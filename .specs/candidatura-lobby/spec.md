@@ -1,7 +1,7 @@
 # Spec — Candidatura a lobby
 
 - Feature: `candidatura-lobby` · Nível: G · Status: Aprovada
-- Notion: ainda não publicado (a fase de Tasks não entra nesta entrega)
+- Notion: [Épico](https://app.notion.com/p/3ead4a3a5eff810bb7f4eae87f4ab3b2)
 - Última revisão: 2026-09-29 — aprovada pelo usuário; perguntas em aberto resolvidas: retirada do pedido de troca,
   visibilidade, bloqueio na remoção
 

@@ -1,7 +1,7 @@
 # Spec — Fundação
 
 - Feature: `fundacao` · Nível: G · Status: Aprovada
-- Notion: ainda não publicado
+- Notion: [Épico](https://app.notion.com/p/3ead4a3a5eff81ca93e6c2681809464e)
 - Última revisão: 2026-09-29 — RN-23 (`.gitattributes` e `.gitignore`) acrescentada com aprovação
   do usuário, depois da aprovação inicial
 
