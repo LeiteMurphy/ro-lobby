@@ -4,8 +4,8 @@ Lobby para jogadores de Ragnarok Online montarem grupos para instâncias difíce
 É um projeto de fã, sem vínculo com a Gravity.
 
 ## Estado atual
-Fase de fundação: o repositório ainda não tem código. A estrutura de pastas será
-definida por ADR na fase de Design.
+Fase de fundação: o repositório ainda não tem código. As decisões de arquitetura ficam
+em `docs/adr/`.
 
 ## Produto
 - Problema: é difícil montar grupos para instâncias difíceis. Um grupo tem até 12
@@ -31,12 +31,12 @@ Futuro: Guilda, Membro de guilda.
 - Login com Discord (OAuth).
 - PostgreSQL, com datas em UTC no banco e convertidas na exibição.
 - Framework web: SvelteKit ([ADR-01](docs/adr/0001-framework-web-sveltekit.md)).
+- Framework HTTP do backend: biblioteca padrão `net/http` ([ADR-02](docs/adr/0002-framework-http-net-http.md)).
+- Estrutura do repositório: monorepo com `backend/`, `web/`, `docs/adr/` e `.specs/` ([ADR-03](docs/adr/0003-estrutura-monorepo.md)).
 
 ### Pendente de ADR (fase de Design)
-- Framework HTTP do backend.
 - Mobile: Kotlin ou Flutter.
 - Hospedagem.
-- Estrutura do repositório.
 
 ### Em aberto
 - Nada no momento.
