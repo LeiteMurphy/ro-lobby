@@ -50,7 +50,9 @@ antes de haver um ADR.
 - Toda feature nova passa pela skill spec-driven-dev. As specs ficam em
   `.specs/<feature>/` e são versionadas. As regras de negócio ficam na spec, não aqui.
 - O backlog fica no Notion, na página "RO Lobby" (Épicos → User Stories → Tasks).
-- Uma branch por feature (`feature/<slug>`). Merge só com relatório do validador APROVADO.
+- Uma branch por feature (`feature/<slug>`).
+- Merge: PRs só de documentação (spec, ADR) entram com a revisão do usuário. PRs com
+  código só entram com o relatório do validador APROVADO.
 - Commits em Conventional Commits citando os IDs da spec,
   ex.: `feat: candidatura a lobby [US-02, CA-02.1]`.
 - Qualidade faz parte do objetivo, já que o projeto é portfólio de quem vem de QA.

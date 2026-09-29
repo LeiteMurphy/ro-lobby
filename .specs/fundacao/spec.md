@@ -2,7 +2,8 @@
 
 - Feature: `fundacao` · Nível: G · Status: Aprovada
 - Notion: ainda não publicado
-- Última revisão: 2026-09-29 — aprovada pelo usuário, com as premissas da seção 9 confirmadas
+- Última revisão: 2026-09-29 — RN-23 (`.gitattributes` e `.gitignore`) acrescentada com aprovação
+  do usuário, depois da aprovação inicial
 
 ## 1. Contexto
 O repositório ainda não tem código. Antes da primeira feature de produto (login com
@@ -52,6 +53,9 @@ Nesta feature, as regras são invariantes técnicos, não de domínio.
 - **RN-05** — O README tem o passo a passo do setup local no Windows, incluindo a
   instalação do Go e do Docker Desktop, e os comandos para subir o banco, migrar,
   rodar o backend, rodar o web e rodar os testes.
+- **RN-23** — O `.gitattributes` força LF nos arquivos de texto, qualquer que seja o
+  sistema operacional. O `.gitignore` cobre `.env`, `node_modules/`, os artefatos de
+  build e os relatórios de cobertura. O `.env.example` continua versionado.
 
 ### Backend e banco
 - **RN-06** — `GET /healthz` responde 200 com `{"status":"ok","database":"ok"}`
@@ -126,6 +130,18 @@ CA-01.4 — Versões fixadas  [US-01, RN-04]
 Given o repositório
 When se compara a versão do Go e do Node declaradas no repositório com as usadas na CI
 Then as versões são as mesmas
+
+CA-01.5 — Quebra de linha LF  [US-01, RN-23]
+Given um clone do repositório no Windows
+When se verifica a quebra de linha dos arquivos de texto versionados
+Then todos usam LF
+  And o gofmt não aponta diferença por causa de quebra de linha
+
+CA-01.6 — Arquivos ignorados  [US-01, RN-23]
+Given um .env local, uma pasta node_modules/ e os artefatos de build e de cobertura
+When se roda git status
+Then nenhum deles aparece como arquivo novo
+  And o .env.example continua versionado
 ```
 
 ### US-02 — Health check
@@ -335,3 +351,5 @@ Then o relatório de cobertura do job correspondente fica disponível no PR
 - Compose → só o Postgres; backend e web rodam direto na máquina (RN-03).
 - Portas padrão → API 8080, web 5173 e Postgres 5432, configuráveis pelo `.env`.
 - Proteção da `main` → configurada pelo usuário no GitHub; a fundação só documenta o passo.
+- `.gitattributes` com LF e `.gitignore` → acrescentados depois da aprovação, por causa dos
+  avisos de CRLF nos commits feitos no Windows (RN-23).
