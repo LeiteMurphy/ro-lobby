@@ -30,10 +30,10 @@ Futuro: Guilda, Membro de guilda.
 - Web primeiro, mobile depois.
 - Login com Discord (OAuth).
 - PostgreSQL, com datas em UTC no banco e convertidas na exibição.
+- Framework web: SvelteKit ([ADR-01](docs/adr/0001-framework-web-sveltekit.md)).
 
 ### Pendente de ADR (fase de Design)
 - Framework HTTP do backend.
-- Framework web: Next.js ou SvelteKit.
 - Mobile: Kotlin ou Flutter.
 - Hospedagem.
 - Estrutura do repositório.
