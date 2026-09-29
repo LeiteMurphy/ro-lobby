@@ -33,6 +33,8 @@ Futuro: Guilda, Membro de guilda.
 - Framework web: SvelteKit ([ADR-01](docs/adr/0001-framework-web-sveltekit.md)).
 - Framework HTTP do backend: biblioteca padrão `net/http` ([ADR-02](docs/adr/0002-framework-http-net-http.md)).
 - Estrutura do repositório: monorepo com `backend/`, `web/`, `docs/adr/` e `.specs/` ([ADR-03](docs/adr/0003-estrutura-monorepo.md)).
+- Acesso ao banco: `pgx` + `sqlc`, migrações com `goose` ([ADR-04](docs/adr/0004-acesso-banco-pgx-sqlc-goose.md)).
+- Contrato da API: `openapi.yaml` como fonte, com `oapi-codegen` (Go) e `openapi-typescript` (web) ([ADR-05](docs/adr/0005-contrato-api-openapi.md)).
 
 ### Pendente de ADR (fase de Design)
 - Mobile: Kotlin ou Flutter.
