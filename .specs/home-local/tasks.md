@@ -5,9 +5,11 @@
 - Branch: `feature/home-local`
 
 ## Decisões de implementação
-- **D-01** — Uma imagem do backend, com dois binários (`api` e `migrate`), sobre
+- **D-01** — Uma imagem do backend, com três binários (`api`, `migrate` e `healthcheck`), sobre
   `gcr.io/distroless/static-debian12:nonroot`. O serviço de migração do Compose usa a
-  mesma imagem com outro comando.
+  mesma imagem com outro comando. A imagem não tem shell nem `curl`, então o `healthcheck`
+  (GET `/healthz`, sai com 0 só em 200) é o binário que o Compose usa para saber se a API
+  está pronta.
 - **D-02** — Imagem do web em dois estágios sobre `node:24-alpine`: o primeiro faz o
   `npm ci` e o build, e o segundo leva só o `build/`, o `package.json` e as dependências
   de produção. Roda com o usuário `node`.
@@ -30,7 +32,7 @@
 
 ## US-01 — Pilha local em containers  (P1)
 
-### T-01 — Imagens da API e do web  [ ]
+### T-01 — Imagens da API e do web  [x]
 - Cobre: RN-05, CA-01.5, D-01, D-02
 - Depende de: —
 - Paralelizável: não
@@ -187,4 +189,6 @@
 Todos os 30 critérios da spec estão cobertos.
 
 ## Descobertas
-- 2026-09-30 — (vazio)
+- 2026-09-30 — O `npm prune --omit=dev` deixava 21 pacotes de desenvolvimento no
+  `node_modules` da imagem do web. — Resolvido na T-01 com um estágio `prod-deps` que faz
+  `npm ci --omit=dev` do zero.
