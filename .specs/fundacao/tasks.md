@@ -52,7 +52,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff8136a1b7f18400b1db23
 
-### T-02 — PostgreSQL pelo Compose  [ ]
+### T-02 — PostgreSQL pelo Compose  [x]
 - Cobre: RN-03, CA-01.3
 - Depende de: T-01
 - Paralelizável: não
