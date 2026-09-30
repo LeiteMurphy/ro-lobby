@@ -5,7 +5,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    # RN-17 pede a main. As branches de feature entram para PRs empilhados dentro de
+    # uma feature, como os PRs de demonstração da T-10.
+    branches: [main, 'feature/**']
   push:
     branches: [main]
 

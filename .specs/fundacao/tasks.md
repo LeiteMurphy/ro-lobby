@@ -239,3 +239,8 @@ Todos os 31 critérios da spec estão cobertos.
 - 2026-09-29 — A RN-15 define a mensagem para 200, 503 e "não responde", mas não para
   outros códigos (500, 404). — Implementado como "API com problema", já que a API
   respondeu mas não está saudável. Não muda a regra; confirmar com o usuário.
+- 2026-09-29 — Para provar o filtro de caminhos (CA-06.1, 06.2), o PR de demonstração
+  precisa mudar só uma pasta em relação à base. Contra a `main`, que ainda não tem a
+  fundação, todo PR muda tudo. — Decisão: a CI também roda em PRs para `feature/**`,
+  e os PRs de demonstração apontam para a `feature/fundacao`. É um acréscimo à RN-17,
+  que continua valendo para a `main`. Confirmar com o usuário.
