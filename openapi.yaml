@@ -10,7 +10,7 @@ paths:
   /healthz:
     get:
       operationId: getHealthz
-      summary: Estado da API e do banco
+      summary: Estado da API e do banco (demonstração do CA-04.3)
       description: >
         Responde 200 quando o banco responde a um ping em até 2 segundos (RN-06) e
         503 quando não responde nesse prazo (RN-07).
