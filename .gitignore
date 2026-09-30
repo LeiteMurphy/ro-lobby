@@ -1,0 +1,27 @@
+# Variáveis locais (o .env.example continua versionado)
+.env
+.env.*
+!.env.example
+
+# Dependências
+node_modules/
+
+# Build
+backend/bin/
+web/build/
+web/.svelte-kit/
+*.exe
+
+# Cobertura e relatórios de teste
+coverage/
+*.coverprofile
+coverage*.out
+coverage*.html
+web/test-results/
+web/playwright-report/
+
+# Editor e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

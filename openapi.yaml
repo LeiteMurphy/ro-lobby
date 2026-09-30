@@ -1,0 +1,48 @@
+# Contrato da API do RO Lobby (ADR-05, RN-11). Toda rota nova começa aqui.
+# Depois de mudar este arquivo, gere o código de novo:
+#   backend: go generate ./...     web: npm run generate
+openapi: 3.0.3
+info:
+  title: RO Lobby API
+  version: 0.1.0
+  description: API do RO Lobby, lobby de fãs para montar grupos em Ragnarok Online.
+paths:
+  /healthz:
+    get:
+      operationId: getHealthz
+      summary: Estado da API e do banco
+      description: >
+        Responde 200 quando o banco responde a um ping em até 2 segundos (RN-06) e
+        503 quando não responde nesse prazo (RN-07).
+      responses:
+        "200":
+          description: API e banco saudáveis.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                status: ok
+                database: ok
+        "503":
+          description: API no ar, mas o banco não respondeu em até 2 segundos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                status: degraded
+                database: unavailable
+components:
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, database]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        database:
+          type: string
+          enum: [ok, unavailable]

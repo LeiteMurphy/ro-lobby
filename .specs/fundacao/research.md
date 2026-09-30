@@ -26,6 +26,10 @@ backend e do web, banco local, migrações, testes e CI, seguindo os ADRs já ap
 - Por isso, a fundação precisa documentar o setup local, e é preciso decidir se o
   Postgres local roda por Docker ou por instalação nativa.
 
+Atualização de 2026-09-29, durante a implementação: Go 1.27.0 e Docker Desktop 4.93.0
+(engine 29.8.1, WSL 2) instalados. O Smart App Control foi desligado porque
+bloqueava os binários de teste do Go (ver "Descobertas" em `tasks.md`).
+
 ## Decisões técnicas que ainda faltam (candidatas a ADR)
 - ADR-04 — Acesso ao banco e migrações (proposta: `pgx` + `sqlc` + `goose`).
 - ADR-05 — Contrato da API (proposta: OpenAPI, com cliente TypeScript gerado).
