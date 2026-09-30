@@ -119,7 +119,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-05 — Página de status  (P1)
 
-### T-07 — Esqueleto do web  [ ]
+### T-07 — Esqueleto do web  [x]
 - Cobre: RN-04, RN-14, RN-16
 - Depende de: T-01
 - Paralelizável: [P] com T-03 a T-06
