@@ -14,6 +14,7 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/config"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/server"
 )
 
 func main() {
@@ -47,7 +48,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           http.NewServeMux(),
+		Handler:           server.New(pool),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

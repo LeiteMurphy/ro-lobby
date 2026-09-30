@@ -90,7 +90,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-02 — Health check  (P1)
 
-### T-05 — Handler do /healthz  [ ]
+### T-05 — Handler do /healthz  [x]
 - Cobre: RN-06, RN-07, RN-10, RN-11, CA-02.1, CA-02.2, CA-02.3, CA-02.4, CA-06.7
 - Depende de: T-04
 - Paralelizável: não
