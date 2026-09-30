@@ -111,7 +111,7 @@
 
 ## US-06 — Celular  (P2)
 
-### T-07 — Layout abaixo de 900 px  [ ]
+### T-07 — Layout abaixo de 900 px  [x]
 - Cobre: RN-19, CA-06.1, CA-06.2
 - Depende de: T-06
 - Paralelizável: não

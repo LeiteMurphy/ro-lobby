@@ -21,6 +21,7 @@
 	import LobbyCard from '$lib/home/components/LobbyCard.svelte';
 	import TopBar from '$lib/home/components/TopBar.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import Drawer from '$lib/ui/Drawer.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -45,7 +46,13 @@
 	const featured = $derived(featuredLobby(dayLobbies, now));
 	const empty = $derived(emptyState(dayLobbies, filtered));
 	const instances = $derived(instanceOptions(data.lobbies));
-	const noFilters = $derived(activeFilterCount(filters) === 0);
+	const activeFilters = $derived(activeFilterCount(filters));
+	const noFilters = $derived(activeFilters === 0);
+	const dayRoleCounts = $derived(roleCounts(dayLobbies));
+	const dayTimeCounts = $derived(timeRangeCounts(dayLobbies, filters));
+
+	// RN-19: abaixo de 900 px os filtros ficam numa gaveta.
+	let drawerOpen = $state(false);
 
 	const heading = $derived(day.today ? 'Grupos para hoje' : `Grupos para ${day.label}`);
 	const subheading = $derived(
@@ -84,8 +91,8 @@
 			<FilterPanel
 				{filters}
 				{instances}
-				roleCounts={roleCounts(dayLobbies)}
-				timeCounts={timeRangeCounts(dayLobbies, filters)}
+				roleCounts={dayRoleCounts}
+				timeCounts={dayTimeCounts}
 				name="faixa"
 				onchange={(f) => (filters = f)}
 			/>
@@ -104,6 +111,16 @@
 					<h1>{heading}</h1>
 					<span class="sub" data-testid="list-subheading">{subheading}</span>
 				</div>
+				<span class="filters-button">
+					<Button
+						variant="secondary"
+						size="sm"
+						iconLeft="sliders-horizontal"
+						onclick={() => (drawerOpen = true)}
+					>
+						{activeFilters ? `Filtros (${activeFilters})` : 'Filtros'}
+					</Button>
+				</span>
 				{#if filtered.length > 0}
 					<div class="legend">
 						<span>Borda: função com mais vagas</span>
@@ -125,6 +142,27 @@
 			{/if}
 		</section>
 	</main>
+
+	<Drawer open={drawerOpen} title="Filtros" onclose={() => (drawerOpen = false)}>
+		<div class="drawer-body">
+			<FilterPanel
+				{filters}
+				{instances}
+				roleCounts={dayRoleCounts}
+				timeCounts={dayTimeCounts}
+				name="faixa-gaveta"
+				size="md"
+				onchange={(f) => (filters = f)}
+			/>
+			<div class="drawer-actions">
+				<Button variant="ghost" size="lg" block onclick={resetFilters}>Limpar</Button>
+				<Button variant="secondary" size="lg" block onclick={() => (drawerOpen = false)}>
+					Ver {filtered.length}
+					{filtered.length === 1 ? 'grupo' : 'grupos'}
+				</Button>
+			</div>
+		</div>
+	</Drawer>
 </div>
 
 <style>
@@ -228,6 +266,35 @@
 	}
 	.swatch.dps {
 		background: var(--dps-400);
+	}
+	.filters-button {
+		display: none;
+	}
+	.drawer-body {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+	.drawer-actions {
+		display: grid;
+		grid-template-columns: 1fr 2fr;
+		gap: 8px;
+	}
+	/* RN-19: abaixo de 900 px, a barra lateral some e os filtros vão para a gaveta. */
+	@media (max-width: 899px) {
+		.days-bar {
+			padding: 14px 16px;
+		}
+		main {
+			padding: 24px 16px 48px;
+		}
+		.sidebar,
+		.legend {
+			display: none;
+		}
+		.filters-button {
+			display: inline-flex;
+		}
 	}
 	.grid {
 		display: grid;

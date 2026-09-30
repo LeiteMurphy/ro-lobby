@@ -13,7 +13,12 @@
 		<span class="desktop"><Button iconLeft="plus" soon>Criar lobby</Button></span>
 		<span class="mobile"><IconButton icon="plus" label="Criar lobby" variant="primary" soon /></span
 		>
-		<Button variant="secondary" iconLeft="log-in" soon>Entrar com Discord</Button>
+		<span class="desktop"
+			><Button variant="secondary" iconLeft="log-in" soon>Entrar com Discord</Button></span
+		>
+		<span class="mobile"
+			><IconButton icon="log-in" label="Entrar com Discord" variant="secondary" soon /></span
+		>
 	</div>
 </header>
 
@@ -44,6 +49,7 @@
 	.brand span {
 		font: 700 21px/1 var(--font-display);
 		letter-spacing: 0.01em;
+		white-space: nowrap;
 	}
 	.actions {
 		margin-left: auto;
