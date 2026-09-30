@@ -50,7 +50,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Pronto quando: `git ls-files --eol` mostra `i/lf` em todos os arquivos de texto; um
   `.env`, um `node_modules/` e uma pasta `coverage/` criados de teste não aparecem no
   `git status`; o `.env.example` está versionado.
-- Commit: —
+- Commit: `0863bde`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff8136a1b7f18400b1db23
 
 ### T-02 — PostgreSQL pelo Compose  [x]
@@ -60,7 +60,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Arquivos: `docker-compose.yml`, `.env.example`
 - Pronto quando: `docker compose up -d` sobe o Postgres com volume nomeado e
   healthcheck; depois de `docker compose down` e `up` de novo, os dados continuam lá.
-- Commit: —
+- Commit: `7d68493`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff819aa998db996b10f18f
 
 ## US-04 — Contrato e código gerado  (P1)
@@ -74,7 +74,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Pronto quando: `go build ./...`, `go vet ./...` e `gofmt -l .` passam; a config
   vem só de variáveis de ambiente, com teste unitário; a conexão do `pgx` define
   `timezone=UTC`.
-- Commit: —
+- Commit: `8724d2c`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81f7a599e6ab53f740dd
 
 ### T-04 — Contrato OpenAPI e código Go gerado  [x]
@@ -86,7 +86,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Pronto quando: o `openapi.yaml` descreve `GET /healthz` com as respostas 200 e 503 e
   seus corpos; `go generate ./...` gera a interface do servidor para `net/http` sem
   diferença com o que está commitado; teste do CA-04.1 lê o contrato e confere a rota.
-- Commit: —
+- Commit: `3b0210b`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff814887cef0e67b3ffab4
 
 ## US-02 — Health check  (P1)
@@ -99,7 +99,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Pronto quando: testes unitários com um `pinger` falso passam para os CA-02.1 a 02.4
   (banco ok → 200; erro → 503; ping que passa de 2 s → 503 em menos de 3 s; POST → 405),
   sem conectar em banco.
-- Commit: —
+- Commit: `381366c` (nomes dos testes em inglês: `e5fd755`)
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81f2a65bff42aadcba7a
 
 ## US-03 — Migrações  (P1)
@@ -115,7 +115,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
   para os CA-02.1 (banco real → 200), CA-02.2 (banco inacessível → 503 em até 3 s),
   CA-02.5 (sessão em UTC), CA-03.1 (up em banco vazio), CA-03.2 (down até 0, sem tabelas
   do projeto) e CA-03.3 (todo arquivo tem `-- +goose Up` e `-- +goose Down`).
-- Commit: —
+- Commit: `5f52ddd`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff815f8ce3d2f1c8fa5f27
 
 ## US-05 — Página de status  (P1)
@@ -128,7 +128,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
   Vitest), `web/package.json` com `engines`
 - Pronto quando: `npm run lint`, `npm run check`, `npm run test` e `npm run build`
   passam; o `tsconfig` tem `strict: true`; o adaptador é o `adapter-node`.
-- Commit: —
+- Commit: `7ba1291`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff818f84c4ddcccf310b3d
 
 ### T-08 — Tipos gerados e página de status  [x]
@@ -141,7 +141,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
   chamada ao `/healthz` usa o tipo gerado; testes Vitest cobrem 200 → "API online",
   503 → "API com problema", falha de rede → "API indisponível" sem erro na tela, e o
   HTML do SSR já traz o texto (CA-05.4).
-- Commit: —
+- Commit: `94c5b9d` (ajuste do tipo nulo: `785966c`)
 - Notion: https://app.notion.com/p/3ebd4a3a5eff819fb067e8024517f34b
 
 ## US-07 — Ponta a ponta  (P2)
@@ -153,7 +153,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Arquivos: `web/playwright.config.ts`, `web/test/e2e/status.spec.ts` (em `test/` para o `svelte-check` checar os tipos)
 - Pronto quando: com banco, backend e web no ar, `npm run test:e2e` encontra
   "API online".
-- Commit: —
+- Commit: `3253efa`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81908995c676bb60ac75
 
 ## US-06 — CI  (P1)
@@ -169,7 +169,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
   aparecem como artefato e resumo. Os cenários negativos (CA-04.3, CA-06.1, 06.2, 06.4,
   06.5, 06.8) são provados com PRs de demonstração em rascunho, fechados sem merge, com
   os links anotados aqui.
-- Commit: —
+- Commit: `813d45b`, `43000e8` e `0b05c00` (gatilho `feature/**` adicionado e revertido)
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81e08a5df1132b05a222
 
 #### Evidência dos cenários negativos (2026-09-29, local, mesmos comandos da CI)
@@ -209,7 +209,7 @@ Backend falhou (CA-06.4).
   subir o banco, migrar, backend, web, testes, troca de portas e proteção da `main`);
   seguido do zero numa pasta nova, chega em "API online"; toda variável lida no código
   e no Compose está no `.env.example`.
-- Commit: —
+- Commit: `b8a5dbb`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81a9a3c5fe51e57d0079
 
 ## Matriz de cobertura
