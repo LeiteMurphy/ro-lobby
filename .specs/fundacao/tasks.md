@@ -64,7 +64,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-04 — Contrato e código gerado  (P1)
 
-### T-03 — Esqueleto do backend  [ ]
+### T-03 — Esqueleto do backend  [x]
 - Cobre: RN-01, RN-04, RN-08, D-02, D-07
 - Depende de: T-01
 - Paralelizável: [P] com T-02
@@ -228,3 +228,7 @@ Todos os 31 critérios da spec estão cobertos.
 - 2026-09-29 — O `research.md` ainda diz que Go e Docker não estão instalados. Hoje há
   Go 1.27.0, Node 24.14.0 e Docker Desktop 4.93.0 (engine 29.8.1, WSL 2). — Atualizar
   na T-11.
+- 2026-09-29 — O Smart App Control do Windows 11 bloqueia os executáveis sem
+  assinatura que o `go test` e o `go build` geram (evento 3118 do Code Integrity no
+  `database.test.exe`). — Decisão do usuário: desligar o SAC. A T-11 documenta o passo
+  no README como pré-requisito do setup no Windows.
