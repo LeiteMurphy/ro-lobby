@@ -157,7 +157,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-06 — CI  (P1)
 
-### T-10 — Workflow do GitHub Actions  [ ]
+### T-10 — Workflow do GitHub Actions  [x]
 - Cobre: RN-04, RN-12, RN-17, RN-18, RN-19, RN-20, RN-21, CA-01.4, CA-04.2, CA-04.3,
   CA-06.1 a CA-06.8, CA-08.1, D-08, D-09, D-10
 - Depende de: T-06, T-08, T-09
@@ -170,6 +170,26 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
   os links anotados aqui.
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81e08a5df1132b05a222
+
+#### Evidência dos cenários negativos (2026-09-29, local, mesmos comandos da CI)
+Cada mutação foi aplicada, o comando do passo da CI rodou e a mutação foi desfeita.
+
+| Critério | Mutação | Comando | Resultado |
+|---|---|---|---|
+| CA-04.3 | `summary` do `openapi.yaml` mudado sem gerar | `go generate ./...` + `git status --porcelain` | exit 1, `api.gen.go` modificado |
+| CA-04.3 | idem | `npm run generate` + `git status --porcelain` | exit 1, `schema.gen.ts` modificado |
+| CA-04.2 | nenhuma | os dois acima | exit 0 |
+| CA-06.4 | função fora do gofmt | passo `gofmt -l .` | exit 1 |
+| CA-06.4 | idem | `golangci-lint run ./...` | exit 1 |
+| CA-06.4 | `.ts` fora do Prettier | `npm run lint` | exit 1 |
+| CA-06.5 | teste Go com `t.Fatal` | `go test ./...` | exit 1 |
+| CA-06.5 | teste Vitest com `expect(1).toBe(2)` | `npm test` | exit 1 |
+| CA-06.8 | parâmetro com `any` implícito | `npm run check` | exit 1 |
+
+O caminho feliz rodou verde na CI real do PR #4 (Backend, Web, Ponta a ponta e CI ok),
+o que também prova o CA-06.3 e o CA-06.6: o PR muda a CI, e os dois jobs rodaram, com
+os testes de integração contra o Postgres de serviço. O CA-06.1 e o CA-06.2 ficam para
+o primeiro PR real de uma pasta só depois do merge (ver "Descobertas").
 
 ## US-01 — Ambiente local (fechamento)
 
@@ -239,8 +259,9 @@ Todos os 31 critérios da spec estão cobertos.
 - 2026-09-29 — A RN-15 define a mensagem para 200, 503 e "não responde", mas não para
   outros códigos (500, 404). — Implementado como "API com problema", já que a API
   respondeu mas não está saudável. Não muda a regra; confirmar com o usuário.
-- 2026-09-29 — Para provar o filtro de caminhos (CA-06.1, 06.2), o PR de demonstração
-  precisa mudar só uma pasta em relação à base. Contra a `main`, que ainda não tem a
-  fundação, todo PR muda tudo. — Decisão: a CI também roda em PRs para `feature/**`,
-  e os PRs de demonstração apontam para a `feature/fundacao`. É um acréscimo à RN-17,
-  que continua valendo para a `main`. Confirmar com o usuário.
+- 2026-09-29 — Os PRs de demonstração da T-10 (#5 a #10) ficaram presos na fila do
+  GitHub Actions. — Decisão do usuário: fechar os PRs sem merge e reverter o gatilho
+  `feature/**`. Os cenários negativos (CA-04.3, CA-06.4, 06.5, 06.8) são provados
+  localmente, com mutações e os mesmos comandos da CI (evidência abaixo). O filtro por
+  pasta (CA-06.1, 06.2) é conferido no primeiro PR real de uma pasta só, depois do
+  merge da fundação.

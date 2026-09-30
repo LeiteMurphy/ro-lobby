@@ -10,3 +10,8 @@ bun.lockb
 
 # Código gerado do openapi.yaml (npm run generate)
 /src/lib/api/schema.gen.ts
+
+# Relatórios de teste e cobertura
+/coverage/
+/playwright-report/
+/test-results/
