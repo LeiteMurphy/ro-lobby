@@ -60,3 +60,5 @@ func (h *Handler) ping(ctx context.Context) error {
 		return ctx.Err()
 	}
 }
+
+// Demonstração do CA-06.1: PR que muda só o backend.
