@@ -1,0 +1,8 @@
+# Configuração do oapi-codegen (ADR-05). Gera os tipos e a interface do servidor
+# para net/http a partir do openapi.yaml da raiz.
+package: api
+output: api.gen.go
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true

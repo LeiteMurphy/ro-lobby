@@ -76,7 +76,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81f7a599e6ab53f740dd
 
-### T-04 — Contrato OpenAPI e código Go gerado  [ ]
+### T-04 — Contrato OpenAPI e código Go gerado  [x]
 - Cobre: RN-11, RN-12, CA-04.1
 - Depende de: T-03
 - Paralelizável: não
