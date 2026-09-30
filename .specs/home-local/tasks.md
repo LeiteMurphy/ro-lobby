@@ -83,13 +83,13 @@
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff818d8a8dc8f2c50dbab5
 
-### T-05 — Lógica da Home e dados fictícios  [P] [ ]
+### T-05 — Lógica da Home e dados fictícios  [P] [x]
 - Cobre: RN-08 a RN-17, CA-02.1, CA-02.2, CA-02.3, CA-02.4, CA-03.1, CA-04.1 a CA-04.8,
   CA-05.1, CA-05.2, CA-05.3, D-05, D-06
 - Depende de: —
 - Paralelizável: [P] com T-01 a T-04
-- Arquivos: `web/src/lib/home/` (`fixtures.ts`, `lobbies.ts`, `days.ts`, `filters.ts`,
-  `time.ts`) e os `*.spec.ts`
+- Arquivos: `web/src/lib/home/` (`types.ts`, `fixtures.ts`, `lobbies.ts`, `days.ts`, `filters.ts`,
+  `time.ts`) e `home.spec.ts`
 - Pronto quando: os testes Vitest de cada critério listado passam, com o "agora" fixado.
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff8149bdcad801f9868b49
