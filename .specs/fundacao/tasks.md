@@ -130,7 +130,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff818f84c4ddcccf310b3d
 
-### T-08 — Tipos gerados e página de status  [ ]
+### T-08 — Tipos gerados e página de status  [x]
 - Cobre: RN-13, RN-15, CA-04.4, CA-05.1, CA-05.2, CA-05.3, CA-05.4
 - Depende de: T-04, T-07
 - Paralelizável: não
@@ -232,3 +232,10 @@ Todos os 31 critérios da spec estão cobertos.
   assinatura que o `go test` e o `go build` geram (evento 3118 do Code Integrity no
   `database.test.exe`). — Decisão do usuário: desligar o SAC. A T-11 documenta o passo
   no README como pré-requisito do setup no Windows.
+- 2026-09-29 — O `openapi-typescript` 7.13, a última versão, só aceita TypeScript 5 como
+  peer, e o scaffold do SvelteKit veio com TypeScript 6. — Decisão: fixar o
+  TypeScript do web em `~5.9` (T-08), sem forçar peer. Voltar ao 6 quando o
+  `openapi-typescript` suportar.
+- 2026-09-29 — A RN-15 define a mensagem para 200, 503 e "não responde", mas não para
+  outros códigos (500, 404). — Implementado como "API com problema", já que a API
+  respondeu mas não está saudável. Não muda a regra; confirmar com o usuário.
