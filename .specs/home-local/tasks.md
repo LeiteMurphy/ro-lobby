@@ -16,7 +16,9 @@
 - **D-03** — A pilha `app` tem um PostgreSQL próprio (`app-postgres`), sem porta
   publicada e com volume separado (`app-postgres-data`). Assim só o web fica exposto
   (RN-03) e os dados da pilha não se misturam com os do desenvolvimento. O Postgres de
-  dev continua sem perfil e com a porta publicada (RN-04).
+  dev fica no perfil `dev`, ligado por padrão com `COMPOSE_PROFILES=dev` no `.env`. O
+  `--profile app` da linha de comando substitui esse padrão, então a pilha `app` não
+  sobe o banco de dev (RN-04 e CA-01.3).
 - **D-04** — A CI ganha um job `app` (build das imagens e teste de fumaça da pilha) que
   roda quando `backend/`, `web/`, o `docker-compose.yml` ou a CI mudam, e entra no
   `ci-ok`. O teste de fumaça é um script versionado (`scripts/smoke-app.sh`), que também
@@ -44,7 +46,7 @@
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81b6bcbdf677fbd182b2
 
-### T-02 — Perfil `app` do Compose  [ ]
+### T-02 — Perfil `app` do Compose  [x]
 - Cobre: RN-01, RN-02, RN-03, RN-04, RN-06, CA-01.1, CA-01.2, CA-01.3, CA-01.4, D-03
 - Depende de: T-01
 - Paralelizável: não
@@ -192,3 +194,7 @@ Todos os 30 critérios da spec estão cobertos.
 - 2026-09-30 — O `npm prune --omit=dev` deixava 21 pacotes de desenvolvimento no
   `node_modules` da imagem do web. — Resolvido na T-01 com um estágio `prod-deps` que faz
   `npm ci --omit=dev` do zero.
+- 2026-09-30 — Serviço sem perfil sobe sempre, então o Postgres de dev subiria junto com a
+  pilha `app`, com a porta 5432 publicada (fere o CA-01.3). — Resolvido na T-02 com o
+  perfil `dev` padrão via `COMPOSE_PROFILES` (D-03). Quem já tem um `.env` antigo precisa
+  acrescentar a variável; a T-10 avisa no README.
