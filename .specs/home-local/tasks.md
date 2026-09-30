@@ -60,7 +60,7 @@
 
 ## US-02 — Grupos do dia  (P1)
 
-### T-03 — Página de status em `/status`  [P] [ ]
+### T-03 — Página de status em `/status`  [P] [x]
 - Cobre: RN-21, CA-02.7
 - Depende de: —
 - Paralelizável: [P] com T-01 e T-02
