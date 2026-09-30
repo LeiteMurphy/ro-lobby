@@ -135,7 +135,7 @@
 
 ## US-07 — Imagens na CI  (P2)
 
-### T-09 — Job `app` na CI e teste de fumaça  [ ]
+### T-09 — Job `app` na CI e teste de fumaça  [x]
 - Cobre: RN-07, CA-07.1, CA-01.1, CA-01.3, CA-01.5, D-04
 - Depende de: T-02, T-06
 - Paralelizável: não
