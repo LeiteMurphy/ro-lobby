@@ -1,0 +1,48 @@
+/* Copiado do RO Lobby Design System (Claude Design), tokens/base.css. */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+html {
+	font-variant-numeric: tabular-nums lining-nums;
+	font-feature-settings: var(--num-features);
+}
+html,
+body {
+	margin: 0;
+	background: var(--bg-app) var(--bg-app-image) center/cover fixed no-repeat;
+	color: var(--text-primary);
+	font: var(--type-body);
+	-webkit-font-smoothing: antialiased;
+}
+a {
+	color: var(--gold-300);
+	text-decoration: none;
+}
+a:hover {
+	color: var(--gold-200);
+	text-decoration: underline;
+}
+::selection {
+	background: var(--gold-soft);
+	color: var(--fg-1);
+}
+:focus-visible {
+	outline: none;
+	box-shadow:
+		var(--focus-ring),
+		0 0 14px rgba(246, 187, 69, 0.28);
+}
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--ink-4);
+	border-radius: 10px;
+	border: 2px solid var(--bg-app);
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}

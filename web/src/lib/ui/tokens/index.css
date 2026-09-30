@@ -1,0 +1,12 @@
+/* Design system do RO Lobby: fontes auto-hospedadas (RNF-02) e tokens. */
+@import '@fontsource/chakra-petch/600.css';
+@import '@fontsource/chakra-petch/700.css';
+@import '@fontsource/figtree/400.css';
+@import '@fontsource/figtree/500.css';
+@import '@fontsource/figtree/600.css';
+@import '@fontsource/figtree/700.css';
+@import './colors.css';
+@import './typography.css';
+@import './spacing.css';
+@import './motion.css';
+@import './base.css';

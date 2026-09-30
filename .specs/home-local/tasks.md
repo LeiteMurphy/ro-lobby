@@ -70,12 +70,13 @@
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff813cbb75f86ca7a538b9
 
-### T-04 — Base do design system no web  [P] [ ]
+### T-04 — Base do design system no web  [P] [x]
 - Cobre: RN-22, RNF-01, RNF-02, D-07
 - Depende de: —
 - Paralelizável: [P] com T-01 a T-03
-- Arquivos: `web/src/lib/ui/` (tokens, Icon, Button, IconButton, Badge, Select,
-  Checkbox, Radio, Drawer, Tooltip), `web/static/brand/`, `web/package.json`
+- Arquivos: `web/src/lib/ui/` (tokens, Icon, Button, IconButton, Badge, Select, Check
+  (checkbox e radio), Drawer; a dica "em breve" fica no Button e no IconButton),
+  `web/static/brand/`, `web/package.json`
   (`@lucide/svelte`, `@fontsource/*`)
 - Pronto quando: os componentes têm teste de renderização (rótulo acessível, estado
   desabilitado com a dica); `npm run build` não referencia nenhum domínio externo.
