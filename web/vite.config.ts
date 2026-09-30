@@ -28,6 +28,14 @@ export default defineConfig(({ mode }) => {
 		},
 		test: {
 			expect: { requireAssertions: true },
+			// RN-21: relatório de cobertura sem percentual mínimo.
+			coverage: {
+				provider: 'v8',
+				reporter: ['text-summary', 'json-summary', 'html'],
+				reportsDirectory: 'coverage',
+				include: ['src/**/*.{ts,svelte}'],
+				exclude: ['src/**/*.spec.ts', 'src/**/*.gen.ts', 'src/**/*.d.ts']
+			},
 			projects: [
 				{
 					extends: './vite.config.ts',
