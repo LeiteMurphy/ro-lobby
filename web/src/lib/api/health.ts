@@ -44,3 +44,5 @@ export async function checkApi(
 	// API respondeu, mas não está saudável.
 	return 'degraded';
 }
+
+// Demonstração do CA-06.2: PR que muda só o web.
