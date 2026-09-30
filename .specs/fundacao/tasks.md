@@ -145,11 +145,11 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-07 — Ponta a ponta  (P2)
 
-### T-09 — Teste Playwright da página de status  [ ]
+### T-09 — Teste Playwright da página de status  [x]
 - Cobre: RN-22, CA-07.1, CA-01.1
 - Depende de: T-06, T-08
 - Paralelizável: não
-- Arquivos: `web/playwright.config.ts`, `web/e2e/status.spec.ts`
+- Arquivos: `web/playwright.config.ts`, `web/test/e2e/status.spec.ts` (em `test/` para o `svelte-check` checar os tipos)
 - Pronto quando: com banco, backend e web no ar, `npm run test:e2e` encontra
   "API online".
 - Commit: —

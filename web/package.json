@@ -14,10 +14,12 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "vitest --run",
-		"generate": "openapi-typescript ../openapi.yaml -o src/lib/api/schema.gen.ts"
+		"generate": "openapi-typescript ../openapi.yaml -o src/lib/api/schema.gen.ts",
+		"test:e2e": "playwright test"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
+		"@playwright/test": "^1.63.0",
 		"@sveltejs/adapter-node": "^5.5.4",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
