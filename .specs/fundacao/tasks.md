@@ -41,7 +41,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-01 — Ambiente local  (P1)
 
-### T-01 — Higiene do repositório  [ ]
+### T-01 — Higiene do repositório  [x]
 - Cobre: RN-01, RN-02, RN-04, RN-23, CA-01.5, CA-01.6
 - Depende de: —
 - Paralelizável: não
