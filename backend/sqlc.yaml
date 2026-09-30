@@ -1,0 +1,12 @@
+# Configuração do sqlc (ADR-04). O schema vem das migrações do goose.
+# Depois de mudar uma migração ou uma query, rode `go generate ./...`.
+version: "2"
+sql:
+  - engine: postgresql
+    schema: migrations
+    queries: queries
+    gen:
+      go:
+        package: db
+        out: internal/db
+        sql_package: pgx/v5

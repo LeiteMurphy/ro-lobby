@@ -103,7 +103,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-03 — Migrações  (P1)
 
-### T-06 — Migrações, sqlc e testes de integração  [ ]
+### T-06 — Migrações, sqlc e testes de integração  [x]
 - Cobre: RN-08, RN-09, RN-10, RN-12, CA-02.1, CA-02.2, CA-02.5, CA-03.1, CA-03.2,
   CA-03.3, D-03, D-04, D-05, D-06
 - Depende de: T-02, T-05
