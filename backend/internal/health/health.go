@@ -60,3 +60,5 @@ func (h *Handler) ping(ctx context.Context) error {
 		return ctx.Err()
 	}
 }
+
+func  demoLint( ) {}
