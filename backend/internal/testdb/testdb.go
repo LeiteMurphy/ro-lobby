@@ -35,7 +35,7 @@ func New(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("conectar em DATABASE_URL: %v", err)
 	}
-	defer admin.Close(ctx)
+	defer func() { _ = admin.Close(ctx) }()
 
 	if _, err := admin.Exec(ctx, "CREATE DATABASE "+pgx.Identifier{name}.Sanitize()); err != nil {
 		t.Fatalf("criar banco de teste: %v", err)
@@ -47,7 +47,7 @@ func New(t *testing.T) string {
 			t.Errorf("limpar banco de teste: %v", err)
 			return
 		}
-		defer conn.Close(context.Background())
+		defer func() { _ = conn.Close(context.Background()) }()
 		if _, err := conn.Exec(context.Background(), "DROP DATABASE IF EXISTS "+pgx.Identifier{name}.Sanitize()+" WITH (FORCE)"); err != nil {
 			t.Errorf("apagar banco de teste: %v", err)
 		}

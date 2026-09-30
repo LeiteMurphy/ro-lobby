@@ -13,7 +13,7 @@ import (
 )
 
 // CA-02.1 com um PostgreSQL real: banco respondendo → 200.
-func TestHealthzIntegracao_CA02_1_BancoDisponivel(t *testing.T) {
+func TestHealthzIntegration_CA02_1_DatabaseAvailable(t *testing.T) {
 	pool, err := database.Open(context.Background(), testdb.New(t))
 	if err != nil {
 		t.Fatal(err)
@@ -25,7 +25,7 @@ func TestHealthzIntegracao_CA02_1_BancoDisponivel(t *testing.T) {
 }
 
 // CA-02.2 com o driver real: banco inacessível → 503 em até 3 s.
-func TestHealthzIntegracao_CA02_2_BancoForaDoAr(t *testing.T) {
+func TestHealthzIntegration_CA02_2_DatabaseDown(t *testing.T) {
 	// Porta 1 no loopback: nada escuta ali, então a conexão é recusada.
 	pool, err := database.Open(context.Background(), "postgres://ro_lobby:x@127.0.0.1:1/ro_lobby?sslmode=disable&connect_timeout=5")
 	if err != nil {

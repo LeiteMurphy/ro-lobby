@@ -20,7 +20,7 @@ func LoadDotEnv(path string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // só leitura: o erro do Close não muda o resultado
 
 	vars, err := parseDotEnv(bufio.NewScanner(f))
 	if err != nil {

@@ -19,27 +19,27 @@ describe('checkApi', () => {
 		expect(status).toBe('online');
 	});
 
-	it('CA-05.2: /healthz respondendo 503 → problema', async () => {
+	it('CA-05.2: /healthz respondendo 503 → degraded', async () => {
 		const status = await checkApi(
 			jsonResponse(503, { status: 'degraded', database: 'unavailable' }),
 			BASE_URL
 		);
-		expect(status).toBe('problema');
+		expect(status).toBe('degraded');
 	});
 
-	it('CA-05.3: backend parado (falha de rede) → indisponivel, sem lançar erro', async () => {
+	it('CA-05.3: backend parado (falha de rede) → unavailable, sem lançar erro', async () => {
 		const refused: typeof fetch = async () => {
 			throw new TypeError('fetch failed: ECONNREFUSED');
 		};
-		await expect(checkApi(refused, BASE_URL)).resolves.toBe('indisponivel');
+		await expect(checkApi(refused, BASE_URL)).resolves.toBe('unavailable');
 	});
 
-	it('CA-05.3: backend que não responde dentro do prazo → indisponivel', async () => {
+	it('CA-05.3: backend que não responde dentro do prazo → unavailable', async () => {
 		const hanging: typeof fetch = (_input, init) =>
 			new Promise((_resolve, reject) => {
 				init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
 			});
-		await expect(checkApi(hanging, BASE_URL, 50)).resolves.toBe('indisponivel');
+		await expect(checkApi(hanging, BASE_URL, 50)).resolves.toBe('unavailable');
 	});
 
 	it('chama GET /healthz na URL base configurada', async () => {

@@ -13,7 +13,7 @@ var (
 )
 
 // CA-03.3: todo arquivo de migração tem uma seção up e uma seção down.
-func TestMigracoes_CA03_3_TodasTemUpEDown(t *testing.T) {
+func TestMigrations_CA03_3_AllHaveUpAndDown(t *testing.T) {
 	files, err := fs.Glob(FS, "*.sql")
 	if err != nil {
 		t.Fatal(err)

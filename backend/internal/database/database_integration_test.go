@@ -14,7 +14,7 @@ import (
 
 // CA-02.5: com o backend conectado, SHOW TimeZone devolve UTC, mesmo que o banco
 // esteja configurado com outro fuso.
-func TestConexao_CA02_5_FusoDaSessaoEUTC(t *testing.T) {
+func TestConnection_CA02_5_SessionTimeZoneIsUTC(t *testing.T) {
 	url := testdb.New(t)
 	ctx := context.Background()
 
@@ -30,7 +30,9 @@ func TestConexao_CA02_5_FusoDaSessaoEUTC(t *testing.T) {
 	if _, err := conn.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{dbName}.Sanitize()+" SET timezone TO 'America/Sao_Paulo'"); err != nil {
 		t.Fatal(err)
 	}
-	conn.Close(ctx)
+	if err := conn.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
 
 	// When: o backend abre a conexão.
 	pool, err := Open(ctx, url)

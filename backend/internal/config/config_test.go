@@ -13,7 +13,7 @@ func envFrom(vars map[string]string) func(string) string {
 }
 
 // RN-01: toda configuração vem de variáveis de ambiente.
-func TestLoad_RN01_LeDasVariaveisDeAmbiente(t *testing.T) {
+func TestLoad_RN01_ReadsEnvironment(t *testing.T) {
 	cfg, err := Load(envFrom(map[string]string{
 		"DATABASE_URL": "postgres://u:p@localhost:5432/db",
 		"API_PORT":     "9090",
@@ -26,7 +26,7 @@ func TestLoad_RN01_LeDasVariaveisDeAmbiente(t *testing.T) {
 	}
 }
 
-func TestLoad_RN01_PortaPadrao8080(t *testing.T) {
+func TestLoad_RN01_DefaultPort8080(t *testing.T) {
 	cfg, err := Load(envFrom(map[string]string{"DATABASE_URL": "postgres://x"}))
 	if err != nil {
 		t.Fatalf("erro inesperado: %v", err)
@@ -36,13 +36,13 @@ func TestLoad_RN01_PortaPadrao8080(t *testing.T) {
 	}
 }
 
-func TestLoad_RN01_ExigeDatabaseURL(t *testing.T) {
+func TestLoad_RN01_RequiresDatabaseURL(t *testing.T) {
 	if _, err := Load(envFrom(nil)); err == nil {
 		t.Fatal("esperado erro sem DATABASE_URL")
 	}
 }
 
-func TestLoad_RN01_RejeitaPortaInvalida(t *testing.T) {
+func TestLoad_RN01_RejectsInvalidPort(t *testing.T) {
 	for _, port := range []string{"abc", "0", "70000"} {
 		_, err := Load(envFrom(map[string]string{"DATABASE_URL": "postgres://x", "API_PORT": port}))
 		if err == nil {
@@ -51,7 +51,7 @@ func TestLoad_RN01_RejeitaPortaInvalida(t *testing.T) {
 	}
 }
 
-func TestParseDotEnv_RN02_FormatoDoEnvExample(t *testing.T) {
+func TestParseDotEnv_RN02_EnvExampleFormat(t *testing.T) {
 	input := "# comentário\n\nPOSTGRES_USER=ro_lobby\nQUOTED=\"com espaço\"\nSINGLE='x'\nEMPTY=\n"
 	vars, err := parseDotEnv(bufio.NewScanner(strings.NewReader(input)))
 	if err != nil {
@@ -68,21 +68,24 @@ func TestParseDotEnv_RN02_FormatoDoEnvExample(t *testing.T) {
 	}
 }
 
-func TestParseDotEnv_RejeitaLinhaSemIgual(t *testing.T) {
+func TestParseDotEnv_RejectsLineWithoutEquals(t *testing.T) {
 	if _, err := parseDotEnv(bufio.NewScanner(strings.NewReader("SEM_IGUAL\n"))); err == nil {
 		t.Fatal("esperado erro")
 	}
 }
 
 // RN-01: variáveis já definidas no ambiente têm precedência sobre o .env.
-func TestLoadDotEnv_RN01_NaoSobrescreveAmbiente(t *testing.T) {
+func TestLoadDotEnv_RN01_DoesNotOverrideEnvironment(t *testing.T) {
 	path := filepath.Join(t.TempDir(), ".env")
 	if err := os.WriteFile(path, []byte("RO_LOBBY_TEST_A=do_arquivo\nRO_LOBBY_TEST_B=do_arquivo\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("RO_LOBBY_TEST_A", "do_ambiente")
+	// t.Setenv registra a restauração; o Unsetenv deixa B de fato indefinida.
 	t.Setenv("RO_LOBBY_TEST_B", "")
-	os.Unsetenv("RO_LOBBY_TEST_B")
+	if err := os.Unsetenv("RO_LOBBY_TEST_B"); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := LoadDotEnv(path); err != nil {
 		t.Fatalf("erro inesperado: %v", err)
@@ -95,7 +98,7 @@ func TestLoadDotEnv_RN01_NaoSobrescreveAmbiente(t *testing.T) {
 	}
 }
 
-func TestLoadDotEnv_ArquivoInexistenteNaoEErro(t *testing.T) {
+func TestLoadDotEnv_MissingFileIsNotAnError(t *testing.T) {
 	if err := LoadDotEnv(filepath.Join(t.TempDir(), "nao-existe")); err != nil {
 		t.Fatalf("erro inesperado: %v", err)
 	}

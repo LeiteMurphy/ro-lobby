@@ -17,11 +17,11 @@ describe('página de status (SSR)', () => {
 	});
 
 	it('CA-05.2: mostra "API com problema"', () => {
-		expect(renderStatus('problema')).toContain('API com problema');
+		expect(renderStatus('degraded')).toContain('API com problema');
 	});
 
 	it('CA-05.3: mostra "API indisponível" sem erro nem stack trace', () => {
-		const html = renderStatus('indisponivel');
+		const html = renderStatus('unavailable');
 		expect(html).toContain('API indisponível');
 		expect(html).not.toMatch(/error|stack|at .+:\d+/i);
 	});

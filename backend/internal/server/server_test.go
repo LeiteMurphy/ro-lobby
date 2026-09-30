@@ -19,7 +19,7 @@ func (f fakePinger) Ping(ctx context.Context) error { return f(ctx) }
 
 func get(t *testing.T, h http.Handler, method string) (*httptest.ResponseRecorder, time.Duration) {
 	t.Helper()
-	req := httptest.NewRequest(method, "/healthz", nil)
+	req := httptest.NewRequestWithContext(t.Context(), method, "/healthz", nil)
 	rec := httptest.NewRecorder()
 	start := time.Now()
 	h.ServeHTTP(rec, req)
@@ -49,14 +49,14 @@ func assertBody(t *testing.T, rec *httptest.ResponseRecorder, wantStatus int, wa
 }
 
 // CA-02.1: banco respondendo → 200 com {"status":"ok","database":"ok"}.
-func TestHealthz_CA02_1_BancoDisponivel(t *testing.T) {
+func TestHealthz_CA02_1_DatabaseAvailable(t *testing.T) {
 	h := New(fakePinger(func(context.Context) error { return nil }))
 	rec, _ := get(t, h, http.MethodGet)
 	assertBody(t, rec, http.StatusOK, map[string]string{"status": "ok", "database": "ok"})
 }
 
 // CA-02.2: banco parado → 503 com {"status":"degraded","database":"unavailable"} em até 3 s.
-func TestHealthz_CA02_2_BancoForaDoAr(t *testing.T) {
+func TestHealthz_CA02_2_DatabaseDown(t *testing.T) {
 	h := New(fakePinger(func(context.Context) error { return errors.New("connection refused") }))
 	rec, took := get(t, h, http.MethodGet)
 	assertBody(t, rec, http.StatusServiceUnavailable, map[string]string{"status": "degraded", "database": "unavailable"})
@@ -66,7 +66,7 @@ func TestHealthz_CA02_2_BancoForaDoAr(t *testing.T) {
 }
 
 // CA-02.3: banco que demora mais de 2 s para responder ao ping → 503.
-func TestHealthz_CA02_3_BancoLento(t *testing.T) {
+func TestHealthz_CA02_3_SlowDatabase(t *testing.T) {
 	release := make(chan struct{})
 	defer close(release)
 	// O Pinger ignora o contexto de propósito: o prazo tem que valer mesmo assim.
@@ -80,7 +80,7 @@ func TestHealthz_CA02_3_BancoLento(t *testing.T) {
 }
 
 // CA-02.4: POST /healthz → 405.
-func TestHealthz_CA02_4_MetodoNaoPermitido(t *testing.T) {
+func TestHealthz_CA02_4_MethodNotAllowed(t *testing.T) {
 	called := false
 	h := New(fakePinger(func(context.Context) error { called = true; return nil }))
 	rec, _ := get(t, h, http.MethodPost)

@@ -23,7 +23,7 @@ func loadContract(t *testing.T) *openapi3.T {
 }
 
 // CA-04.1: GET /healthz está descrita com as respostas 200 e 503 e seus corpos.
-func TestContrato_CA04_1_HealthzDescrita(t *testing.T) {
+func TestContract_CA04_1_HealthzIsDescribed(t *testing.T) {
 	doc := loadContract(t)
 
 	path := doc.Paths.Find("/healthz")
