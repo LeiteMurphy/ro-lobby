@@ -9,8 +9,9 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 - **D-01** — O `openapi.yaml` fica na raiz do repositório, porque é compartilhado por
   `backend/` e `web/` (RN-11, RN-17).
-- **D-02** — As ferramentas Go (`sqlc`, `goose`, `oapi-codegen`) ficam fixadas como
-  `tool` no `backend/go.mod` e rodam com `go tool`. Assim a versão é a mesma na máquina
+- **D-02** — As ferramentas Go de geração (`sqlc`, `oapi-codegen`) ficam fixadas como
+  `tool` no `backend/go.mod` e rodam com `go tool`. O `goose` entra como biblioteca,
+  usada pelo `cmd/migrate` (D-03), e também tem a versão fixada no `go.mod`. Assim a versão é a mesma na máquina
   e na CI (RN-04, RN-12). O `golangci-lint` roda pela action oficial na CI e tem a
   instalação descrita no README.
 - **D-03** — As migrações rodam por um comando próprio (`go run ./cmd/migrate up|down|status`),
@@ -188,8 +189,13 @@ Cada mutação foi aplicada, o comando do passo da CI rodou e a mutação foi de
 
 O caminho feliz rodou verde na CI real do PR #4 (Backend, Web, Ponta a ponta e CI ok),
 o que também prova o CA-06.3 e o CA-06.6: o PR muda a CI, e os dois jobs rodaram, com
-os testes de integração contra o Postgres de serviço. O CA-06.1 e o CA-06.2 ficam para
-o primeiro PR real de uma pasta só depois do merge (ver "Descobertas").
+os testes de integração contra o Postgres de serviço. Os runs dos PRs de demonstração, cancelados na fila, já tinham
+provado o filtro: no [#5](https://github.com/LeiteMurphy/ro-lobby/actions/runs/36652806330)
+(só backend) o job Web foi pulado (CA-06.1); no
+[#6](https://github.com/LeiteMurphy/ro-lobby/actions/runs/36652813215) (só web) o job
+Backend foi pulado (CA-06.2); no
+[#8](https://github.com/LeiteMurphy/ro-lobby/actions/runs/36652825897) (lint) o job
+Backend falhou (CA-06.4).
 
 ## US-01 — Ambiente local (fechamento)
 
@@ -263,5 +269,5 @@ Todos os 31 critérios da spec estão cobertos.
   GitHub Actions. — Decisão do usuário: fechar os PRs sem merge e reverter o gatilho
   `feature/**`. Os cenários negativos (CA-04.3, CA-06.4, 06.5, 06.8) são provados
   localmente, com mutações e os mesmos comandos da CI (evidência abaixo). O filtro por
-  pasta (CA-06.1, 06.2) é conferido no primeiro PR real de uma pasta só, depois do
-  merge da fundação.
+  pasta (CA-06.1, 06.2) ficou provado pelos runs dos PRs #5 e #6 antes do cancelamento
+  (evidência na T-10).

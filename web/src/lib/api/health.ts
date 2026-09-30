@@ -37,7 +37,7 @@ export async function checkApi(
 	}
 
 	if (response.status === 200) {
-		const body: HealthBody = await response.json().catch(() => null);
+		const body: HealthBody | null = await response.json().catch(() => null);
 		return body?.status === 'ok' ? 'online' : 'degraded';
 	}
 	// 503 é o caso descrito no contrato. Qualquer outra resposta também significa que a

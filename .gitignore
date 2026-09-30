@@ -15,7 +15,8 @@ web/.svelte-kit/
 # Cobertura e relatórios de teste
 coverage/
 *.coverprofile
-coverage.out
+coverage*.out
+coverage*.html
 web/test-results/
 web/playwright-report/
 

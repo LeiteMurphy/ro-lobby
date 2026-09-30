@@ -68,7 +68,8 @@ func TestParseDotEnv_RN02_EnvExampleFormat(t *testing.T) {
 	}
 }
 
-func TestParseDotEnv_RejectsLineWithoutEquals(t *testing.T) {
+// RN-02: o .env segue o formato KEY=VALUE do .env.example.
+func TestParseDotEnv_RN02_RejectsLineWithoutEquals(t *testing.T) {
 	if _, err := parseDotEnv(bufio.NewScanner(strings.NewReader("SEM_IGUAL\n"))); err == nil {
 		t.Fatal("esperado erro")
 	}
@@ -98,7 +99,8 @@ func TestLoadDotEnv_RN01_DoesNotOverrideEnvironment(t *testing.T) {
 	}
 }
 
-func TestLoadDotEnv_MissingFileIsNotAnError(t *testing.T) {
+// RN-01: sem .env, a configuração vem só do ambiente (caso da CI).
+func TestLoadDotEnv_RN01_MissingFileIsNotAnError(t *testing.T) {
 	if err := LoadDotEnv(filepath.Join(t.TempDir(), "nao-existe")); err != nil {
 		t.Fatalf("erro inesperado: %v", err)
 	}

@@ -42,7 +42,7 @@ describe('checkApi', () => {
 		await expect(checkApi(hanging, BASE_URL, 50)).resolves.toBe('unavailable');
 	});
 
-	it('chama GET /healthz na URL base configurada', async () => {
+	it('RN-13 / CA-05.1: chama o GET /healthz do contrato na URL base configurada', async () => {
 		let called = '';
 		const spy: typeof fetch = async (input) => {
 			called = String(input);

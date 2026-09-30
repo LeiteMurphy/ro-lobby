@@ -14,7 +14,8 @@ func TestPoolConfig_RN08_ForcesUTC(t *testing.T) {
 	}
 }
 
-func TestPoolConfig_RejectsInvalidURL(t *testing.T) {
+// RN-01: uma DATABASE_URL inválida vira erro de configuração.
+func TestPoolConfig_RN01_RejectsInvalidURL(t *testing.T) {
 	if _, err := PoolConfig("::não é url::"); err == nil {
 		t.Fatal("esperado erro")
 	}
