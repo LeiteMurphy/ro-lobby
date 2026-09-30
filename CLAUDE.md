@@ -4,8 +4,11 @@ Lobby para jogadores de Ragnarok Online montarem grupos para instâncias difíce
 É um projeto de fã, sem vínculo com a Gravity.
 
 ## Estado atual
-Fase de fundação: o repositório ainda não tem código. As decisões de arquitetura ficam
-em `docs/adr/`.
+A fundação está implementada: backend Go com `GET /healthz`, web SvelteKit com a
+página de status, PostgreSQL pelo Compose, migrações, contrato OpenAPI com código
+gerado e CI. Ainda não há funcionalidade de produto nem tabelas de domínio; a próxima
+feature é o login com Discord. O setup local e os comandos estão no `README.md`. As
+decisões de arquitetura ficam em `docs/adr/`.
 
 ## Produto
 - Problema: é difícil montar grupos para instâncias difíceis. Um grupo tem até 12

@@ -173,7 +173,7 @@ Detalhes que a spec e os ADRs deixam livres. Nenhum muda regra, escopo ou tecnol
 
 ## US-01 — Ambiente local (fechamento)
 
-### T-11 — README e estado do projeto  [ ]
+### T-11 — README e estado do projeto  [x]
 - Cobre: RN-02, RN-05, CA-01.1, CA-01.2, CA-01.4
 - Depende de: T-10
 - Paralelizável: não
