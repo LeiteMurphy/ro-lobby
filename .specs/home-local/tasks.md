@@ -148,7 +148,7 @@
 
 ## US-01 — Fechamento
 
-### T-10 — README e estado do projeto  [ ]
+### T-10 — README e estado do projeto  [x]
 - Cobre: RN-06, CA-01.6
 - Depende de: T-09
 - Paralelizável: não

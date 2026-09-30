@@ -52,7 +52,11 @@ Copy-Item .env.example .env
 
 Os valores do `.env.example` são fictícios e servem para o ambiente local.
 
-**Porta ocupada?** Troque `POSTGRES_PORT`, `API_PORT` ou `WEB_PORT` no `.env`. Se
+> **`.env` antigo?** Se o seu `.env` é de antes da Home, acrescente
+> `COMPOSE_PROFILES=dev` e `APP_WEB_PORT=3000`, ou copie o `.env.example` de novo. Sem o
+> `COMPOSE_PROFILES`, o `docker compose up` não sobe nenhum serviço.
+
+**Porta ocupada?** Troque `POSTGRES_PORT`, `API_PORT`, `WEB_PORT` ou `APP_WEB_PORT` no `.env`. Se
 mudar `POSTGRES_PORT` ou `API_PORT`, ajuste também a `DATABASE_URL` ou a
 `API_BASE_URL`.
 
@@ -93,7 +97,36 @@ npm ci
 npm run dev
 ```
 
-Abra http://localhost:5173. A página mostra **API online**.
+Abra http://localhost:5173. A Home mostra os grupos do dia, com dados fictícios, e
+http://localhost:5173/status mostra **API online**.
+
+## Pilha completa em containers (produção local)
+
+A hospedagem, por enquanto, é local ([ADR-06](docs/adr/0006-hospedagem-local.md)). Um
+único comando sobe um PostgreSQL próprio, as migrações, a API e o web com o build de
+produção, como num servidor:
+
+```powershell
+docker compose --profile app up -d --wait --build   # sobe tudo
+```
+
+Abra http://localhost:3000. A porta vem de `APP_WEB_PORT`. Só o web fica exposto: a API
+e o banco da pilha ficam na rede interna do Compose. As migrações rodam antes da API, e
+se uma delas falhar a API não sobe.
+
+```powershell
+docker compose --profile app logs -f web api   # acompanha os logs
+docker compose --profile app down              # para, mantendo os dados
+docker compose --profile app down -v           # para e apaga o banco da pilha
+```
+
+O banco da pilha usa o volume `ro-lobby_app-postgres-data`, separado do banco de
+desenvolvimento. Para conferir a pilha inteira de uma vez, rode o teste de fumaça, o
+mesmo da CI:
+
+```powershell
+bash scripts/smoke-app.sh
+```
 
 ## Testes e verificações
 
@@ -149,6 +182,8 @@ O workflow `.github/workflows/ci.yml` roda em todo PR para a `main`:
 - **Web**, quando `web/` muda: ESLint, Prettier, svelte-check, Vitest com cobertura,
   build e tipos gerados.
 - **Ponta a ponta**, quando o backend ou o web mudam.
+- **Pilha app**, quando o backend, o web ou o Compose mudam: constrói as imagens e roda
+  o `scripts/smoke-app.sh`. Não publica as imagens.
 - O `openapi.yaml` e a própria CI disparam todos.
 - **CI ok** junta os resultados. PR só de documentação passa direto.
 
