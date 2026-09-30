@@ -123,11 +123,12 @@
 
 ## US-02 a US-06 — Ponta a ponta
 
-### T-08 — Playwright da Home  [ ]
-- Cobre: CA-02.1, CA-02.5, CA-02.6, CA-03.2, CA-04.1, CA-04.7, CA-06.1, CA-06.2
+### T-08 — Playwright da Home  [x]
+- Cobre: CA-02.1, CA-02.5, CA-02.6, CA-03.2, CA-03.3, CA-04.1, CA-04.7, CA-06.1, CA-06.2, RN-19,
+  RNF-02
 - Depende de: T-07
 - Paralelizável: não
-- Arquivos: `web/test/e2e/home.spec.ts`, `web/playwright.config.ts`
+- Arquivos: `web/test/e2e/home.spec.ts` (o `playwright.config.ts` não precisou mudar)
 - Pronto quando: os testes passam em desktop (1280 px) e celular (390 px).
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81babf88da228b7ce0aa
