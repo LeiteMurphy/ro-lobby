@@ -94,13 +94,15 @@
 - Commit: —
 - Notion: https://app.notion.com/p/3ebd4a3a5eff8149bdcad801f9868b49
 
-### T-06 — Tela da Home  [ ]
+### T-06 — Tela da Home  [x]
 - Cobre: RN-18, RN-20, CA-02.1, CA-02.5, CA-02.6, CA-03.2, CA-03.3, CA-04.7
 - Depende de: T-03, T-04, T-05
 - Paralelizável: não
 - Arquivos: `web/src/routes/+page.server.ts`, `web/src/routes/+page.svelte`,
-  `web/src/lib/home/components/` (TopBar, DaySelector, FilterPanel, FeaturedLobby,
-  LobbyCard, RoleComposition, EmptyState)
+  `web/src/lib/home/catalog.ts`, `web/src/lib/home/components/` (TopBar, DaySelector,
+  FilterPanel, FeaturedLobby, LobbyCard, HostLine, RoleComposition, EmptyState). A troca
+  de "Criar lobby" por ícone abaixo de 900 px já entrou aqui, só com CSS; a T-07 fica com
+  a gaveta e o botão "Filtros (N)".
 - Pronto quando: `/` renderiza no servidor os cards de hoje; troca de dia, filtros,
   "Limpar filtros" e estados vazios funcionam; os controles sem backend estão
   desabilitados com "Disponível em breve"; teste de renderização do SSR passa.
