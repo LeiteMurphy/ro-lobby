@@ -43,7 +43,7 @@
 - Pronto quando: `docker build` das duas imagens passa; `docker inspect` mostra usuário
   não-root; a imagem da API não tem `go` nem o código-fonte, e a do web não tem
   `devDependencies`.
-- Commit: —
+- Commit: `0c48a73`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81b6bcbdf677fbd182b2
 
 ### T-02 — Perfil `app` do Compose  [x]
@@ -55,7 +55,7 @@
   saudáveis e o `migrate` termina com 0; `docker compose up -d` sem perfil sobe só o
   Postgres de dev; só a porta do web aparece publicada pela pilha `app`; com uma migração
   quebrada de propósito, o `migrate` sai com erro e a API não inicia.
-- Commit: —
+- Commit: `a80813f`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff811db8d7ec2dbc1ec445
 
 ## US-02 — Grupos do dia  (P1)
@@ -67,7 +67,7 @@
 - Arquivos: `web/src/routes/status/`, `web/test/e2e/status.spec.ts`
 - Pronto quando: `/status` mostra os três estados da fundação; os testes Vitest e
   Playwright do status passam no caminho novo.
-- Commit: —
+- Commit: `fd9ea59`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff813cbb75f86ca7a538b9
 
 ### T-04 — Base do design system no web  [P] [x]
@@ -80,7 +80,7 @@
   (`@lucide/svelte`, `@fontsource/*`)
 - Pronto quando: os componentes têm teste de renderização (rótulo acessível, estado
   desabilitado com a dica); `npm run build` não referencia nenhum domínio externo.
-- Commit: —
+- Commit: `0d20607`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff818d8a8dc8f2c50dbab5
 
 ### T-05 — Lógica da Home e dados fictícios  [P] [x]
@@ -91,7 +91,7 @@
 - Arquivos: `web/src/lib/home/` (`types.ts`, `fixtures.ts`, `lobbies.ts`, `days.ts`, `filters.ts`,
   `time.ts`) e `home.spec.ts`
 - Pronto quando: os testes Vitest de cada critério listado passam, com o "agora" fixado.
-- Commit: —
+- Commit: `82292bc`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff8149bdcad801f9868b49
 
 ### T-06 — Tela da Home  [x]
@@ -106,7 +106,7 @@
 - Pronto quando: `/` renderiza no servidor os cards de hoje; troca de dia, filtros,
   "Limpar filtros" e estados vazios funcionam; os controles sem backend estão
   desabilitados com "Disponível em breve"; teste de renderização do SSR passa.
-- Commit: —
+- Commit: `2c6c361`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff819f9688df62aa68a5db
 
 ## US-06 — Celular  (P2)
@@ -118,7 +118,7 @@
 - Arquivos: componentes da Home, `web/src/lib/ui/Drawer.svelte`
 - Pronto quando: em 390 px a barra lateral some, "Filtros (N)" abre a gaveta e "Criar
   lobby" vira ícone.
-- Commit: —
+- Commit: `1158f9f`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff816e8a53cfb9d807712d
 
 ## US-02 a US-06 — Ponta a ponta
@@ -130,7 +130,7 @@
 - Paralelizável: não
 - Arquivos: `web/test/e2e/home.spec.ts` (o `playwright.config.ts` não precisou mudar)
 - Pronto quando: os testes passam em desktop (1280 px) e celular (390 px).
-- Commit: —
+- Commit: `e9fc533`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff81babf88da228b7ce0aa
 
 ## US-07 — Imagens na CI  (P2)
@@ -143,7 +143,7 @@
 - Pronto quando: o script passa na máquina e no job `app` da CI do PR (sobe a pilha,
   confere a Home em `/`, "API online" em `/status`, portas publicadas e usuários
   não-root), e o `ci-ok` depende do job.
-- Commit: —
+- Commit: `132dfc6`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff8114986dd2841c551cb3
 
 ## US-01 — Fechamento
@@ -155,7 +155,7 @@
 - Arquivos: `README.md`, `CLAUDE.md` (hospedagem decidida pelo ADR-06; estado atual)
 - Pronto quando: o README tem subir, parar e apagar a pilha `app`; toda variável do
   Compose e das imagens está no `.env.example`.
-- Commit: —
+- Commit: `0f2d6bc`
 - Notion: https://app.notion.com/p/3ebd4a3a5eff8156b9f9c89b6a1dc609
 
 ## Matriz de cobertura
