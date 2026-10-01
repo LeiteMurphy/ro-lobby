@@ -98,7 +98,8 @@ que dependem de backend ficam visíveis, mas desabilitadas.
 - **RN-21** — A página de status da fundação passa para `/status`, com o mesmo
   comportamento (RN-15 da fundação).
 - **RN-22** — A Home não usa logos, artes nem sprites do Ragnarok Online. Os nomes de
-  classe seguem a nomenclatura do bRO, conforme o [bROWiki](https://browiki.org/wiki/Classes);
+  classe seguem a nomenclatura do [bROWiki](https://browiki.org/wiki/Classes), que acompanha os
+  dados do Ragnarok LATAM;
   os nomes de instância continuam inventados. Os textos seguem o design system: pt-BR,
   "você", sem exclamação nem emoji.
 
