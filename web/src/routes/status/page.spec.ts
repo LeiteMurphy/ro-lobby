@@ -11,7 +11,7 @@ function renderStatus(apiStatus: ApiStatus): string {
 
 // CA-05.4: o HTML renderizado no servidor já traz o texto, sem depender de JavaScript
 // no navegador.
-describe('página de status (SSR)', () => {
+describe('página de status em /status (SSR) — CA-02.7 home-local', () => {
 	it('CA-05.1 / CA-05.4: mostra "API online" no HTML do servidor', () => {
 		expect(renderStatus('online')).toContain('API online');
 	});

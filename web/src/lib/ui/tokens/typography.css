@@ -1,0 +1,39 @@
+/* Copiado do RO Lobby Design System (Claude Design), tokens/typography.css. As fontes são
+   auto-hospedadas pelo @fontsource (RNF-02), importadas em src/lib/ui/tokens/index.css. */
+:root {
+	--font-display: 'Chakra Petch', 'Oxanium', 'Figtree', system-ui, sans-serif;
+	--font-ui: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-num: var(--font-ui);
+	--font-mono: var(--font-ui);
+	--num-features: 'tnum' 1, 'lnum' 1;
+	--fs-11: 11px;
+	--fs-12: 12px;
+	--fs-13: 13px;
+	--fs-14: 14px;
+	--fs-16: 16px;
+	--fs-18: 18px;
+	--fs-22: 22px;
+	--fs-28: 28px;
+	--fs-36: 36px;
+	--fs-48: 48px;
+	--fw-regular: 400;
+	--fw-medium: 500;
+	--fw-semibold: 600;
+	--fw-bold: 700;
+	--lh-tight: 1.15;
+	--lh-snug: 1.3;
+	--lh-body: 1.5;
+	--tracking-caps: 0.08em;
+	--tracking-display: 0.01em;
+	--type-display: 700 var(--fs-48)/1.05 var(--font-display);
+	--type-h1: 700 var(--fs-36)/1.1 var(--font-display);
+	--type-h2: 600 var(--fs-28)/1.15 var(--font-display);
+	--type-h3: 600 var(--fs-22)/1.2 var(--font-display);
+	--type-title: 600 var(--fs-18)/1.3 var(--font-ui);
+	--type-body: 400 var(--fs-14)/1.5 var(--font-ui);
+	--type-body-lg: 400 var(--fs-16)/1.5 var(--font-ui);
+	--type-small: 500 var(--fs-13)/1.4 var(--font-ui);
+	--type-caption: 500 var(--fs-12)/1.35 var(--font-ui);
+	--type-overline: 600 var(--fs-11)/1.2 var(--font-ui);
+	--type-time: 600 var(--fs-13)/1 var(--font-num);
+}

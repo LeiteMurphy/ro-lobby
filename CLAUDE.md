@@ -4,11 +4,13 @@ Lobby para jogadores de Ragnarok Online montarem grupos para instâncias difíce
 É um projeto de fã, sem vínculo com a Gravity.
 
 ## Estado atual
-A fundação está implementada: backend Go com `GET /healthz`, web SvelteKit com a
-página de status, PostgreSQL pelo Compose, migrações, contrato OpenAPI com código
-gerado e CI. Ainda não há funcionalidade de produto nem tabelas de domínio; a próxima
-feature é o login com Discord. O setup local e os comandos estão no `README.md`. As
-decisões de arquitetura ficam em `docs/adr/`.
+A fundação está implementada: backend Go com `GET /healthz`, PostgreSQL pelo Compose,
+migrações, contrato OpenAPI com código gerado e CI. A Home do Claude Design ("RO Lobby
+Home v2") está em `/`, com dados fictícios, e a página de status em `/status`. A pilha
+completa roda em containers com `docker compose --profile app up` (ADR-06). Ainda não
+há login, personagens, lobbies nem tabelas de domínio; a próxima feature é o login com
+Discord. O setup local e os comandos estão no `README.md`. As decisões de arquitetura
+ficam em `docs/adr/`.
 
 ## Produto
 - Problema: é difícil montar grupos para instâncias difíceis. Um grupo tem até 12
@@ -38,10 +40,11 @@ Futuro: Guilda, Membro de guilda.
 - Estrutura do repositório: monorepo com `backend/`, `web/`, `docs/adr/` e `.specs/` ([ADR-03](docs/adr/0003-estrutura-monorepo.md)).
 - Acesso ao banco: `pgx` + `sqlc`, migrações com `goose` ([ADR-04](docs/adr/0004-acesso-banco-pgx-sqlc-goose.md)).
 - Contrato da API: `openapi.yaml` como fonte, com `oapi-codegen` (Go) e `openapi-typescript` (web) ([ADR-05](docs/adr/0005-contrato-api-openapi.md)).
+- Hospedagem: local por enquanto, com o perfil `app` do Docker Compose; revisão quando a spec do login com Discord for aprovada ([ADR-06](docs/adr/0006-hospedagem-local.md)).
 
 ### Pendente de ADR (fase de Design)
 - Mobile: Kotlin ou Flutter.
-- Hospedagem.
+- Hospedagem externa (nuvem ou VPS), na revisão do ADR-06.
 
 ### Em aberto
 - Nada no momento.

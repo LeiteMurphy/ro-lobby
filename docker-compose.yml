@@ -1,24 +1,92 @@
-# RN-03: o Compose sobe só o PostgreSQL local. O backend e o web rodam direto na máquina.
+# Dois modos (ADR-06):
+#   docker compose up -d --wait                 desenvolvimento: só o PostgreSQL, com a porta
+#                                               publicada; backend e web rodam na máquina
+#   docker compose --profile app up -d --wait   pilha app: PostgreSQL próprio, migrações, API e
+#                                               web com o build de produção; só o web é exposto
+# O modo de desenvolvimento é o padrão porque o .env define COMPOSE_PROFILES=dev. O
+# --profile app substitui esse padrão.
 name: ro-lobby
 
+x-postgres: &postgres
+  image: postgres:18-alpine
+  environment:
+    POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+    TZ: UTC
+    PGTZ: UTC
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    interval: 2s
+    timeout: 3s
+    retries: 15
+
+x-app-database-url: &app-database-url postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@app-postgres:5432/${POSTGRES_DB}?sslmode=disable
+
 services:
+  # Desenvolvimento (RN-03 da fundação, RN-04 da home-local)
   postgres:
-    image: postgres:18-alpine
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
-      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
-      TZ: UTC
-      PGTZ: UTC
+    <<: *postgres
+    profiles: [dev]
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
+
+  # Pilha app (RN-01 a RN-03 da home-local)
+  app-postgres:
+    <<: *postgres
+    profiles: [app]
+    # Sem porta publicada: só a rede interna do Compose alcança o banco da pilha.
+    volumes:
+      - app-postgres-data:/var/lib/postgresql
+
+  migrate:
+    profiles: [app]
+    build: ./backend
+    image: ro-lobby-api:local
+    entrypoint: ["/app/migrate"]
+    command: ["up"]
+    environment:
+      DATABASE_URL: *app-database-url
+    depends_on:
+      app-postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    profiles: [app]
+    image: ro-lobby-api:local
+    environment:
+      DATABASE_URL: *app-database-url
+      API_PORT: "8080"
+    # RN-02: a API só sobe depois que as migrações terminam com sucesso.
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 2s
+      test: ["CMD", "/app/healthcheck"]
+      interval: 3s
       timeout: 3s
-      retries: 15
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    profiles: [app]
+    build: ./web
+    image: ro-lobby-web:local
+    environment:
+      PORT: "3000"
+      API_BASE_URL: http://api:8080
+      # O adapter-node confere a origem das actions (proteção CSRF).
+      ORIGIN: http://localhost:${APP_WEB_PORT:-3000}
+    ports:
+      - "${APP_WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres-data:
+  app-postgres-data:

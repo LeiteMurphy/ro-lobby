@@ -30,6 +30,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       web: ${{ steps.filter.outputs.web }}
+      app: ${{ steps.filter.outputs.app }}
     steps:
       - uses: actions/checkout@v7
       # RN-17: o contrato e a própria CI disparam os dois jobs.
@@ -47,6 +48,15 @@ jobs:
               - *shared
               - 'web/**'
               - '.nvmrc'
+            # RN-07 (home-local): a pilha app depende do backend, do web e do Compose.
+            app:
+              - *shared
+              - 'backend/**'
+              - 'web/**'
+              - '.nvmrc'
+              - 'docker-compose.yml'
+              - '.env.example'
+              - 'scripts/smoke-app.sh'
 
   backend:
     name: Backend
@@ -274,9 +284,35 @@ jobs:
             web/test-results/
           if-no-files-found: ignore
 
+  app:
+    name: Pilha app
+    needs: changes
+    # RN-07 / CA-07.1 (home-local): build das imagens e teste de fumaça da pilha app.
+    # Não publica as imagens em nenhum registry.
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: .env da pilha
+        run: cp .env.example .env
+
+      # Sobe a pilha e confere CA-01.1, CA-01.3, CA-01.4 e CA-01.5.
+      - name: Teste de fumaça
+        run: bash scripts/smoke-app.sh
+
+      - name: Logs da pilha
+        if: failure()
+        run: docker compose --profile app logs --no-color
+
+      - name: Derrubar a pilha
+        if: always()
+        run: docker compose --profile app down -v --remove-orphans
+
   ci-ok:
     name: CI ok
-    needs: [changes, backend, web, e2e]
+    needs: [changes, backend, web, e2e, app]
     if: always()
     runs-on: ubuntu-latest
     steps:

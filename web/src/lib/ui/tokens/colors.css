@@ -1,0 +1,106 @@
+/* Copiado do RO Lobby Design System (Claude Design), tokens/colors.css. O caminho das
+   imagens de fundo aponta para static/brand/. */
+:root {
+	/* Base — deep blue-gray layers (0 = app floor, 4 = highest) */
+	--ink-0: #0b1017;
+	--ink-1: #111822;
+	--ink-2: #17202c;
+	--ink-3: #1e2936;
+	--ink-4: #263342;
+	--ink-5: #304052;
+	--line-1: #222d3b;
+	--line-2: #2d3a4b;
+	--line-3: #3c4d62;
+	--fg-1: #e9eef5;
+	--fg-2: #aeb9c8;
+	--fg-3: #8391a5;
+	--fg-4: #5a677a;
+	/* Accent — single warm amber */
+	--gold-200: #ffe3a6;
+	--gold-300: #ffd27a;
+	--gold-400: #f6bb45;
+	--gold-500: #e6a224;
+	--gold-600: #c1830f;
+	--gold-700: #7a520a;
+	--gold-soft: rgba(246, 187, 69, 0.14);
+	--gold-line: rgba(246, 187, 69, 0.38);
+	/* Roles — fixed, never repurposed */
+	--tank-300: #8fb6ff;
+	--tank-400: #5b95ff;
+	--tank-500: #3b78eb;
+	--tank-soft: rgba(91, 149, 255, 0.15);
+	--tank-line: rgba(91, 149, 255, 0.42);
+	--support-300: #7fe3b4;
+	--support-400: #3fcf8e;
+	--support-500: #22a970;
+	--support-soft: rgba(63, 207, 142, 0.14);
+	--support-line: rgba(63, 207, 142, 0.4);
+	--dps-300: #ff9a9c;
+	--dps-400: #ff5d63;
+	--dps-500: #e03b42;
+	--dps-soft: rgba(255, 93, 99, 0.14);
+	--dps-line: rgba(255, 93, 99, 0.42);
+	/* Status */
+	--status-ok: #9ad35e;
+	--status-warn: #f59a4a;
+	--status-error: #f0648c;
+	--status-info: #5ec5da;
+	--status-ok-soft: rgba(154, 211, 94, 0.14);
+	--status-warn-soft: rgba(245, 154, 74, 0.14);
+	--status-error-soft: rgba(240, 100, 140, 0.14);
+	--status-info-soft: rgba(94, 197, 218, 0.14);
+	/* Semantic aliases */
+	--bg-app: var(--ink-0);
+	--surface-sidebar: rgba(17, 24, 34, 0.74);
+	--surface-card: rgba(23, 32, 44, 0.8);
+	--surface-raised: rgba(30, 41, 54, 0.9);
+	--surface-input: rgba(11, 16, 23, 0.55);
+	--surface-hover: var(--ink-4);
+	--surface-active: var(--ink-5);
+	--border-subtle: var(--line-1);
+	--border-default: var(--line-2);
+	--border-strong: var(--line-3);
+	--text-primary: var(--fg-1);
+	--text-secondary: var(--fg-2);
+	--text-muted: var(--fg-3);
+	--text-disabled: var(--fg-4);
+	--accent: var(--gold-400);
+	--accent-hover: var(--gold-300);
+	--accent-press: var(--gold-500);
+	--accent-soft: var(--gold-soft);
+	--accent-line: var(--gold-line);
+	--on-accent: #1b1306;
+	--focus-ring: 0 0 0 2px var(--ink-0), 0 0 0 4px var(--gold-400);
+	--gradient-hero:
+		radial-gradient(120% 90% at 100% 0%, rgba(246, 187, 69, 0.22) 0%, rgba(246, 187, 69, 0) 55%),
+		radial-gradient(90% 120% at 0% 100%, rgba(59, 120, 235, 0.28) 0%, rgba(59, 120, 235, 0) 60%),
+		linear-gradient(160deg, #16243a 0%, #0e1520 100%);
+	--glass-bg: rgba(23, 32, 44, 0.58);
+	--glass-border: rgba(233, 238, 245, 0.1);
+	--glass-blur: 16px;
+	--scrim: rgba(5, 8, 12, 0.72);
+	--bg-app-image: url('/brand/bg-ceu-pixel.svg');
+	--panel-bg: rgba(17, 24, 34, 0.72);
+	--panel-border: rgba(233, 238, 245, 0.08);
+	--panel-blur: 14px;
+	--gradient-accent: linear-gradient(135deg, #ffd27a 0%, #f6bb45 48%, #e6a224 100%);
+	--gradient-accent-hover: linear-gradient(135deg, #ffe3a6 0%, #ffd27a 48%, #f6bb45 100%);
+	--gradient-accent-press: linear-gradient(135deg, #f6bb45 0%, #e6a224 55%, #c1830f 100%);
+	--gradient-featured: linear-gradient(
+		150deg,
+		rgba(246, 187, 69, 0.2) 0%,
+		rgba(246, 187, 69, 0.05) 42%,
+		rgba(23, 32, 44, 0.82) 100%
+	);
+	--gradient-tank: linear-gradient(
+		135deg,
+		rgba(91, 149, 255, 0.28) 0%,
+		rgba(91, 149, 255, 0.07) 100%
+	);
+	--gradient-support: linear-gradient(
+		135deg,
+		rgba(63, 207, 142, 0.26) 0%,
+		rgba(63, 207, 142, 0.06) 100%
+	);
+	--gradient-dps: linear-gradient(135deg, rgba(255, 93, 99, 0.26) 0%, rgba(255, 93, 99, 0.06) 100%);
+}
