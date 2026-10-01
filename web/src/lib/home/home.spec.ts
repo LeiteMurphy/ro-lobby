@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDays, DAYS_AHEAD } from './days';
+import { buildDays, dayAriaLabel, DAYS_AHEAD } from './days';
 import { DAY_COUNTS, getHomeLobbies } from './fixtures';
 import {
 	activeFilterCount,
@@ -51,7 +51,7 @@ describe('RN-09: fuso America/Sao_Paulo', () => {
 		expect(zonedNow(new Date('2026-10-01T01:30:00Z')).date).toBe('2026-09-30');
 	});
 
-	it('addDays atravessa o fim do mês', () => {
+	it('RN-10 / CA-03.1: os 14 dias atravessam o fim do mês', () => {
 		expect(addDays('2026-09-30', 1)).toBe('2026-10-01');
 	});
 });
@@ -122,6 +122,13 @@ describe('US-03 — troca de dia', () => {
 		expect(days.filter((d) => d.today)).toHaveLength(1);
 		expect(days.map((d) => d.count)).toEqual([...DAY_COUNTS]);
 		expect(days[1]).toMatchObject({ date: '2026-10-01', day: '01' });
+	});
+
+	it('RNF-01: rótulo do dia para leitor de tela, no singular e no plural', () => {
+		const [today, , empty] = buildDays(TODAY, getHomeLobbies(TODAY));
+		expect(dayAriaLabel(today)).toBe(`Hoje, qua, 30 set: ${DAY_COUNTS[0]} grupos`);
+		expect(dayAriaLabel(empty)).toBe('sex, 2 out: nenhum grupo');
+		expect(dayAriaLabel({ ...empty, count: 1 })).toBe('sex, 2 out: 1 grupo');
 	});
 
 	it('CA-03.3: dia sem grupos mostra o estado "Nenhum grupo neste dia"', () => {

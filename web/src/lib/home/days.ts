@@ -17,6 +17,13 @@ export interface Day {
 	today: boolean;
 }
 
+/** RNF-01: rótulo do dia para leitores de tela, ex.: "Hoje, qua, 30 set: 6 grupos". */
+export function dayAriaLabel(day: Day): string {
+	const groups =
+		day.count === 0 ? 'nenhum grupo' : `${day.count} ${day.count === 1 ? 'grupo' : 'grupos'}`;
+	return `${day.today ? 'Hoje, ' : ''}${day.label}: ${groups}`;
+}
+
 /** RN-10: 14 dias a partir de hoje, cada um com a quantidade de grupos. */
 export function buildDays(today: string, lobbies: readonly Lobby[]): Day[] {
 	return Array.from({ length: DAYS_AHEAD }, (_, i) => {

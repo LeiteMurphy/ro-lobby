@@ -202,3 +202,7 @@ Todos os 30 critérios da spec estão cobertos.
   pilha `app`, com a porta 5432 publicada (fere o CA-01.3). — Resolvido na T-02 com o
   perfil `dev` padrão via `COMPOSE_PROFILES` (D-03). Quem já tem um `.env` antigo precisa
   acrescentar a variável; a T-10 avisa no README.
+- 2026-09-30 — Observações do ciclo 1 da validação, corrigidas antes do merge: rótulo do
+  dia sem grupos ("nenhum grupos" → "nenhum grupo"), teste sem ID, comentário do
+  `catalog.ts` e falta de teste de teclado e foco (RNF-01). O anel de foco do Select
+  (borda âmbar e halo de 3 px) foi mantido: é a regra do design system para campos.

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import IconButton from '$lib/ui/IconButton.svelte';
-	import type { Day } from '../days';
+	import { dayAriaLabel, type Day } from '../days';
 
 	interface Props {
 		days: readonly Day[];
@@ -30,9 +30,7 @@
 				type="button"
 				role="tab"
 				aria-selected={selected}
-				aria-label="{day.today ? 'Hoje, ' : ''}{day.label}: {day.count || 'nenhum'} {day.count === 1
-					? 'grupo'
-					: 'grupos'}"
+				aria-label={dayAriaLabel(day)}
 				data-date={day.date}
 				class="day"
 				class:sel={selected}

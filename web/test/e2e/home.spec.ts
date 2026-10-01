@@ -103,6 +103,35 @@ test.describe('Home no desktop', () => {
 		await expect(cards(page)).toHaveCount(total);
 	});
 
+	test('RNF-01: dá para trocar o dia e filtrar só com o teclado, com foco visível', async ({
+		page
+	}) => {
+		await page.goto('/');
+		const ring = (selector: string) =>
+			page.evaluate((s) => getComputedStyle(document.querySelector(s)!).boxShadow, selector);
+
+		// Dia: Tab chega no primeiro dia, Tab vai para o próximo e Enter seleciona.
+		await dayTabs(page).first().focus();
+		await page.keyboard.press('Tab');
+		await expect(dayTabs(page).nth(1)).toBeFocused();
+		expect(await page.evaluate(() => getComputedStyle(document.activeElement!).boxShadow)).not.toBe(
+			'none'
+		);
+		await page.keyboard.press('Enter');
+		await expect(dayTabs(page).nth(1)).toHaveAttribute('aria-selected', 'true');
+		await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Grupos para hoje');
+
+		// Filtro: o checkbox recebe foco pelo teclado, mostra o anel e marca com Espaço.
+		const sidebar = page.getByRole('complementary', { name: 'Filtros' });
+		const tank = sidebar.getByRole('checkbox', { name: 'Tank' });
+		await sidebar.getByRole('combobox', { name: 'Instância' }).focus();
+		await page.keyboard.press('Tab');
+		await expect(tank).toBeFocused();
+		expect(await ring('aside.sidebar input:focus-visible + span')).not.toBe('none');
+		await page.keyboard.press('Space');
+		await expect(tank).toBeChecked();
+	});
+
 	test('RNF-02: a Home não carrega nada de fora do próprio servidor', async ({ page, baseURL }) => {
 		const origins = new Set<string>();
 		page.on('request', (req) => origins.add(new URL(req.url()).origin));

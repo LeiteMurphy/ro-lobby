@@ -1,5 +1,6 @@
-// Apresentação da Home: capa e ícone por instância, ícone e função por classe. Tudo é
-// arte original do design system do RO Lobby, com nomes inventados (RN-22).
+// Apresentação da Home: capa e ícone por instância, ícone e função por classe. As capas e
+// os ícones são arte original do design system do RO Lobby, e os nomes de instância são
+// inventados (RN-22). Os nomes de classe e os ícones Lucide vêm do design aprovado.
 import type { IconName } from '$lib/ui/Icon.svelte';
 import type { Role } from './types';
 
