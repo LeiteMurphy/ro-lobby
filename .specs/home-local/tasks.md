@@ -212,3 +212,8 @@ Todos os 30 critérios da spec estão cobertos.
   IconButton e no DaySelector, e com um teste que passa por todos os pontos de Tab da Home
   (desktop e celular) e exige estilo com foco diferente do sem foco e com o âmbar. O teste
   reprova sem a correção.
+- 2026-10-01 — A pedido do usuário, a RN-22 passou a permitir os nomes de classe do bRO e
+  entrou um catálogo com as 82 classes do bROWiki (`web/src/lib/catalog/classes.ts`),
+  com linha, nível, ícone e uma função sugerida só para a cor do ícone. Hoje continua
+  com as classes do design; os outros dias dos dados fictícios passam pelas classes de
+  3ª, 4ª e expandidas. O catálogo serve de base para o cadastro de personagens.

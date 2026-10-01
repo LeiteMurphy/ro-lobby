@@ -72,11 +72,4 @@ describe('Home renderizada no servidor', () => {
 	it('RN-22: sem marca da Gravity e sem nomes oficiais de mapa ou monstro na tela', () => {
 		expect(html).not.toMatch(/Gravity|Prontera|Glast Heim|Poring/i);
 	});
-
-	it('RN-22: as classes dos dados fictícios usam os nomes do bRO (bROWiki)', () => {
-		// Nomes de classe do bRO, conforme https://browiki.org/wiki/Classes.
-		const BRO_CLASSES = ['Arcebispo', 'Paladino', 'Feiticeiro', 'Sicário', 'Guardião Real', 'Musa'];
-		const classes = new Set(getHomeLobbies(TODAY).map((l) => l.hostClass));
-		for (const cls of classes) expect(BRO_CLASSES).toContain(cls);
-	});
 });

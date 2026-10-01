@@ -1,6 +1,7 @@
 // Apresentação da Home: capa e ícone por instância, ícone e função por classe. As capas e
 // os ícones são arte original do design system do RO Lobby, e os nomes de instância são
 // inventados. Os nomes de classe seguem o bRO, conforme o bROWiki (RN-22).
+import { findClass } from '$lib/catalog/classes';
 import type { IconName } from '$lib/ui/Icon.svelte';
 import type { Role } from './types';
 
@@ -46,17 +47,10 @@ export function instanceArt(instance: string): InstanceArt {
 	return INSTANCES[instance] ?? FALLBACK_INSTANCE;
 }
 
-const CLASSES: Record<string, { icon: IconName; role: Role }> = {
-	Arcebispo: { icon: 'cross', role: 'support' },
-	Paladino: { icon: 'shield-half', role: 'tank' },
-	Feiticeiro: { icon: 'wand-sparkles', role: 'dps' },
-	Sicário: { icon: 'venetian-mask', role: 'dps' },
-	'Guardião Real': { icon: 'shield-plus', role: 'tank' },
-	Musa: { icon: 'music', role: 'support' }
-};
-
+/** Ícone e função sugerida da classe, a partir do catálogo do bRO (RN-22). */
 export function classArt(hostClass: string): { icon: IconName; role: Role } {
-	return CLASSES[hostClass] ?? { icon: 'user', role: 'dps' };
+	const found = findClass(hostClass);
+	return found ? { icon: found.icon, role: found.role } : { icon: 'user', role: 'dps' };
 }
 
 export const ROLE_ICONS: Record<Role, IconName> = {

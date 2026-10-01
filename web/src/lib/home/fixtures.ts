@@ -1,6 +1,7 @@
 // RN-08 / D-06: dados fictícios da Home, iguais aos do design "Home v2". É o único
 // lugar que conhece esses dados; o resto do web usa getHomeLobbies(), que a feature de
 // lobby vai trocar pela API.
+import { CLASSES } from '$lib/catalog/classes';
 import { addDays } from './time';
 import type { Composition, Lobby } from './types';
 
@@ -73,6 +74,11 @@ const TEMPLATES: readonly Template[] = [
 	}
 ];
 
+/** Classes que fazem instância difícil: 3ª, 4ª e expandidas, na ordem do catálogo. */
+const HOST_CLASSES = CLASSES.filter((c) =>
+	['terceira', 'quarta', 'expandida'].includes(c.tier)
+).map((c) => c.name);
+
 /** Quantidade de lobbies em cada um dos 14 dias, a partir de hoje (como no design). */
 export const DAY_COUNTS: readonly number[] = [6, 4, 0, 5, 6, 6, 3, 2, 4, 0, 5, 6, 6, 2];
 
@@ -81,7 +87,14 @@ export function getHomeLobbies(today: string): Lobby[] {
 	return DAY_COUNTS.flatMap((count, day) => {
 		const date = addDays(today, day);
 		return TEMPLATES.filter((_, i) => (i + day * 2) % TEMPLATES.length < count).map(
-			({ key, ...rest }) => ({ ...rest, id: `${date}-${key}`, date })
+			({ key, hostClass, ...rest }, i) => ({
+				...rest,
+				// Hoje fica igual ao design; os outros dias passam pelas classes do catálogo.
+				hostClass:
+					day === 0 ? hostClass : HOST_CLASSES[(day * TEMPLATES.length + i) % HOST_CLASSES.length],
+				id: `${date}-${key}`,
+				date
+			})
 		);
 	});
 }

@@ -1,5 +1,18 @@
 <script lang="ts" module>
 	import Check from '@lucide/svelte/icons/check';
+	import Crosshair from '@lucide/svelte/icons/crosshair';
+	import Drama from '@lucide/svelte/icons/drama';
+	import FlaskConical from '@lucide/svelte/icons/flask-conical';
+	import Hammer from '@lucide/svelte/icons/hammer';
+	import HandFist from '@lucide/svelte/icons/hand-fist';
+	import Leaf from '@lucide/svelte/icons/leaf';
+	import Moon from '@lucide/svelte/icons/moon';
+	import PawPrint from '@lucide/svelte/icons/paw-print';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import Star from '@lucide/svelte/icons/star';
+	import Sword from '@lucide/svelte/icons/sword';
+	import Target from '@lucide/svelte/icons/target';
+	import Zap from '@lucide/svelte/icons/zap';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -25,6 +38,19 @@
 	// Só os ícones Lucide que a interface usa, empacotados no build (RNF-02). O design
 	// system carregava cada ícone de uma CDN.
 	export const ICONS = {
+		crosshair: Crosshair,
+		drama: Drama,
+		'flask-conical': FlaskConical,
+		hammer: Hammer,
+		'hand-fist': HandFist,
+		leaf: Leaf,
+		moon: Moon,
+		'paw-print': PawPrint,
+		sparkles: Sparkles,
+		star: Star,
+		sword: Sword,
+		target: Target,
+		zap: Zap,
 		check: Check,
 		'chevron-down': ChevronDown,
 		'chevron-left': ChevronLeft,
