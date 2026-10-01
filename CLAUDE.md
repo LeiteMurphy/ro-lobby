@@ -64,4 +64,6 @@ antes de haver um ADR.
 - Qualidade faz parte do objetivo, já que o projeto é portfólio de quem vem de QA.
   Toda regra de domínio tem teste, e cada teste cita o ID do critério de aceite.
 - Idioma: documentação, specs e commits em português. Código e identificadores em inglês.
-- Não usar logos, artes nem nomes oficiais da Gravity.
+- Não usar logos, artes nem sprites da Gravity. Nomes de classe do jogo podem ser usados:
+  seguem a nomenclatura do [bROWiki](https://browiki.org/wiki/Classes), que acompanha os
+  dados do Ragnarok LATAM.
