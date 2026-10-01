@@ -206,3 +206,9 @@ Todos os 30 critérios da spec estão cobertos.
   dia sem grupos ("nenhum grupos" → "nenhum grupo"), teste sem ID, comentário do
   `catalog.ts` e falta de teste de teclado e foco (RNF-01). O anel de foco do Select
   (borda âmbar e halo de 3 px) foi mantido: é a regra do design system para campos.
+- 2026-09-30 — Ciclo 2 da validação reprovou no RNF-01: o `box-shadow` do botão primário
+  e do dia selecionado cobria o anel de foco global, e o teste só olhava um dia não
+  selecionado e um checkbox. — Corrigido com regras de `:focus-visible` no Button, no
+  IconButton e no DaySelector, e com um teste que passa por todos os pontos de Tab da Home
+  (desktop e celular) e exige estilo com foco diferente do sem foco e com o âmbar. O teste
+  reprova sem a correção.

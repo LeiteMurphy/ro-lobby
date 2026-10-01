@@ -106,6 +106,15 @@
 		border-color: var(--accent-line);
 		box-shadow: var(--glow-gold);
 	}
+	/* RNF-01: o anel de foco aparece também no dia selecionado e durante o hover. */
+	.day.day:focus-visible {
+		box-shadow:
+			var(--focus-ring),
+			0 0 14px rgba(246, 187, 69, 0.28);
+	}
+	.day.sel.sel:focus-visible {
+		box-shadow: var(--focus-ring), var(--glow-gold);
+	}
 	.wd {
 		font: 600 10px/1 var(--font-ui);
 		letter-spacing: var(--tracking-caps);

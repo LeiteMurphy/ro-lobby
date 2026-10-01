@@ -91,6 +91,12 @@
 		color: var(--on-accent);
 		box-shadow: var(--glow-gold-strong);
 	}
+	/* RNF-01: o anel de foco vence o box-shadow das variantes e do hover. */
+	.ib.ib:focus-visible {
+		box-shadow:
+			var(--focus-ring),
+			0 0 14px rgba(246, 187, 69, 0.28);
+	}
 	.hint {
 		position: absolute;
 		top: calc(100% + 6px);

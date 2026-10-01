@@ -18,6 +18,64 @@ async function cardTimes(page: Page): Promise<string[]> {
 	);
 }
 
+/**
+ * RNF-01: percorre a página com Tab e, em cada ponto, exige que o estilo com foco seja
+ * diferente do estilo sem foco e tenha o âmbar do design system (#f6bb45, opaco no anel ou
+ * translúcido no halo dos campos). Para checkbox e radio, o
+ * anel fica na caixa desenhada ao lado do input; para o select, no campo em volta.
+ */
+async function expectFocusRingOnEveryTabStop(page: Page) {
+	// Mede o estado final de cada controle, sem pegar o meio de uma transição.
+	await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important}' });
+	await page.locator('body').focus();
+	const stops: { name: string; focused: string; idx: number }[] = [];
+	for (let i = 0; i < 80; i++) {
+		await page.keyboard.press('Tab');
+		const stop = await page.evaluate((idx) => {
+			const el = document.activeElement as HTMLElement | null;
+			if (!el || el === document.body || el.dataset.tabStop) return null;
+			el.dataset.tabStop = String(idx);
+			const target =
+				el instanceof HTMLInputElement && ['checkbox', 'radio'].includes(el.type)
+					? (el.nextElementSibling as HTMLElement)
+					: el instanceof HTMLSelectElement
+						? (el.parentElement as HTMLElement)
+						: el;
+			const name =
+				el.getAttribute('aria-label') ||
+				el.closest('label')?.textContent?.trim() ||
+				el.textContent?.trim() ||
+				el.tagName;
+			return { name, focused: getComputedStyle(target).boxShadow, idx };
+		}, i);
+		if (!stop) break;
+		stops.push(stop);
+	}
+	expect(stops.length).toBeGreaterThan(10);
+
+	await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+	await page.mouse.move(0, 0);
+	const unfocused = await page.evaluate(() =>
+		Object.fromEntries(
+			[...document.querySelectorAll<HTMLElement>('[data-tab-stop]')].map((el) => {
+				const target =
+					el instanceof HTMLInputElement && ['checkbox', 'radio'].includes(el.type)
+						? (el.nextElementSibling as HTMLElement)
+						: el instanceof HTMLSelectElement
+							? (el.parentElement as HTMLElement)
+							: el;
+				return [el.dataset.tabStop, getComputedStyle(target).boxShadow];
+			})
+		)
+	);
+
+	const missing = stops.filter(
+		// O âmbar pode vir opaco (anel) ou translúcido (halo dos campos, como no design system).
+		(s) => s.focused === unfocused[s.idx] || !/rgba?\(246, 187, 69/.test(s.focused)
+	);
+	expect(missing.map((s) => s.name)).toEqual([]);
+}
+
 test.describe('Home no desktop', () => {
 	test.use({ viewport: { width: 1280, height: 900 } });
 
@@ -103,33 +161,29 @@ test.describe('Home no desktop', () => {
 		await expect(cards(page)).toHaveCount(total);
 	});
 
-	test('RNF-01: dá para trocar o dia e filtrar só com o teclado, com foco visível', async ({
-		page
-	}) => {
+	test('RNF-01: dá para trocar o dia e filtrar só com o teclado', async ({ page }) => {
 		await page.goto('/');
-		const ring = (selector: string) =>
-			page.evaluate((s) => getComputedStyle(document.querySelector(s)!).boxShadow, selector);
-
 		// Dia: Tab chega no primeiro dia, Tab vai para o próximo e Enter seleciona.
 		await dayTabs(page).first().focus();
 		await page.keyboard.press('Tab');
 		await expect(dayTabs(page).nth(1)).toBeFocused();
-		expect(await page.evaluate(() => getComputedStyle(document.activeElement!).boxShadow)).not.toBe(
-			'none'
-		);
 		await page.keyboard.press('Enter');
 		await expect(dayTabs(page).nth(1)).toHaveAttribute('aria-selected', 'true');
 		await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Grupos para hoje');
 
-		// Filtro: o checkbox recebe foco pelo teclado, mostra o anel e marca com Espaço.
+		// Filtro: o checkbox recebe foco pelo teclado e marca com Espaço.
 		const sidebar = page.getByRole('complementary', { name: 'Filtros' });
 		const tank = sidebar.getByRole('checkbox', { name: 'Tank' });
 		await sidebar.getByRole('combobox', { name: 'Instância' }).focus();
 		await page.keyboard.press('Tab');
 		await expect(tank).toBeFocused();
-		expect(await ring('aside.sidebar input:focus-visible + span')).not.toBe('none');
 		await page.keyboard.press('Space');
 		await expect(tank).toBeChecked();
+	});
+
+	test('RNF-01: todo ponto de Tab mostra o anel de foco âmbar', async ({ page }) => {
+		await page.goto('/');
+		await expectFocusRingOnEveryTabStop(page);
 	});
 
 	test('RNF-02: a Home não carrega nada de fora do próprio servidor', async ({ page, baseURL }) => {
@@ -165,6 +219,11 @@ test.describe('Home no celular', () => {
 		await drawer.getByText('18h–20h').click();
 		await drawer.getByRole('button', { name: /^Ver \d+ grupos?$/ }).click();
 		await expect(page.getByRole('button', { name: /^Filtros/ })).toHaveText('Filtros (2)');
+	});
+
+	test('RNF-01: todo ponto de Tab mostra o anel de foco âmbar no celular', async ({ page }) => {
+		await page.goto('/');
+		await expectFocusRingOnEveryTabStop(page);
 	});
 
 	test('RN-19: "Criar lobby" vira botão só com ícone', async ({ page }) => {
