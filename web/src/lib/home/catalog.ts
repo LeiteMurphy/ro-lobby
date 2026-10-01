@@ -1,6 +1,6 @@
 // Apresentação da Home: capa e ícone por instância, ícone e função por classe. As capas e
 // os ícones são arte original do design system do RO Lobby, e os nomes de instância são
-// inventados (RN-22). Os nomes de classe e os ícones Lucide vêm do design aprovado.
+// inventados. Os nomes de classe seguem o bRO, conforme o bROWiki (RN-22).
 import type { IconName } from '$lib/ui/Icon.svelte';
 import type { Role } from './types';
 
@@ -51,8 +51,8 @@ const CLASSES: Record<string, { icon: IconName; role: Role }> = {
 	Paladino: { icon: 'shield-half', role: 'tank' },
 	Feiticeiro: { icon: 'wand-sparkles', role: 'dps' },
 	Sicário: { icon: 'venetian-mask', role: 'dps' },
-	Guardiã: { icon: 'shield-plus', role: 'tank' },
-	Andarilho: { icon: 'music', role: 'support' }
+	'Guardião Real': { icon: 'shield-plus', role: 'tank' },
+	Musa: { icon: 'music', role: 'support' }
 };
 
 export function classArt(hostClass: string): { icon: IconName; role: Role } {

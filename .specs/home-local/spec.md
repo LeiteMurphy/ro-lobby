@@ -3,7 +3,8 @@
 - Feature: `home-local` · Nível: M · Status: Aprovada
 - Design: Claude Design, projeto "RO Lobby Home v2", arquivo `Home v2.dc.html`
 - ADR: [ADR-06](../../docs/adr/0006-hospedagem-local.md) (aceito)
-- Última revisão: 2026-09-30 — aprovada pelo usuário
+- Última revisão: 2026-10-01 — RN-22 revista a pedido do usuário: nomes de classe do bRO
+  (bROWiki) passam a ser permitidos; logos, artes e sprites continuam proibidos
 
 ## 1. Contexto
 A fundação deixou um esqueleto que roda em modo de desenvolvimento, com a página de
@@ -96,8 +97,10 @@ que dependem de backend ficam visíveis, mas desabilitadas.
 - **RN-20** — O HTML que o servidor devolve para `/` já contém os cards de hoje.
 - **RN-21** — A página de status da fundação passa para `/status`, com o mesmo
   comportamento (RN-15 da fundação).
-- **RN-22** — A Home não usa logos, artes, sprites nem nomes oficiais do Ragnarok Online.
-  Os textos seguem o design system: pt-BR, "você", sem exclamação nem emoji.
+- **RN-22** — A Home não usa logos, artes nem sprites do Ragnarok Online. Os nomes de
+  classe seguem a nomenclatura do bRO, conforme o [bROWiki](https://browiki.org/wiki/Classes);
+  os nomes de instância continuam inventados. Os textos seguem o design system: pt-BR,
+  "você", sem exclamação nem emoji.
 
 ## 5. Critérios de aceite
 

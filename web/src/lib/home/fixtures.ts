@@ -58,7 +58,7 @@ const TEMPLATES: readonly Template[] = [
 		time: '21:30',
 		instance: 'Ruínas ao norte',
 		host: 'Valkyrja',
-		hostClass: 'Guardiã',
+		hostClass: 'Guardião Real',
 		minLevel: 185,
 		composition: comp([1, 1], [1, 4], [5, 7])
 	},
@@ -67,7 +67,7 @@ const TEMPLATES: readonly Template[] = [
 		time: '22:45',
 		instance: 'Torre sem fim',
 		host: 'Zé Morcego',
-		hostClass: 'Andarilho',
+		hostClass: 'Musa',
 		minLevel: 160,
 		composition: comp([0, 1], [0, 2], [2, 9])
 	}
