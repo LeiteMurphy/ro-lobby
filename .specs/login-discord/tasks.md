@@ -70,7 +70,7 @@
 - Commit: —
 - Notion: https://app.notion.com/p/3f0d4a3a5eff8146bc6ddac5e0160af2
 
-### T-03 — Serviço de autenticação  [ ]
+### T-03 — Serviço de autenticação  [x]
 - Cobre: RN-04, RN-05, RN-07, RN-09, RN-10, RN-11, CA-01.2, CA-03.2, CA-06.3, CA-06.4, D-06
 - Depende de: T-01, T-02
 - Paralelizável: não
