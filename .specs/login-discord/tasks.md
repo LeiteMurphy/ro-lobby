@@ -58,7 +58,7 @@
 - Commit: —
 - Notion: https://app.notion.com/p/3f0d4a3a5eff81bfbb38f9cc7350b37d
 
-### T-02 — Cliente do Discord e Discord falso  [P] [ ]
+### T-02 — Cliente do Discord e Discord falso  [P] [x]
 - Cobre: RN-01, RN-04, RN-13, RN-17, RNF-04, D-04, D-05
 - Depende de: —
 - Paralelizável: [P] com T-01
