@@ -60,6 +60,10 @@ services:
     environment:
       DATABASE_URL: *app-database-url
       API_PORT: "8080"
+      # RN-03 (login-discord): o Client Secret só existe no ambiente da API.
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?defina DISCORD_CLIENT_ID no .env}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:?defina DISCORD_CLIENT_SECRET no .env}
+      DISCORD_API_BASE_URL: ${DISCORD_API_BASE_URL:-https://discord.com/api}
     # RN-02: a API só sobe depois que as migrações terminam com sucesso.
     depends_on:
       migrate:

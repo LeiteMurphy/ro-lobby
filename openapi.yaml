@@ -33,7 +33,81 @@ paths:
               example:
                 status: degraded
                 database: unavailable
+  /auth/discord:
+    post:
+      operationId: createSessionFromDiscord
+      summary: Troca o código do Discord por uma sessão
+      description: >
+        Chamado pelo servidor do web depois do retorno do Discord (ADR-07). A API troca o
+        código no Discord, cria ou atualiza o Usuário pelo ID do Discord e abre uma Sessão
+        (RN-04, RN-05, RN-07). Se o Discord falhar, nada é criado (RN-13).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscordLogin"
+      responses:
+        "201":
+          description: Sessão criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCreated"
+        "400":
+          description: O Discord recusou o código, ou o pedido veio sem código.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: invalid_code
+        "502":
+          description: O Discord não respondeu em até 5 segundos ou respondeu com erro.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: discord_unavailable
+  /me:
+    get:
+      operationId: getMe
+      summary: Usuário da sessão
+      description: Responde 401 sem sessão válida (RN-10, RN-16).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Usuário da sessão.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Sem sessão, ou sessão desconhecida ou vencida.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: no_session
+  /session:
+    delete:
+      operationId: deleteSession
+      summary: Encerra a sessão atual
+      description: Apaga só esta Sessão; outras sessões do Usuário continuam (RN-11).
+      security:
+        - sessionToken: []
+      responses:
+        "204":
+          description: Sessão encerrada (ou já não existia).
 components:
+  securitySchemes:
+    sessionToken:
+      type: http
+      scheme: bearer
+      description: Token de sessão devolvido por POST /auth/discord (ADR-07).
   schemas:
     Health:
       type: object
@@ -46,3 +120,47 @@ components:
         database:
           type: string
           enum: [ok, unavailable]
+    DiscordLogin:
+      type: object
+      additionalProperties: false
+      required: [code, redirectUri]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        redirectUri:
+          type: string
+          format: uri
+          description: O mesmo redirect_uri usado na autorização (D-08).
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, username, globalName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        globalName:
+          type: string
+          nullable: true
+          description: Nome de exibição no Discord; nulo quando a pessoa não definiu.
+    SessionCreated:
+      type: object
+      additionalProperties: false
+      required: [sessionToken, user]
+      properties:
+        sessionToken:
+          type: string
+          description: Vai só para o cookie HttpOnly do web; o banco guarda o hash (RN-07).
+        user:
+          $ref: "#/components/schemas/User"
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: [invalid_code, discord_unavailable, no_session]

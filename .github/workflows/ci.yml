@@ -17,7 +17,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Valor fictício, só para o PostgreSQL de serviço da CI.
+  # Valores fictícios: o PostgreSQL de serviço e um aplicativo do Discord que não existe.
+  # Os testes usam o Discord falso; a CI não fala com o Discord de verdade (RNF-04).
+  DISCORD_CLIENT_ID: "000000000000000000"
+  DISCORD_CLIENT_SECRET: segredo-ficticio-da-ci
   DATABASE_URL: postgres://ro_lobby:ro_lobby_ci@localhost:5432/ro_lobby?sslmode=disable
 
 jobs:

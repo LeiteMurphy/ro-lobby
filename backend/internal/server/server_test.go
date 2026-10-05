@@ -50,14 +50,14 @@ func assertBody(t *testing.T, rec *httptest.ResponseRecorder, wantStatus int, wa
 
 // CA-02.1: banco respondendo → 200 com {"status":"ok","database":"ok"}.
 func TestHealthz_CA02_1_DatabaseAvailable(t *testing.T) {
-	h := New(fakePinger(func(context.Context) error { return nil }))
+	h := New(fakePinger(func(context.Context) error { return nil }), nil)
 	rec, _ := get(t, h, http.MethodGet)
 	assertBody(t, rec, http.StatusOK, map[string]string{"status": "ok", "database": "ok"})
 }
 
 // CA-02.2: banco parado → 503 com {"status":"degraded","database":"unavailable"} em até 3 s.
 func TestHealthz_CA02_2_DatabaseDown(t *testing.T) {
-	h := New(fakePinger(func(context.Context) error { return errors.New("connection refused") }))
+	h := New(fakePinger(func(context.Context) error { return errors.New("connection refused") }), nil)
 	rec, took := get(t, h, http.MethodGet)
 	assertBody(t, rec, http.StatusServiceUnavailable, map[string]string{"status": "degraded", "database": "unavailable"})
 	if took > 3*time.Second {
@@ -70,7 +70,7 @@ func TestHealthz_CA02_3_SlowDatabase(t *testing.T) {
 	release := make(chan struct{})
 	defer close(release)
 	// O Pinger ignora o contexto de propósito: o prazo tem que valer mesmo assim.
-	h := New(fakePinger(func(context.Context) error { <-release; return nil }))
+	h := New(fakePinger(func(context.Context) error { <-release; return nil }), nil)
 
 	rec, took := get(t, h, http.MethodGet)
 	assertBody(t, rec, http.StatusServiceUnavailable, map[string]string{"status": "degraded", "database": "unavailable"})
@@ -82,7 +82,7 @@ func TestHealthz_CA02_3_SlowDatabase(t *testing.T) {
 // CA-02.4: POST /healthz → 405.
 func TestHealthz_CA02_4_MethodNotAllowed(t *testing.T) {
 	called := false
-	h := New(fakePinger(func(context.Context) error { called = true; return nil }))
+	h := New(fakePinger(func(context.Context) error { called = true; return nil }), nil)
 	rec, _ := get(t, h, http.MethodPost)
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, esperado 405", rec.Code)

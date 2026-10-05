@@ -12,11 +12,47 @@ func envFrom(vars map[string]string) func(string) string {
 	return func(key string) string { return vars[key] }
 }
 
+func withDiscord(vars map[string]string) map[string]string {
+	vars["DISCORD_CLIENT_ID"] = "123"
+	vars["DISCORD_CLIENT_SECRET"] = "segredo"
+	return vars
+}
+
+// RN-03 / RN-17 (login-discord): o aplicativo do Discord vem do ambiente, com a API
+// oficial como padrão.
+func TestLoad_RN17_DiscordDefaults(t *testing.T) {
+	cfg, err := Load(envFrom(withDiscord(map[string]string{"DATABASE_URL": "postgres://x"})))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := Discord{ClientID: "123", ClientSecret: "segredo", APIBaseURL: "https://discord.com/api"}
+	if cfg.Discord != want {
+		t.Fatalf("Discord = %+v, esperado %+v", cfg.Discord, want)
+	}
+	cfg, err = Load(envFrom(withDiscord(map[string]string{"DATABASE_URL": "postgres://x", "DISCORD_API_BASE_URL": "http://localhost:8090/api"})))
+	if err != nil || cfg.Discord.APIBaseURL != "http://localhost:8090/api" {
+		t.Fatalf("APIBaseURL = %q (%v)", cfg.Discord.APIBaseURL, err)
+	}
+}
+
+// RN-03 (login-discord): sem Client ID ou Client Secret, a API não sobe.
+func TestLoad_RN03_RequiresDiscordCredentials(t *testing.T) {
+	for _, missing := range []string{"DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET"} {
+		vars := withDiscord(map[string]string{"DATABASE_URL": "postgres://x"})
+		delete(vars, missing)
+		if _, err := Load(envFrom(vars)); err == nil {
+			t.Errorf("sem %s: esperado erro", missing)
+		}
+	}
+}
+
 // RN-01: toda configuração vem de variáveis de ambiente.
 func TestLoad_RN01_ReadsEnvironment(t *testing.T) {
 	cfg, err := Load(envFrom(map[string]string{
-		"DATABASE_URL": "postgres://u:p@localhost:5432/db",
-		"API_PORT":     "9090",
+		"DATABASE_URL":          "postgres://u:p@localhost:5432/db",
+		"API_PORT":              "9090",
+		"DISCORD_CLIENT_ID":     "123",
+		"DISCORD_CLIENT_SECRET": "segredo",
 	}))
 	if err != nil {
 		t.Fatalf("erro inesperado: %v", err)
@@ -27,7 +63,7 @@ func TestLoad_RN01_ReadsEnvironment(t *testing.T) {
 }
 
 func TestLoad_RN01_DefaultPort8080(t *testing.T) {
-	cfg, err := Load(envFrom(map[string]string{"DATABASE_URL": "postgres://x"}))
+	cfg, err := Load(envFrom(withDiscord(map[string]string{"DATABASE_URL": "postgres://x"})))
 	if err != nil {
 		t.Fatalf("erro inesperado: %v", err)
 	}
@@ -44,7 +80,7 @@ func TestLoad_RN01_RequiresDatabaseURL(t *testing.T) {
 
 func TestLoad_RN01_RejectsInvalidPort(t *testing.T) {
 	for _, port := range []string{"abc", "0", "70000"} {
-		_, err := Load(envFrom(map[string]string{"DATABASE_URL": "postgres://x", "API_PORT": port}))
+		_, err := Load(envFrom(withDiscord(map[string]string{"DATABASE_URL": "postgres://x", "API_PORT": port})))
 		if err == nil {
 			t.Errorf("API_PORT=%q: esperado erro", port)
 		}

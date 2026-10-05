@@ -12,8 +12,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/auth"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/config"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/server"
 )
 
@@ -46,9 +49,12 @@ func run() error {
 	}
 	defer pool.Close()
 
+	discordClient := discord.New(cfg.Discord.APIBaseURL, cfg.Discord.ClientID, cfg.Discord.ClientSecret)
+	authService := auth.NewService(db.New(pool), discordClient)
+
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           server.New(pool),
+		Handler:           server.New(pool, authService),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

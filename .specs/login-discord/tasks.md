@@ -81,7 +81,7 @@
 - Commit: —
 - Notion: https://app.notion.com/p/3f0d4a3a5eff81d9a931c29fe5cca219
 
-### T-04 — Contrato e rotas da API  [ ]
+### T-04 — Contrato e rotas da API  [x]
 - Cobre: RN-16, CA-06.1, CA-06.2, CA-04.4, CA-04.5, D-02
 - Depende de: T-03
 - Paralelizável: não
@@ -183,3 +183,7 @@ Todos os 24 critérios da spec estão cobertos.
 ## Descobertas
 - 2026-10-05 — O Client Secret do aplicativo do Discord foi colado na conversa. —
   Orientado a gerar um novo no Developer Portal e colocar direto no `.env`.
+- 2026-10-05 — A API passou a exigir `DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET` para
+  subir (T-04). Para nenhum commit quebrar a pilha `app` nem a CI, as variáveis entraram
+  já na T-04 no `.env.example` (fictícias), no serviço `api` do Compose e no job de ponta
+  a ponta da CI. A T-07 fica com o web, o README e o teste do secret no build.

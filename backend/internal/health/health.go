@@ -22,7 +22,11 @@ type Handler struct {
 	timeout time.Duration
 }
 
-var _ api.StrictServerInterface = (*Handler)(nil)
+// GetHealthz é a parte do api.StrictServerInterface que este pacote implementa; o
+// pacote server junta as rotas de todas as áreas.
+var _ interface {
+	GetHealthz(context.Context, api.GetHealthzRequestObject) (api.GetHealthzResponseObject, error)
+} = (*Handler)(nil)
 
 // New cria o handler com o prazo padrão de 2 segundos.
 func New(db Pinger) *Handler {
