@@ -94,7 +94,7 @@
 
 ## US-01, US-04 e US-05 — Fluxo no web
 
-### T-05 — Rotas de login, callback e logout no web  [ ]
+### T-05 — Rotas de login, callback e logout no web  [x]
 - Cobre: RN-02, RN-08, RN-10, RN-12, RN-13, CA-01.3, CA-04.1, CA-04.2, CA-04.3,
   CA-04.6, CA-05.1, CA-05.2, CA-06.5, D-03, D-07, D-08
 - Depende de: T-04
