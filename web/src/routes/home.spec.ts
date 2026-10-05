@@ -8,8 +8,17 @@ import Page from './+page.svelte';
 const NOW = '2026-09-30T19:40:00.000Z';
 const TODAY = '2026-09-30';
 
-function renderHome(): string {
-	const data = { now: NOW, today: TODAY, lobbies: getHomeLobbies(TODAY) };
+type User = { id: string; username: string; globalName: string | null };
+
+function renderHome(user: User | null = null, loginError = false): string {
+	const data = {
+		now: NOW,
+		today: TODAY,
+		lobbies: getHomeLobbies(TODAY),
+		user,
+		loginHref: '/auth/discord/login?next=%2F',
+		loginError
+	};
 	// O PageProps completo inclui `params`, que a Home não usa.
 	const props = { data, params: {} } as unknown as Parameters<typeof Page>[1];
 	return render(Page, { props }).body;
@@ -41,14 +50,14 @@ describe('Home renderizada no servidor', () => {
 		expect(html).toContain('em 1 h 20 min');
 	});
 
-	it('CA-02.5 / RN-18: ações sem backend ficam desabilitadas com "Disponível em breve"', () => {
+	it('CA-02.5 / RN-18: ações sem backend continuam desabilitadas com "Disponível em breve"', () => {
 		const buttons = [...html.matchAll(/<button(\s[^>]*)?>([\s\S]*?)<\/button>/g)].map(
 			([, attrs, inner]) => ({
 				disabled: (attrs ?? '').includes('aria-disabled="true"'),
 				text: inner.replace(/<[^>]+>/g, '').trim()
 			})
 		);
-		for (const label of ['Criar lobby', 'Entrar com Discord', 'Candidatar', 'Ver grupo']) {
+		for (const label of ['Criar lobby', 'Candidatar', 'Ver grupo']) {
 			const matching = buttons.filter((b) => b.text === label);
 			expect(matching.length, label).toBeGreaterThan(0);
 			expect(
@@ -71,5 +80,50 @@ describe('Home renderizada no servidor', () => {
 
 	it('RN-22: sem marca da Gravity e sem nomes oficiais de mapa ou monstro na tela', () => {
 		expect(html).not.toMatch(/Gravity|Prontera|Glast Heim|Poring/i);
+	});
+});
+
+const GRIMBOLD = {
+	id: '6f1c2b8e-3a4d-4e5f-9a1b-2c3d4e5f6a7b',
+	username: 'grimbold',
+	globalName: 'Grimbold'
+};
+
+describe('Home com login (spec login-discord)', () => {
+	it('RN-14: visitante vê "Entrar com Discord" como link para o login, não desabilitado', () => {
+		const html = renderHome();
+		expect(html).toMatch(
+			/<a href="\/auth\/discord\/login\?next=%2F"[^>]*>[\s\S]*?Entrar com Discord/
+		);
+		expect(html).not.toMatch(/aria-disabled="true"[^>]*>[\s\S]{0,600}?Entrar com Discord/);
+	});
+
+	it('CA-02.1 / CA-02.3: logado, o HTML do servidor já traz a inicial e o nome, sem "Entrar com Discord"', () => {
+		const html = renderHome(GRIMBOLD);
+		expect(html).toContain('data-testid="user-menu"');
+		expect(html).toMatch(/class="tile[^"]*"[^>]*>G</);
+		expect(html).toContain('Grimbold');
+		expect(html).not.toContain('Entrar com Discord');
+	});
+
+	it('CA-02.2: sem nome de exibição, mostra o nome de usuário e a inicial dele', () => {
+		const html = renderHome({ ...GRIMBOLD, username: 'mirai.exe', globalName: null });
+		expect(html).toMatch(/class="tile[^"]*"[^>]*>M</);
+		expect(html).toContain('mirai.exe');
+	});
+
+	it('CA-02.4 / RNF-05: logado, nenhuma imagem de fora do servidor', () => {
+		const html = renderHome(GRIMBOLD);
+		const external = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1]);
+		expect(external).toEqual([]);
+		expect(html).not.toContain('cdn.discordapp.com');
+	});
+
+	it('CA-04.1 / RN-13: com ?login=erro, a Home mostra a mensagem de falha', () => {
+		const html = renderHome(null, true);
+		expect(html).toMatch(
+			/role="alert"[^>]*>Não foi possível entrar com o Discord\. Tente de novo\.</
+		);
+		expect(renderHome()).not.toContain('role="alert"');
 	});
 });

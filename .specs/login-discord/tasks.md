@@ -109,7 +109,7 @@
 
 ## US-02 e US-03 — Barra superior
 
-### T-06 — Usuário na barra, menu "Sair" e mensagem de erro  [ ]
+### T-06 — Usuário na barra, menu "Sair" e mensagem de erro  [x]
 - Cobre: RN-14, RN-15, CA-02.1, CA-02.2, CA-02.3, CA-03.1, RNF-02
 - Depende de: T-05
 - Paralelizável: não

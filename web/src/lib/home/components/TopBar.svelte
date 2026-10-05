@@ -2,6 +2,17 @@
 	import { resolve } from '$app/paths';
 	import Button from '$lib/ui/Button.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
+	import type { SessionUser } from '$lib/auth/api';
+	import UserMenu from './UserMenu.svelte';
+
+	interface Props {
+		/** Usuário da sessão, ou null para visitante (spec login-discord). */
+		user: SessionUser | null;
+		/** Link de login que volta para a página atual (RN-12). */
+		loginHref: string;
+	}
+
+	let { user, loginHref }: Props = $props();
 </script>
 
 <header class="topbar">
@@ -13,12 +24,23 @@
 		<span class="desktop"><Button iconLeft="plus" soon>Criar lobby</Button></span>
 		<span class="mobile"><IconButton icon="plus" label="Criar lobby" variant="primary" soon /></span
 		>
-		<span class="desktop"
-			><Button variant="secondary" iconLeft="log-in" soon>Entrar com Discord</Button></span
-		>
-		<span class="mobile"
-			><IconButton icon="log-in" label="Entrar com Discord" variant="secondary" soon /></span
-		>
+		{#if user}
+			<UserMenu {user} />
+		{:else}
+			<!-- RN-14 (login-discord): o login já funciona; os outros controles seguem "em breve". -->
+			<span class="desktop"
+				><Button variant="secondary" iconLeft="log-in" href={loginHref}>Entrar com Discord</Button
+				></span
+			>
+			<span class="mobile"
+				><IconButton
+					icon="log-in"
+					label="Entrar com Discord"
+					variant="secondary"
+					href={loginHref}
+				/></span
+			>
+		{/if}
 	</div>
 </header>
 

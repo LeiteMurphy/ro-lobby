@@ -1,0 +1,147 @@
+<script lang="ts">
+	import Icon from '$lib/ui/Icon.svelte';
+	import { displayName, initial } from '$lib/auth/display';
+	import type { SessionUser } from '$lib/auth/api';
+
+	interface Props {
+		user: SessionUser;
+	}
+
+	let { user }: Props = $props();
+	const name = $derived(displayName(user));
+	const menuId = $props.id();
+
+	let open = $state(false);
+	let root: HTMLDivElement | undefined = $state();
+	let trigger: HTMLButtonElement | undefined = $state();
+	let logout: HTMLButtonElement | undefined = $state();
+
+	// RNF-02: o menu abre pelo teclado, leva o foco para "Sair" e fecha com Escape.
+	async function toggle() {
+		open = !open;
+		if (open) {
+			await Promise.resolve();
+			logout?.focus();
+		}
+	}
+
+	function onkeydown(event: KeyboardEvent) {
+		if (open && event.key === 'Escape') {
+			open = false;
+			trigger?.focus();
+		}
+	}
+
+	function onpointerdown(event: PointerEvent) {
+		if (open && root && !root.contains(event.target as Node)) open = false;
+	}
+</script>
+
+<svelte:window {onkeydown} {onpointerdown} />
+
+<div class="user" bind:this={root} data-testid="user-menu">
+	<button
+		type="button"
+		class="trigger"
+		bind:this={trigger}
+		aria-haspopup="menu"
+		aria-expanded={open}
+		aria-controls={menuId}
+		aria-label="Menu de {name}"
+		onclick={toggle}
+	>
+		<span class="tile" aria-hidden="true">{initial(name)}</span>
+		<span class="name">{name}</span>
+		<Icon name="chevron-down" size={14} color="var(--fg-3)" />
+	</button>
+	{#if open}
+		<div class="menu" id={menuId} role="menu" aria-label="Conta">
+			<form method="POST" action="/auth/logout">
+				<button type="submit" role="menuitem" class="item" bind:this={logout}>
+					<Icon name="log-in" size={15} />Sair
+				</button>
+			</form>
+		</div>
+	{/if}
+</div>
+
+<style>
+	.user {
+		position: relative;
+	}
+	.trigger {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		height: 38px;
+		padding: 0 8px 0 4px;
+		background: transparent;
+		border: 1px solid transparent;
+		border-radius: var(--radius-sm);
+		color: var(--fg-2);
+		cursor: pointer;
+		font: 600 13px/1 var(--font-ui);
+	}
+	.trigger:hover {
+		background: var(--ink-3);
+		border-color: var(--line-2);
+	}
+	.tile {
+		width: 30px;
+		height: 30px;
+		border-radius: var(--radius-sm);
+		background: var(--gradient-featured);
+		border: 1px solid var(--accent-line);
+		color: var(--gold-200);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font: 700 15px/1 var(--font-display);
+	}
+	.name {
+		color: var(--fg-1);
+		max-width: 180px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.menu {
+		position: absolute;
+		top: calc(100% + 6px);
+		right: 0;
+		z-index: var(--z-tooltip);
+		min-width: 160px;
+		padding: 6px;
+		background: var(--surface-raised);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-pop);
+	}
+	form {
+		margin: 0;
+	}
+	.item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		padding: 8px 10px;
+		background: transparent;
+		border: 0;
+		border-radius: var(--radius-sm);
+		color: var(--fg-1);
+		font: 500 14px/1 var(--font-ui);
+		text-align: left;
+		cursor: pointer;
+	}
+	.item:hover {
+		background: var(--surface-hover);
+	}
+	.item :global(svg) {
+		transform: scaleX(-1);
+	}
+	@media (max-width: 899px) {
+		.name {
+			display: none;
+		}
+	}
+</style>
