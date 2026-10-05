@@ -46,7 +46,7 @@
 
 ## US-06 e US-01 — Base no backend
 
-### T-01 — Tabelas de Usuário e Sessão  [ ]
+### T-01 — Tabelas de Usuário e Sessão  [x]
 - Cobre: RN-05, RN-06, RN-07, RN-09, CA-01.4, D-01
 - Depende de: —
 - Paralelizável: não
