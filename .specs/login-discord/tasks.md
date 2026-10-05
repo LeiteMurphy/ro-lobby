@@ -123,7 +123,7 @@
 
 ## US-01 — Ambiente e segurança
 
-### T-07 — Variáveis, pilha `app` e README  [ ]
+### T-07 — Variáveis, pilha `app` e README  [x]
 - Cobre: RN-03, CA-01.5, D-09
 - Depende de: T-06
 - Paralelizável: não

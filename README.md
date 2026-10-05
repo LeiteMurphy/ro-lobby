@@ -60,6 +60,27 @@ Os valores do `.env.example` são fictícios e servem para o ambiente local.
 mudar `POSTGRES_PORT` ou `API_PORT`, ajuste também a `DATABASE_URL` ou a
 `API_BASE_URL`.
 
+#### Aplicativo do Discord (login)
+
+O login usa um aplicativo do Discord ([ADR-07](docs/adr/0007-login-discord-sessao.md)). A API
+não sobe sem `DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET`.
+
+1. Em https://discord.com/developers/applications, crie um aplicativo (ex.: "RO Lobby (dev)").
+2. Na aba **OAuth2**, cadastre os dois Redirects:
+   - `http://localhost:3000/auth/discord/callback` (pilha app)
+   - `http://localhost:5173/auth/discord/callback` (modo de desenvolvimento)
+3. Copie o **Client ID** e gere o **Client Secret**. Coloque os dois no seu `.env`:
+
+   ```dotenv
+   DISCORD_CLIENT_ID=<seu Client ID>
+   DISCORD_CLIENT_SECRET=<seu Client Secret>
+   ```
+
+O Client Secret só existe no `.env`, que o git ignora, e só a API recebe esse valor. Nunca
+cole o secret em issue, commit ou conversa; se isso acontecer, gere outro no Developer
+Portal (**OAuth2 → Reset Secret**). Os testes e a CI usam um Discord falso e não precisam
+de aplicativo.
+
 ### 3. Banco de dados
 
 ```powershell
@@ -180,7 +201,7 @@ O workflow `.github/workflows/ci.yml` roda em todo PR para a `main`:
 - **Backend**, quando `backend/` muda: gofmt, golangci-lint, testes unitários, migrações,
   testes de integração, build e código gerado.
 - **Web**, quando `web/` muda: ESLint, Prettier, svelte-check, Vitest com cobertura,
-  build e tipos gerados.
+  build, tipos gerados e a conferência de que o Client Secret não aparece no build.
 - **Ponta a ponta**, quando o backend ou o web mudam.
 - **Pilha app**, quando o backend, o web ou o Compose mudam: constrói as imagens e roda
   o `scripts/smoke-app.sh`. Não publica as imagens.

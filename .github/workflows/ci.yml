@@ -210,6 +210,17 @@ jobs:
       - name: Build
         run: npm run build
 
+      # CA-01.5 (login-discord): o Client Secret não pode chegar ao build do web. O build
+      # roda com um secret marcador no ambiente, e o job falha se o marcador aparecer.
+      - name: Client Secret fora do build
+        env:
+          DISCORD_CLIENT_SECRET: marcador-do-client-secret-ci-0f3a9
+        run: |
+          npm run build >/dev/null
+          if grep -rqF "$DISCORD_CLIENT_SECRET" build .svelte-kit/output; then
+            echo "::error::O Client Secret apareceu no build do web."; exit 1
+          fi
+
       # RN-21 / CA-08.1
       - name: Resumo da cobertura
         if: always()

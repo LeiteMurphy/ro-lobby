@@ -82,6 +82,9 @@ services:
     environment:
       PORT: "3000"
       API_BASE_URL: http://api:8080
+      # RN-03 (login-discord): o web recebe só o Client ID, nunca o Client Secret.
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?defina DISCORD_CLIENT_ID no .env}
+      DISCORD_AUTHORIZE_URL: ${DISCORD_AUTHORIZE_URL:-https://discord.com/oauth2/authorize}
       # O adapter-node confere a origem das actions (proteção CSRF).
       ORIGIN: http://localhost:${APP_WEB_PORT:-3000}
     ports:
