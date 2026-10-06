@@ -1,9 +1,12 @@
 package discord
 
 import (
+	"bytes"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -75,13 +78,35 @@ func TestProfileFromCode_RN04_RedirectURIMustMatch(t *testing.T) {
 	}
 }
 
-// RN-03: Client Secret errado também é recusado.
+// RN-03 / AJ-03: Client Secret errado também é recusado, e a API registra o motivo no log,
+// sem o segredo.
 func TestProfileFromCode_RN03_WrongSecret(t *testing.T) {
 	fake, srv := newFake(t)
 	code := fake.IssueCode(fake.User, redirect)
-	_, err := New(srv.URL+"/api", "123", "errado").ProfileFromCode(t.Context(), code, redirect)
+	var logs bytes.Buffer
+	c := New(srv.URL+"/api", "123", "errado", WithLogger(slog.New(slog.NewTextHandler(&logs, nil))))
+	_, err := c.ProfileFromCode(t.Context(), code, redirect)
 	if !errors.Is(err, ErrInvalidCode) {
 		t.Fatalf("err = %v, esperado ErrInvalidCode", err)
+	}
+	if !strings.Contains(logs.String(), "level=ERROR") || !strings.Contains(logs.String(), "DISCORD_CLIENT_SECRET") {
+		t.Errorf("log = %q, esperado o aviso de Client Secret", logs.String())
+	}
+	if strings.Contains(logs.String(), "errado") {
+		t.Errorf("o log vazou o Client Secret: %q", logs.String())
+	}
+}
+
+// AJ-03: código recusado (400) não é problema de configuração, então não gera o aviso.
+func TestProfileFromCode_RN03_InvalidCodeDoesNotLogSecretWarning(t *testing.T) {
+	_, srv := newFake(t)
+	var logs bytes.Buffer
+	c := New(srv.URL+"/api", "123", "segredo", WithLogger(slog.New(slog.NewTextHandler(&logs, nil))))
+	if _, err := c.ProfileFromCode(t.Context(), "nao-existe", redirect); !errors.Is(err, ErrInvalidCode) {
+		t.Fatalf("err = %v", err)
+	}
+	if logs.Len() != 0 {
+		t.Errorf("log inesperado: %q", logs.String())
 	}
 }
 
