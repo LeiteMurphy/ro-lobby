@@ -96,12 +96,12 @@
   - a capa padrão para todas as instâncias.
 
   Os testes de tela da Home continuam passando com os dados de teste.
-- Commit:
+- Commit: `0106547`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81b18493dc21671ed80f
 
 ## US-01 e US-04 — Criar e editar
 
-### T-07 — Páginas de criar e editar lobby  [ ]
+### T-07 — Páginas de criar e editar lobby  [x]
 - Cobre: RN-02, RN-04, RN-05 a RN-12, RN-17, RN-18, RNF-01, RNF-04, CA-01.1, CA-01.2,
   CA-01.10, CA-04.1, CA-06.2, D-07
 - Depende de: T-06
@@ -117,12 +117,12 @@
   - os erros aparecem junto do campo, sem perder os valores;
   - a edição só abre para o dono com o lobby aberto, sem instância nem personagem;
   - os testes de renderização no servidor e das actions passam.
-- Commit:
+- Commit: `917dee8`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81fab6faf0f911165027
 
 ## US-03 e US-05 — Detalhe e cancelamento
 
-### T-08 — Página de detalhe e cancelamento  [ ]
+### T-08 — Página de detalhe e cancelamento  [x]
 - Cobre: RN-15, RN-16, RN-19, RNF-01, CA-03.1, CA-03.2, CA-03.3, CA-05.1, CA-05.2
 - Depende de: T-06
 - Paralelizável: [P] com T-07
@@ -136,10 +136,10 @@
   - o cancelamento pede um motivo de 10 a 250 caracteres;
   - o lobby cancelado mostra o selo e o motivo;
   - os testes de renderização e da action passam.
-- Commit:
+- Commit: `031fac2`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff8128aeedec46dec52cc1
 
-### T-09 — Mensagem do personagem travado no perfil  [P] [ ]
+### T-09 — Mensagem do personagem travado no perfil  [P] [x]
 - Cobre: RN-21, CA-06.4
 - Depende de: T-05
 - Paralelizável: [P] com T-06 a T-08
@@ -147,7 +147,7 @@
 - Pronto quando: excluir ou mudar a função do personagem dono de lobby aberto mostra
   "Esse personagem está num lobby aberto. Cancele o lobby antes." no perfil, com teste das
   actions.
-- Commit:
+- Commit: `d58af6f`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81c9b5d0f9d9e5b05278
 
 ## US-01 a US-06 — Ponta a ponta
@@ -223,3 +223,10 @@ Todos os 31 critérios da spec estão cobertos.
 - 2026-10-06 — A função de chamada à API saiu de `lib/characters/api.ts` para
   `lib/api/request.ts`, usada por personagens e lobbies. O 409 passou a trazer o código do
   erro (`conflict` + `code`), e o perfil lê o `character_limit` por ele.
+- 2026-10-06 — Na T-08, a conferência visual mostrou que trocar de instância não baixava o
+  nível mínimo, e que a instância inicial (a de nível mais alto) podia ficar acima do
+  personagem. — O nível mínimo passou a voltar ao da instância escolhida, e a inicial é a
+  mais alta que o principal alcança (ajuste da T-07, no commit da T-08).
+- 2026-10-06 — Na T-10, o ponta a ponta passou a usar um banco só dele (`ro_lobby_e2e`),
+  recriado a cada execução por `go run ./cmd/migrate fresh`, que só aceita bancos `*_e2e`.
+  Isso também resolve a observação antiga de dados acumulados no banco de dev.

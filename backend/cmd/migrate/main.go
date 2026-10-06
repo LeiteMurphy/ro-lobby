@@ -4,6 +4,7 @@
 //	go run ./cmd/migrate down    reverte a última
 //	go run ./cmd/migrate reset   reverte todas
 //	go run ./cmd/migrate status  mostra o estado de cada migração
+//	go run ./cmd/migrate fresh   apaga, recria e migra o banco (só bancos *_e2e)
 package main
 
 import (
@@ -18,7 +19,7 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/migrate"
 )
 
-const usage = "uso: go run ./cmd/migrate up|down|reset|status"
+const usage = "uso: go run ./cmd/migrate up|down|reset|status|fresh"
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -42,6 +43,15 @@ func run(args []string) error {
 		return errors.New("DATABASE_URL não definida")
 	}
 
+	ctx := context.Background()
+	if args[0] == "fresh" {
+		if err := migrate.Fresh(ctx, databaseURL); err != nil {
+			return err
+		}
+		fmt.Println("banco recriado e migrado")
+		return nil
+	}
+
 	db, err := migrate.OpenDB(databaseURL)
 	if err != nil {
 		return err
@@ -53,7 +63,6 @@ func run(args []string) error {
 		return err
 	}
 
-	ctx := context.Background()
 	switch args[0] {
 	case "up":
 		return report(provider.Up(ctx))

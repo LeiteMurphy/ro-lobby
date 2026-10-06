@@ -6,8 +6,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/url"
+	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pressly/goose/v3"
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/testdb"
@@ -107,5 +110,49 @@ func TestMigrations_CA03_2_DownToZero(t *testing.T) {
 	}
 	if setting.Valid && setting.String != "" && setting.String != "{}" {
 		t.Errorf("configuração do banco não foi desfeita: %s", setting.String)
+	}
+}
+
+// T-10 (lobbies): fresh apaga, recria e migra só bancos terminados em _e2e.
+func TestFresh_T10_RecreatesOnlyE2EDatabases(t *testing.T) {
+	ctx := t.Context()
+	base := testdb.New(t) // um banco descartável; o fresh usa outro nome, com _e2e no fim
+	u, err := url.Parse(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u.Path += FreshSuffix
+	target := u.String()
+	t.Cleanup(func() {
+		admin := *u
+		admin.Path = "/postgres"
+		conn, err := pgx.Connect(context.Background(), admin.String())
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		defer func() { _ = conn.Close(context.Background()) }()
+		_, _ = conn.Exec(context.Background(), "DROP DATABASE IF EXISTS "+pgx.Identifier{strings.TrimPrefix(u.Path, "/")}.Sanitize()+" WITH (FORCE)")
+	})
+
+	if err := Fresh(ctx, base); !errors.Is(err, ErrNotFreshable) {
+		t.Fatalf("banco sem _e2e: err = %v", err)
+	}
+	for range 2 { // a segunda vez apaga o que a primeira criou
+		if err := Fresh(ctx, target); err != nil {
+			t.Fatal(err)
+		}
+		db, err := OpenDB(target)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.ExecContext(ctx, "INSERT INTO users (discord_id, username, created_at, last_login_at) VALUES ('1', 'a', now(), now())"); err != nil {
+			t.Fatal(err)
+		}
+		var n int
+		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users").Scan(&n); err != nil || n != 1 {
+			t.Errorf("usuários = %d (err %v): o banco não começou vazio", n, err)
+		}
+		_ = db.Close()
 	}
 }

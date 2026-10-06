@@ -179,7 +179,10 @@ npx playwright install chromium   # uma vez
 npm run test:e2e                  # ponta a ponta: sobe o backend e o web sozinho
 ```
 
-O ponta a ponta precisa do banco no ar e migrado (passo 3).
+O ponta a ponta precisa do PostgreSQL no ar (passo 3). Ele usa um banco só dele,
+`ro_lobby_e2e`, que o `go run ./cmd/migrate fresh` apaga, recria e migra a cada execução.
+O `fresh` só aceita bancos terminados em `_e2e`, para nunca apagar o banco de
+desenvolvimento.
 
 ## Contrato e código gerado
 

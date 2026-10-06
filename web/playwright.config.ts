@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
 // RN-22 (fundação): o teste ponta a ponta sobe o backend e o web. O PostgreSQL precisa
-// estar no ar e migrado antes (docker compose up -d e go run ./cmd/migrate up).
+// estar no ar (docker compose up -d); o banco do ponta a ponta é criado aqui (ver abaixo).
 //
 // Spec login-discord (RNF-04, D-05): o login roda contra um Discord falso local, sem rede
 // externa. A API e o web recebem as URLs do falso, e nenhum servidor é reaproveitado,
@@ -11,6 +12,25 @@ const apiBaseUrl = `http://localhost:${apiPort}`;
 const webPort = 4173;
 const fakeDiscord = 'http://127.0.0.1:8090';
 const discordApp = { clientId: '000000000000000000', clientSecret: 'segredo-do-discord-falso-e2e' };
+
+// Spec lobbies (T-10): o ponta a ponta usa um banco só dele, ro_lobby_e2e, apagado e migrado
+// a cada execução (go run ./cmd/migrate fresh, que só aceita bancos *_e2e). Assim os testes
+// não dependem do que ficou no banco de desenvolvimento nem o sujam.
+function databaseUrl(): string {
+	if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+	try {
+		const line = readFileSync('../.env', 'utf8')
+			.split(/\r?\n/)
+			.find((l) => l.startsWith('DATABASE_URL='));
+		if (line) return line.slice('DATABASE_URL='.length).trim();
+	} catch {
+		// sem .env: usa o padrão do README
+	}
+	return 'postgres://ro_lobby:ro_lobby_dev@localhost:5432/ro_lobby?sslmode=disable';
+}
+const e2eDatabase = new URL(databaseUrl());
+e2eDatabase.pathname = '/ro_lobby_e2e';
+export const E2E_DATABASE_URL = e2eDatabase.toString();
 
 export default defineConfig({
 	testDir: 'test/e2e',
@@ -32,9 +52,10 @@ export default defineConfig({
 			timeout: 120_000
 		},
 		{
-			command: 'go run ./cmd/api',
+			command: 'go run ./cmd/migrate fresh && go run ./cmd/api',
 			cwd: '../backend',
 			env: {
+				DATABASE_URL: E2E_DATABASE_URL,
 				DISCORD_CLIENT_ID: discordApp.clientId,
 				DISCORD_CLIENT_SECRET: discordApp.clientSecret,
 				DISCORD_API_BASE_URL: `${fakeDiscord}/api`
