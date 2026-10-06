@@ -1,7 +1,7 @@
 # Tasks — Candidatura a lobby (Parte 1)
 
 - Spec: `./spec.md` · Design: `./design.md`
-- Notion: <link do Épico>
+- Notion: [Épico](https://app.notion.com/p/3ead4a3a5eff810bb7f4eae87f4ab3b2)
 - Branch: `feature/candidatura`
 
 ## US-01 a US-04 — Base no backend
@@ -15,7 +15,7 @@
   ativa única por Usuário e lobby, os `CHECK` de estado, mensagem e justificativa, o
   histórico e as contagens de ocupantes e pendentes do lobby.
 - Commit:
-- Notion:
+- Notion: https://app.notion.com/p/3f1d4a3a5eff81ff98bacdd773c4fcab
 
 ### T-02 — Serviço de candidaturas  [ ]
 - Cobre: RN-01 a RN-13, RN-16, RN-17, RN-18, RN-30, CA-01.1 a CA-01.11, CA-02.1 a
@@ -27,7 +27,7 @@
   na última vaga; expiração pelo início e pelo cancelamento; edição de lobby com as vagas
   dos membros; histórico de transições.
 - Commit:
-- Notion:
+- Notion: https://app.notion.com/p/3f1d4a3a5eff81a59565f3ba1b15babb
 
 ### T-03 — Travas do personagem com candidatura  [P] [ ]
 - Cobre: RN-25, RN-26, CA-09.1 a CA-09.4
@@ -37,7 +37,7 @@
 - Pronto quando: testes de integração passam para nível e função travados (dono,
   pendente, aceito), outros campos livres, exclusão travada e liberada depois do início.
 - Commit:
-- Notion:
+- Notion: https://app.notion.com/p/3f1d4a3a5eff8116b56bc051fba37594
 
 ### T-04 — Contrato e rotas, com o detalhe conforme quem olha  [ ]
 - Cobre: RN-28, RN-29, RN-32, RNF-02, CA-03.1, CA-03.7, CA-03.8, CA-10.2, CA-10.3, D-06,
@@ -48,7 +48,7 @@
   testes das rotas passam para cada papel (dono, membro, candidato, visitante) e cada
   erro (401, 404, 409 com código, 422).
 - Commit:
-- Notion:
+- Notion: https://app.notion.com/p/3f1d4a3a5eff81a4ad7fc17a3e00df60
 
 ## US-01, US-02, US-10 — Tela do lobby
 
@@ -61,7 +61,7 @@
   diálogo de candidatura (personagens habilitados e motivos), aceitar, recusar com
   justificativa, retirar e as mensagens de cada código de erro.
 - Commit:
-- Notion:
+- Notion: https://app.notion.com/p/3f1d4a3a5eff81018cc5ebd9f412b538
 
 ## US-03, US-10 — Acompanhamento
 
@@ -74,7 +74,7 @@
 - Pronto quando: testes Vitest passam para a lista com estados e justificativa, retirar,
   o item no menu, o selo só para o dono e a mensagem nova da trava.
 - Commit:
-- Notion:
+- Notion: https://app.notion.com/p/3f1d4a3a5eff8148a136db1b1c93af05
 
 ## US-01 a US-04, US-10 — Ponta a ponta
 
@@ -88,7 +88,7 @@
   candidaturas", o selo, o painel com e sem Discord, a trava de nível no perfil e a
   expiração pelo cancelamento.
 - Commit:
-- Notion:
+- Notion: https://app.notion.com/p/3f1d4a3a5eff81c19f88f4b7d49eaaad
 
 ## Matriz de cobertura (Parte 1)
 | Critério | Tasks |
