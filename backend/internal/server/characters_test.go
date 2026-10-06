@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -188,12 +189,15 @@ func TestCharacters_DeleteAndSetMainAre204(t *testing.T) {
 	}
 }
 
-// Erro inesperado do serviço vira 500, sem detalhes no corpo.
-func TestCharacters_UnexpectedErrorIs500(t *testing.T) {
+// RN-21: erro inesperado do serviço vira 500, sem detalhes no corpo.
+func TestCharacters_RN21_UnexpectedErrorIs500(t *testing.T) {
 	f := &fakeChars{err: errors.New("banco caiu")}
 	rec, _ := call(t, newCharsServer(f), http.MethodGet, "/characters", "token-valido", "")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("status %d", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), "banco caiu") {
+		t.Errorf("o corpo vazou o erro interno: %q", rec.Body)
 	}
 }
 

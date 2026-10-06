@@ -63,7 +63,9 @@ func TestAuthorize_CA04_1_DenyRedirectsWithError(t *testing.T) {
 	}
 }
 
-func TestAuthorize_AllowRedirectsWithCode(t *testing.T) {
+// RNF-04 (login-discord): o falso imita a autorização; "Autorizar" volta ao redirect_uri
+// com o code e o state.
+func TestAuthorize_RNF04_AllowRedirectsWithCode(t *testing.T) {
 	_, srv := newServer(t)
 	form := url.Values{"redirect_uri": {"http://localhost:3000/cb"}, "state": {"abc"}, "decision": {"allow"}}
 	_, header := do(t, noRedirect(), http.MethodPost, srv.URL+"/oauth2/authorize", "application/x-www-form-urlencoded", form.Encode())
@@ -105,8 +107,8 @@ func TestAuthorize_D11_ChooseAnotherUser(t *testing.T) {
 	}
 }
 
-// O endpoint de token recusa JSON, como o Discord de verdade.
-func TestToken_RejectsJSON(t *testing.T) {
+// RNF-04 (login-discord): o endpoint de token recusa JSON, como o Discord de verdade.
+func TestToken_RNF04_RejectsJSON(t *testing.T) {
 	_, srv := newServer(t)
 	status, _ := do(t, http.DefaultClient, http.MethodPost, srv.URL+"/api/oauth2/token", "application/json", `{}`)
 	if status != http.StatusUnsupportedMediaType {

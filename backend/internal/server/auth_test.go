@@ -102,11 +102,15 @@ func TestAuthDiscord_CA04_5_DiscordUnavailable(t *testing.T) {
 	}
 }
 
-func TestAuthDiscord_UnexpectedErrorIs500(t *testing.T) {
+// RN-13 (login-discord): uma falha inesperada no login responde 500, sem sessão.
+func TestAuthDiscord_RN13_UnexpectedErrorIs500(t *testing.T) {
 	rec, _ := call(t, newAuthServer(&fakeAuth{loginErr: errors.New("banco caiu")}), http.MethodPost, "/auth/discord", "",
 		`{"code":"x","redirectUri":"http://localhost:3000/cb"}`)
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), "banco caiu") {
+		t.Errorf("o corpo vazou o erro interno: %q", rec.Body)
 	}
 }
 
