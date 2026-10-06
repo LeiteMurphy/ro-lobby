@@ -113,7 +113,12 @@ func (q *Queries) CreateLobby(ctx context.Context, arg CreateLobbyParams) (pgtyp
 const getLobby = `-- name: GetLobby :one
 SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at,
        c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
-       u.username AS owner_username, u.global_name AS owner_global_name
+       u.username AS owner_username, u.global_name AS owner_global_name,
+       -- D-03 (candidatura): membros aceitos por função e pendentes.
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'tank') AS accepted_tank,
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'support') AS accepted_support,
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'dps') AS accepted_dps,
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'pending') AS pending_count
 FROM lobbies
 JOIN users u ON u.id = lobbies.owner_id
 LEFT JOIN characters c ON c.id = lobbies.owner_character_id
@@ -128,6 +133,10 @@ type GetLobbyRow struct {
 	OwnerPortrait   pgtype.Text
 	OwnerUsername   string
 	OwnerGlobalName pgtype.Text
+	AcceptedTank    int64
+	AcceptedSupport int64
+	AcceptedDps     int64
+	PendingCount    int64
 }
 
 // RN-15: o lobby em qualquer estado, com o personagem e o Discord do dono.
@@ -157,6 +166,10 @@ func (q *Queries) GetLobby(ctx context.Context, id pgtype.UUID) (GetLobbyRow, er
 		&i.OwnerPortrait,
 		&i.OwnerUsername,
 		&i.OwnerGlobalName,
+		&i.AcceptedTank,
+		&i.AcceptedSupport,
+		&i.AcceptedDps,
+		&i.PendingCount,
 	)
 	return i, err
 }
@@ -197,30 +210,34 @@ func (q *Queries) GetOwnLobbyForUpdate(ctx context.Context, arg GetOwnLobbyForUp
 
 const hasScheduleConflict = `-- name: HasScheduleConflict :one
 SELECT EXISTS (
-    SELECT 1 FROM lobbies
-    WHERE owner_character_id = $1
-      AND cancelled_at IS NULL
-      AND id IS DISTINCT FROM $2
-      AND starts_at > $3
-      AND starts_at < $4
+    SELECT 1 FROM lobbies l
+    WHERE l.cancelled_at IS NULL
+      AND l.id IS DISTINCT FROM $1
+      AND l.starts_at > $2
+      AND l.starts_at < $3
+      AND (l.owner_character_id = $4
+           OR EXISTS (SELECT 1 FROM applications a
+                      WHERE a.lobby_id = l.id AND a.character_id = $4
+                        AND a.status = 'accepted'))
 )
 `
 
 type HasScheduleConflictParams struct {
-	CharacterID pgtype.UUID
 	ExcludeID   pgtype.UUID
 	WindowStart time.Time
 	WindowEnd   time.Time
+	CharacterID pgtype.UUID
 }
 
-// RN-10 / D-03: outro lobby não cancelado do mesmo personagem com início dentro da
-// janela (início - 2 h, início + 2 h), calculada pelo serviço.
+// RN-10 da lobbies e RN-11 da candidatura (D-03 e D-04): outro lobby não cancelado, com
+// início dentro da janela (início - 2 h, início + 2 h) calculada pelo serviço, em que o
+// personagem é dono ou membro aceito.
 func (q *Queries) HasScheduleConflict(ctx context.Context, arg HasScheduleConflictParams) (bool, error) {
 	row := q.db.QueryRow(ctx, hasScheduleConflict,
-		arg.CharacterID,
 		arg.ExcludeID,
 		arg.WindowStart,
 		arg.WindowEnd,
+		arg.CharacterID,
 	)
 	var exists bool
 	err := row.Scan(&exists)
@@ -230,7 +247,12 @@ func (q *Queries) HasScheduleConflict(ctx context.Context, arg HasScheduleConfli
 const listOpenLobbies = `-- name: ListOpenLobbies :many
 SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at,
        c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
-       u.username AS owner_username, u.global_name AS owner_global_name
+       u.username AS owner_username, u.global_name AS owner_global_name,
+       -- D-03 (candidatura): membros aceitos por função e pendentes.
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'tank') AS accepted_tank,
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'support') AS accepted_support,
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'dps') AS accepted_dps,
+       (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'pending') AS pending_count
 FROM lobbies
 JOIN users u ON u.id = lobbies.owner_id
 LEFT JOIN characters c ON c.id = lobbies.owner_character_id
@@ -255,6 +277,10 @@ type ListOpenLobbiesRow struct {
 	OwnerPortrait   pgtype.Text
 	OwnerUsername   string
 	OwnerGlobalName pgtype.Text
+	AcceptedTank    int64
+	AcceptedSupport int64
+	AcceptedDps     int64
+	PendingCount    int64
 }
 
 // RN-13 / RN-14: só abertos (não cancelados e ainda não iniciados), por início.
@@ -290,6 +316,10 @@ func (q *Queries) ListOpenLobbies(ctx context.Context, arg ListOpenLobbiesParams
 			&i.OwnerPortrait,
 			&i.OwnerUsername,
 			&i.OwnerGlobalName,
+			&i.AcceptedTank,
+			&i.AcceptedSupport,
+			&i.AcceptedDps,
+			&i.PendingCount,
 		); err != nil {
 			return nil, err
 		}
