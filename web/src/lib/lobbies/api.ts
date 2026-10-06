@@ -27,10 +27,13 @@ export function listLobbies(fetchFn: typeof fetch, apiBaseUrl: string, from: str
 	return request<ApiLobby[]>(publicCall(fetchFn, apiBaseUrl), 'GET', `/lobbies?${query}`);
 }
 
-/** RN-15: o lobby em qualquer estado, sem sessão. */
-export function getLobby(fetchFn: typeof fetch, apiBaseUrl: string, id: string) {
+/**
+ * RN-15: o lobby em qualquer estado. A sessão é opcional e muda o que vem: membros com
+ * Discord, pendentes e a própria candidatura (D-06 da candidatura-lobby).
+ */
+export function getLobby(fetchFn: typeof fetch, apiBaseUrl: string, id: string, token = '') {
 	return request<ApiLobby>(
-		publicCall(fetchFn, apiBaseUrl),
+		{ fetchFn, apiBaseUrl, token },
 		'GET',
 		`/lobbies/${encodeURIComponent(id)}`
 	);

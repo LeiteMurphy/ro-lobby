@@ -1,13 +1,24 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import ApplyDialog from '$lib/applications/components/ApplyDialog.svelte';
+	import PlayerPanel from '$lib/applications/components/PlayerPanel.svelte';
+	import RejectDialog from '$lib/applications/components/RejectDialog.svelte';
+	import {
+		applyState,
+		composition,
+		eligibility,
+		HOST_KEY,
+		people,
+		type Person
+	} from '$lib/applications/detail';
 	import { buildDays } from '$lib/home/days';
 	import { instanceArt, ROLE_ICONS } from '$lib/home/catalog';
 	import TopBar from '$lib/home/components/TopBar.svelte';
 	import { relativeLabel, zonedNow } from '$lib/home/time';
-	import { ROLE_LABELS, ROLES, type Role } from '$lib/home/types';
+	import { ROLE_LABELS } from '$lib/home/types';
 	import CancelDialog from '$lib/lobbies/components/CancelDialog.svelte';
 	import { fromUtcIso } from '$lib/lobbies/time';
-	import { DELETED_CHARACTER } from '$lib/lobbies/toHome';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { PageProps } from './$types';
@@ -29,39 +40,45 @@
 	} as const;
 	const STATUS_LABELS = { open: 'Aberto', started: 'Iniciado', cancelled: 'Cancelado' } as const;
 
-	// RN-15: as vagas de cada função, com o personagem do dono na vaga da função dele.
-	type Slot = { owner: boolean };
-	const rows = $derived(
-		ROLES.map((role: Role) => ({
-			role,
-			total: lobby.slots[role],
-			filled: lobby.occupied[role],
-			slots: Array.from({ length: lobby.slots[role] }, (_, i): Slot => ({
-				owner: role === lobby.owner.role && i === 0
-			}))
-		}))
-	);
-	const ownerName = $derived(lobby.owner.nick ?? DELETED_CHARACTER);
+	// RN-15 / D-03: as vagas de cada função com o anfitrião e os membros aceitos.
+	const list = $derived(people(lobby));
+	const rows = $derived(composition(lobby, list));
+	const candidates = $derived(list.filter((p) => p.kind === 'candidate'));
 	const art = $derived(instanceArt(lobby.instance.name));
-	const ownerPortrait = $derived(
-		lobby.owner.portrait ? `/portraits/${lobby.owner.portrait}.svg` : null
-	);
-	const ownerClassLevel = $derived(
-		[data.ownerClass, lobby.owner.level ? `Nv ${lobby.owner.level}` : null]
-			.filter(Boolean)
-			.join(' · ')
-	);
+	const viewerState = $derived(applyState(lobby, data.user?.id ?? null));
+	const canDecide = $derived(data.isOwner && lobby.status === 'open');
 
-	let cancelOpen = $state(false);
-	let cancelKey = $state(0);
+	// RN-31: a pessoa do painel da direita; começa no anfitrião e volta para ele se a
+	// escolhida sair da lista (aceita, recusada ou retirada).
+	let selectedKey = $state(HOST_KEY);
+	const selected = $derived(list.find((p) => p.key === selectedKey) ?? list[0]);
+	const classLevel = (p: Person) =>
+		[p.classId ? (data.classNames[p.classId] ?? p.classId) : null, p.level ? `Nv ${p.level}` : null]
+			.filter(Boolean)
+			.join(' · ');
+
 	// O erro de uma tentativa só volta para o diálogo da mesma abertura (AJ-04).
 	let staleForm = $state.raw<typeof form>(null);
-	const openCancel = () => {
+	const freshForm = $derived(form && form !== staleForm && 'action' in form ? form : null);
+	const formOf = <A extends string>(action: A) =>
+		freshForm?.action === action ? (freshForm as Extract<typeof freshForm, { action: A }>) : null;
+
+	let cancelOpen = $state(false);
+	let applyOpen = $state(false);
+	let rejecting = $state<Person | null>(null);
+	let dialogKey = $state(0);
+	const open = (set: () => void) => {
 		staleForm = form;
-		cancelKey++;
-		cancelOpen = true;
+		dialogKey++;
+		set();
 	};
-	const cancelForm = $derived(form && form !== staleForm && 'errors' in form ? form : null);
+	const cancelForm = $derived(formOf('cancel'));
+	const applyForm = $derived(formOf('apply'));
+	const rejectForm = $derived(formOf('reject'));
+	// Erros de aceitar e retirar aparecem num aviso na página.
+	const pageError = $derived(formOf('accept')?.message ?? formOf('withdraw')?.message ?? null);
+	const options = $derived(eligibility(lobby, data.characters));
+	const mine = $derived(lobby.myApplication);
 </script>
 
 <svelte:head>
@@ -90,20 +107,31 @@
 					<span>Nível mínimo <b>{lobby.minLevel}</b></span>
 					{#if lobby.instance.reset}<span>{RESET_LABELS[lobby.instance.reset]}</span>{/if}
 					<span><b>{occupied} de {total}</b> vagas ocupadas</span>
+					{#if data.isOwner && lobby.pendingCount > 0}
+						<!-- RN-34: o selo de pendentes é do dono. -->
+						<span class="pill pill--pend" data-testid="pending-badge"
+							>{lobby.pendingCount} {lobby.pendingCount === 1 ? 'pendente' : 'pendentes'}</span
+						>
+					{/if}
 				</div>
 			</div>
 			{#if lobby.status === 'open'}
 				<div class="acts">
-					{#if data.isOwner}
+					{#if viewerState === 'owner'}
 						<Button
 							variant="secondary"
 							iconLeft="pencil"
 							href={resolve('/lobbies/[id]/editar', { id: lobby.id })}>Editar</Button
 						>
-						<Button variant="outline" class="danger" onclick={openCancel}>Cancelar lobby</Button>
-					{:else}
-						<!-- RN-16: a candidatura entra na feature seguinte. -->
-						<Button iconLeft="user-plus" soon>Candidatar</Button>
+						<Button variant="outline" class="danger" onclick={() => open(() => (cancelOpen = true))}
+							>Cancelar lobby</Button
+						>
+					{:else if viewerState === 'login'}
+						<Button iconLeft="log-in" href={data.loginHref}>Entrar para se candidatar</Button>
+					{:else if viewerState === 'apply'}
+						<Button iconLeft="user-plus" onclick={() => open(() => (applyOpen = true))}
+							>Candidatar</Button
+						>
 					{/if}
 				</div>
 			{/if}
@@ -113,6 +141,39 @@
 			<div class="banner" role="status">
 				<span class="over">Motivo do cancelamento</span>
 				<span>{lobby.cancelReason}</span>
+			</div>
+		{/if}
+
+		{#if pageError}<p class="page-error" role="alert">{pageError}</p>{/if}
+		{#if form && 'done' in form && form.done === 'apply'}
+			<p class="page-ok" role="status">Candidatura enviada. O anfitrião vai aceitar ou recusar.</p>
+		{/if}
+
+		{#if mine && viewerState !== 'owner'}
+			<!-- RN-29 / RN-13: a própria candidatura, com a justificativa e o botão de retirar. -->
+			<div class="mine mine--{mine.status}" data-testid="my-application" role="status">
+				{#if mine.status === 'pending'}
+					<span><b>Sua candidatura está pendente.</b> O anfitrião ainda não decidiu.</span>
+					{#if lobby.status === 'open'}
+						<form method="POST" action="?/withdraw" use:enhance>
+							<input type="hidden" name="applicationId" value={mine.id} />
+							<Button type="submit" variant="secondary" size="sm">Retirar candidatura</Button>
+						</form>
+					{/if}
+				{:else if mine.status === 'accepted'}
+					<span><b>Você está no grupo.</b> Combine os detalhes com o anfitrião no Discord.</span>
+				{:else if mine.status === 'rejected'}
+					<span class="col"
+						><b>Sua candidatura foi recusada.</b>{#if mine.reason}<span
+								>Justificativa: {mine.reason}</span
+							>{/if}</span
+					>
+				{:else if mine.status === 'withdrawn'}
+					<span>Você retirou sua candidatura. Pode se candidatar de novo enquanto houver vaga.</span
+					>
+				{:else if mine.status === 'expired'}
+					<span>Sua candidatura expirou sem decisão.</span>
+				{/if}
 			</div>
 		{/if}
 
@@ -127,25 +188,34 @@
 							>
 							<span class="hint">{r.total === 0 ? 'Sem vagas' : `${r.filled} de ${r.total}`}</span>
 						</div>
-						{#if r.total > 0}
+						{#if r.slots.length > 0}
 							<ul class="slots">
-								{#each r.slots as s, i (i)}
-									{#if s.owner}
-										<li class="slot filled slot--{r.role}" data-testid="owner-slot">
-											{#if ownerPortrait}<img
-													class="portrait"
-													src={ownerPortrait}
-													alt=""
-													width="52"
-													height="52"
-												/>{/if}
-											<span class="who">
-												<span class="nm">{ownerName}</span>
-												{#if ownerClassLevel}<span class="sub">{ownerClassLevel}</span>{/if}
-												<span class="tag tag--{r.role}"
-													><Icon name="star" size={11} />Anfitrião</span
-												>
-											</span>
+								{#each r.slots as p, i (p?.key ?? `open-${i}`)}
+									{#if p}
+										<li>
+											<button
+												type="button"
+												class="slot filled slot--{r.role}"
+												class:sel={selected.key === p.key}
+												aria-pressed={selected.key === p.key}
+												data-testid={p.kind === 'host' ? 'owner-slot' : 'member-slot'}
+												onclick={() => (selectedKey = p.key)}
+											>
+												{#if p.portrait}<img
+														class="portrait"
+														src="/portraits/{p.portrait}.svg"
+														alt=""
+														width="52"
+														height="52"
+													/>{/if}
+												<span class="who">
+													<span class="nm">{p.nick}</span>
+													{#if classLevel(p)}<span class="sub">{classLevel(p)}</span>{/if}
+													{#if p.kind === 'host'}<span class="tag tag--{r.role}"
+															><Icon name="star" size={11} />Anfitrião</span
+														>{/if}
+												</span>
+											</button>
 										</li>
 									{:else}
 										<li class="slot slot--{r.role}">
@@ -161,31 +231,62 @@
 						{/if}
 					</div>
 				{/each}
+
+				{#if data.isOwner && lobby.status === 'open'}
+					<div class="pending" data-testid="pending-list">
+						<div class="rolehead">
+							<span class="role">Candidaturas pendentes</span>
+							<span class="hint">só você vê</span>
+						</div>
+						{#if candidates.length === 0}
+							<span class="hint">Nenhuma candidatura pendente.</span>
+						{:else}
+							<ul class="slots">
+								{#each candidates as p (p.key)}
+									<li>
+										<button
+											type="button"
+											class="slot cand"
+											class:sel={selected.key === p.key}
+											aria-pressed={selected.key === p.key}
+											data-testid="candidate"
+											onclick={() => (selectedKey = p.key)}
+										>
+											{#if p.portrait}<img
+													class="portrait"
+													src="/portraits/{p.portrait}.svg"
+													alt=""
+													width="52"
+													height="52"
+												/>{/if}
+											<span class="who">
+												<span class="nm">{p.nick}</span>
+												<span class="sub"
+													>{[classLevel(p), ROLE_LABELS[p.role]].filter(Boolean).join(' · ')}</span
+												>
+											</span>
+										</button>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</div>
+				{:else if lobby.pendingCount > 0}
+					<!-- RN-28: os outros veem só a quantidade. -->
+					<span class="hint" data-testid="pending-count"
+						>{lobby.pendingCount}
+						{lobby.pendingCount === 1 ? 'candidatura pendente' : 'candidaturas pendentes'}</span
+					>
+				{/if}
 			</section>
 
 			<div class="side">
-				<section class="panel" aria-labelledby="host-title">
-					<h2 id="host-title">Anfitrião</h2>
-					<div class="host">
-						{#if ownerPortrait}<img
-								class="portrait"
-								src={ownerPortrait}
-								alt=""
-								width="56"
-								height="56"
-							/>{/if}
-						<span class="who"
-							><span class="nm big">{ownerName}</span><span class="sub"
-								>{ROLE_LABELS[lobby.owner.role]}</span
-							></span
-						>
-					</div>
-					<div class="kv"><span>Personagem</span><b>{ownerName}</b></div>
-					{#if ownerClassLevel}
-						<div class="kv"><span>Classe</span><b>{ownerClassLevel}</b></div>
-					{/if}
-					<div class="kv"><span>Discord</span><b>{lobby.owner.discordName}</b></div>
-				</section>
+				<PlayerPanel
+					person={selected}
+					classNames={data.classNames}
+					{canDecide}
+					onreject={(p) => open(() => (rejecting = p))}
+				/>
 				{#if lobby.note}
 					<section class="panel" aria-labelledby="note-title">
 						<h2 id="note-title">Observação</h2>
@@ -197,8 +298,8 @@
 	</main>
 </div>
 
-{#if cancelOpen}
-	{#key cancelKey}
+{#key dialogKey}
+	{#if cancelOpen}
 		<CancelDialog
 			title="{lobby.instance.name}, {dayLabel} às {when.time}"
 			reason={cancelForm?.reason ?? ''}
@@ -206,8 +307,30 @@
 			message={cancelForm?.message ?? null}
 			onclose={() => (cancelOpen = false)}
 		/>
-	{/key}
-{/if}
+	{/if}
+	{#if applyOpen}
+		<ApplyDialog
+			title="{lobby.instance.name} · {dayLabel} às {when.time} · nível mínimo {lobby.minLevel}"
+			{options}
+			classNames={data.classNames}
+			characterId={applyForm?.characterId ?? ''}
+			message={applyForm?.text ?? ''}
+			errors={applyForm?.errors ?? {}}
+			formError={applyForm?.message ?? null}
+			onclose={() => (applyOpen = false)}
+		/>
+	{/if}
+	{#if rejecting && rejecting.applicationId}
+		<RejectDialog
+			applicationId={rejecting.applicationId}
+			nick={rejecting.nick}
+			reason={rejectForm?.reason ?? ''}
+			error={rejectForm?.errors?.reason ?? null}
+			message={rejectForm?.message ?? null}
+			onclose={() => (rejecting = null)}
+		/>
+	{/if}
+{/key}
 
 <style>
 	/* O fundo é o céu do design system, como na Home (vem do body). */
@@ -498,25 +621,6 @@
 		color: var(--gold-300);
 		font: 600 11px/1 var(--font-ui);
 	}
-	.host {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		padding-bottom: 4px;
-		border-bottom: 1px solid var(--border-subtle);
-	}
-	.kv {
-		display: flex;
-		justify-content: space-between;
-		gap: 12px;
-		font: 500 13px/1.3 var(--font-ui);
-		color: var(--fg-3);
-	}
-	.kv b {
-		color: var(--fg-1);
-		font-weight: 600;
-		text-align: right;
-	}
 	.note {
 		margin: 0;
 		padding: 12px 14px;
@@ -525,5 +629,102 @@
 		color: var(--fg-2);
 		font: 400 14px/1.45 var(--font-ui);
 		overflow-wrap: anywhere;
+	}
+	button.slot {
+		width: 100%;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		transition: box-shadow var(--dur-fast, 120ms) ease;
+	}
+	button.slot:hover {
+		box-shadow: 0 0 0 1px var(--gold-line);
+	}
+	button.slot:focus-visible {
+		outline: 2px solid var(--gold-400);
+		outline-offset: 2px;
+	}
+	/* RN-31: o card escolhido fica com o anel âmbar (Candidatura 1a). */
+	.slot.sel,
+	button.slot.sel:hover {
+		box-shadow:
+			0 0 0 2px var(--gold-400),
+			var(--shadow-glow-gold);
+	}
+	.slots > li {
+		display: flex;
+	}
+	.slot.cand {
+		border: 1px solid var(--gold-line);
+		background: var(--gold-soft);
+	}
+	.pending {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding-top: 10px;
+		border-top: 1px solid var(--border-subtle);
+	}
+	.pill {
+		display: inline-flex;
+		align-items: center;
+		height: 22px;
+		padding: 0 8px;
+		border-radius: 999px;
+		font: 600 11px/1 var(--font-ui);
+	}
+	.pill--pend {
+		background: var(--gold-soft);
+		color: var(--gold-300);
+	}
+	.mine {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px 16px;
+		padding: 12px 16px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--panel-border);
+		background: var(--panel-bg);
+		color: var(--fg-2);
+		font: 500 14px/1.4 var(--font-ui);
+	}
+	.mine b {
+		color: var(--fg-1);
+	}
+	.mine form {
+		margin: 0;
+	}
+	.mine--pending {
+		border-color: var(--gold-line);
+	}
+	.mine--accepted {
+		border-color: var(--support-line);
+	}
+	.mine--rejected {
+		border-color: rgba(240, 100, 140, 0.4);
+	}
+	.col {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		overflow-wrap: anywhere;
+	}
+	.page-error,
+	.page-ok {
+		margin: 0;
+		padding: 10px 14px;
+		border-radius: var(--radius-sm);
+		font: 500 13px/1.3 var(--font-ui);
+	}
+	.page-error {
+		background: rgba(240, 100, 140, 0.12);
+		color: var(--status-error);
+	}
+	.page-ok {
+		background: rgba(79, 179, 161, 0.14);
+		color: var(--support-300);
 	}
 </style>

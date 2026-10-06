@@ -6,7 +6,7 @@
 
 ## US-01 a US-04 — Base no backend
 
-### T-01 — Tabelas de candidatura e histórico, e ocupantes do lobby  [ ]
+### T-01 — Tabelas de candidatura e histórico, e ocupantes do lobby  [x]
 - Cobre: RN-02, RN-06, RN-09, RN-17, RN-18, D-01, D-03
 - Depende de: —
 - Arquivos: `backend/migrations/00005_applications.sql`, `backend/queries/applications.sql`,
@@ -14,10 +14,10 @@
 - Pronto quando: a migração aplica e reverte; testes de integração provam a candidatura
   ativa única por Usuário e lobby, os `CHECK` de estado, mensagem e justificativa, o
   histórico e as contagens de ocupantes e pendentes do lobby.
-- Commit:
+- Commit: de97202
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81ff98bacdd773c4fcab
 
-### T-02 — Serviço de candidaturas  [ ]
+### T-02 — Serviço de candidaturas  [x]
 - Cobre: RN-01 a RN-13, RN-16, RN-17, RN-18, RN-30, CA-01.1 a CA-01.11, CA-02.1 a
   CA-02.12, CA-03.2 a CA-03.6, CA-04.1 a CA-04.3, D-02, D-04, D-05
 - Depende de: T-01
@@ -26,20 +26,20 @@
   recusa e retirada; conflito com a janela de 2 h (dono e membro); aceites simultâneos
   na última vaga; expiração pelo início e pelo cancelamento; edição de lobby com as vagas
   dos membros; histórico de transições.
-- Commit:
+- Commit: 1670dec
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81a59565f3ba1b15babb
 
-### T-03 — Travas do personagem com candidatura  [P] [ ]
+### T-03 — Travas do personagem com candidatura  [P] [x]
 - Cobre: RN-25, RN-26, CA-09.1 a CA-09.4
 - Depende de: T-01
 - Paralelizável: [P] com T-02 (pacote diferente)
 - Arquivos: `backend/internal/characters/`, `backend/queries/characters.sql`
 - Pronto quando: testes de integração passam para nível e função travados (dono,
   pendente, aceito), outros campos livres, exclusão travada e liberada depois do início.
-- Commit:
+- Commit: 96cf0f8
 - Notion: https://app.notion.com/p/3f1d4a3a5eff8116b56bc051fba37594
 
-### T-04 — Contrato e rotas, com o detalhe conforme quem olha  [ ]
+### T-04 — Contrato e rotas, com o detalhe conforme quem olha  [x]
 - Cobre: RN-28, RN-29, RN-32, RNF-02, CA-03.1, CA-03.7, CA-03.8, CA-10.2, CA-10.3, D-06,
   D-07
 - Depende de: T-02, T-03
@@ -47,7 +47,7 @@
 - Pronto quando: o contrato descreve as rotas novas e o `Lobby` com membros e pendentes;
   testes das rotas passam para cada papel (dono, membro, candidato, visitante) e cada
   erro (401, 404, 409 com código, 422).
-- Commit:
+- Commit: 484240b
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81a4ad7fc17a3e00df60
 
 ## US-01, US-02, US-10 — Tela do lobby
@@ -106,4 +106,9 @@
 Os 43 critérios da Parte 1 estão cobertos.
 
 ## Descobertas
-- Nenhuma até agora.
+- T-02: a spec não diz se o dono pode subir o nível mínimo acima do nível de um membro
+  já aceito. Hoje pode (o membro continua no grupo; o mínimo novo vale para os próximos
+  aceites, RN-30). Fica para decidir com o usuário.
+- T-05: o botão "Candidatar" do card na Home continua "Disponível em breve" (RN-18 da
+  home-local); a candidatura acontece no detalhe do lobby, que o card já abre. Fica para
+  decidir com o usuário se o botão do card vira um atalho para o detalhe.
