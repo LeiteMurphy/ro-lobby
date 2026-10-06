@@ -42,7 +42,7 @@ func TestInstances_CA06_1_GroupInstancesFromBROWiki(t *testing.T) {
 	}{
 		{"torre-da-constelacao", 240, ResetThreeDays},
 		{"templo-do-demonio-rei", 160, ResetDaily},
-		{"sarah-vs-fenril", 145, ResetWeekly},
+		{"sarah-vs-fenrir", 145, ResetWeekly},
 		{"altar-do-selo", 75, ResetHours},
 		{"vila-dos-porings", 30, ResetDaily},
 	} {

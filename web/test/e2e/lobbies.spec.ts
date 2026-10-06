@@ -217,6 +217,13 @@ test.describe('lobbies', () => {
 		await expect(page).toHaveURL(url);
 		await expect(page.getByRole('main')).toContainText(`${dayLabel(5)} · 21:00`);
 		await expect(page.getByText('0 de 5')).toBeVisible();
+		// A Home também mostra o horário e as vagas novas.
+		await page.goto('/');
+		await page.getByRole('tablist', { name: 'Dias' }).getByRole('tab').nth(5).click();
+		const edited = page.getByTestId('lobby-card').filter({ hasText: character.nick });
+		await expect(edited).toContainText('21:00');
+		await expect(edited).toContainText('1/8');
+		await page.goto(url);
 
 		// CA-05.1: cancelar com motivo curto, depois válido.
 		await page.getByRole('button', { name: 'Cancelar lobby' }).click();

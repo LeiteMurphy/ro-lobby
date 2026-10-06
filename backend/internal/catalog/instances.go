@@ -89,7 +89,7 @@ var instances = []Instance{
 	{ID: "tumulo-do-monarca", Name: "Túmulo do Monarca", Level: 99, Reset: ResetWeekly},
 	{ID: "hospital-abandonado", Name: "Hospital Abandonado", Level: 100, Reset: ResetWeekly},
 	{ID: "lago-de-bakonawa", Name: "Lago de Bakonawa", Level: 140, Reset: ResetWeekly},
-	{ID: "sarah-vs-fenril", Name: "Sarah vs Fenril", Level: 145, Reset: ResetWeekly},
+	{ID: "sarah-vs-fenrir", Name: "Sarah vs Fenrir", Level: 145, Reset: ResetWeekly},
 }
 
 var instanceByID = func() map[string]Instance {
