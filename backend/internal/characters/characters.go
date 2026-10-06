@@ -39,6 +39,9 @@ var (
 	ErrNotFound = errors.New("characters: personagem não encontrado")
 	// ErrLimitReached: o Usuário já tem MaxPerUser personagens (RN-11).
 	ErrLimitReached = errors.New("characters: limite de personagens atingido")
+	// ErrInOpenLobby: o personagem é dono de um lobby aberto e não pode ser excluído nem
+	// mudar de função (RN-21 da spec lobbies).
+	ErrInOpenLobby = errors.New("characters: personagem dono de lobby aberto")
 )
 
 // Campos e códigos de erro de validação (D-07). O web traduz para pt-BR.
@@ -185,20 +188,48 @@ func (s *Service) Update(ctx context.Context, userID, id string, in Input) (Char
 	if err != nil {
 		return Character{}, err
 	}
-	updated, err := s.queries.UpdateCharacter(ctx, db.UpdateCharacterParams{
-		ID:       cid,
-		UserID:   uid,
-		Nick:     in.Nick,
-		ClassID:  in.ClassID,
-		Level:    int16(in.Level), //nolint:gosec // Validate garante 1..275
-		Role:     in.Role,
-		Portrait: in.Portrait,
-		Link:     optionalText(in.Link),
+	// Em transação com o Usuário travado, para a checagem da RN-21 não correr contra a
+	// criação de um lobby (D-05 da spec lobbies).
+	var updated db.Character
+	err = s.inTx(ctx, uid, func(q *db.Queries) error {
+		current, err := q.GetOwnCharacter(ctx, db.GetOwnCharacterParams{ID: cid, UserID: uid})
+		if err != nil {
+			return err // pgx.ErrNoRows vira ErrNotFound (RN-02)
+		}
+		if current.Role != in.Role {
+			if err := s.checkNotInOpenLobby(ctx, q, cid); err != nil {
+				return err
+			}
+		}
+		updated, err = q.UpdateCharacter(ctx, db.UpdateCharacterParams{
+			ID:       cid,
+			UserID:   uid,
+			Nick:     in.Nick,
+			ClassID:  in.ClassID,
+			Level:    int16(in.Level), //nolint:gosec // Validate garante 1..275
+			Role:     in.Role,
+			Portrait: in.Portrait,
+			Link:     optionalText(in.Link),
+		})
+		return err
 	})
 	if err != nil {
 		return Character{}, translate(err, "editar")
 	}
 	return toCharacter(updated), nil
+}
+
+// checkNotInOpenLobby recusa mexer no personagem que é dono de um lobby aberto (RN-21 da
+// spec lobbies).
+func (s *Service) checkNotInOpenLobby(ctx context.Context, q *db.Queries, cid pgtype.UUID) error {
+	inLobby, err := q.CharacterOwnsOpenLobby(ctx, db.CharacterOwnsOpenLobbyParams{CharacterID: cid, Now: s.Now().UTC()})
+	if err != nil {
+		return err
+	}
+	if inLobby {
+		return ErrInOpenLobby
+	}
+	return nil
 }
 
 // Delete exclui o personagem do Usuário. Se era o principal, o mais antigo que sobrar
@@ -213,6 +244,12 @@ func (s *Service) Delete(ctx context.Context, userID, id string) error {
 		return ErrNotFound
 	}
 	err = s.inTx(ctx, uid, func(q *db.Queries) error {
+		if _, err := q.GetOwnCharacter(ctx, db.GetOwnCharacterParams{ID: cid, UserID: uid}); err != nil {
+			return err // pgx.ErrNoRows vira ErrNotFound (RN-02)
+		}
+		if err := s.checkNotInOpenLobby(ctx, q, cid); err != nil {
+			return err
+		}
 		wasMain, err := q.DeleteCharacter(ctx, db.DeleteCharacterParams{ID: cid, UserID: uid})
 		if err != nil {
 			return err
@@ -348,6 +385,8 @@ func translate(err error, action string) error {
 		return ErrNotFound
 	case errors.Is(err, ErrLimitReached):
 		return ErrLimitReached
+	case errors.Is(err, ErrInOpenLobby):
+		return ErrInOpenLobby
 	case errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == nickIndex:
 		return &ValidationError{Fields: []FieldError{{Field: FieldNick, Code: CodeTaken}}} // RN-05
 	default:

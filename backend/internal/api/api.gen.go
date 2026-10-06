@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -52,21 +53,33 @@ func (e ClassTier) Valid() bool {
 
 // Defines values for ErrorError.
 const (
-	ErrorErrorCharacterLimit     ErrorError = "character_limit"
-	ErrorErrorDiscordUnavailable ErrorError = "discord_unavailable"
-	ErrorErrorInvalidCode        ErrorError = "invalid_code"
-	ErrorErrorNoSession          ErrorError = "no_session"
-	ErrorErrorNotFound           ErrorError = "not_found"
+	ErrorErrorCharacterInOpenLobby ErrorError = "character_in_open_lobby"
+	ErrorErrorCharacterLimit       ErrorError = "character_limit"
+	ErrorErrorDiscordUnavailable   ErrorError = "discord_unavailable"
+	ErrorErrorInvalidCode          ErrorError = "invalid_code"
+	ErrorErrorInvalidRange         ErrorError = "invalid_range"
+	ErrorErrorLobbyLimit           ErrorError = "lobby_limit"
+	ErrorErrorLobbyNotOpen         ErrorError = "lobby_not_open"
+	ErrorErrorNoSession            ErrorError = "no_session"
+	ErrorErrorNotFound             ErrorError = "not_found"
 )
 
 // Valid indicates whether the value is a known member of the ErrorError enum.
 func (e ErrorError) Valid() bool {
 	switch e {
+	case ErrorErrorCharacterInOpenLobby:
+		return true
 	case ErrorErrorCharacterLimit:
 		return true
 	case ErrorErrorDiscordUnavailable:
 		return true
 	case ErrorErrorInvalidCode:
+		return true
+	case ErrorErrorInvalidRange:
+		return true
+	case ErrorErrorLobbyLimit:
+		return true
+	case ErrorErrorLobbyNotOpen:
 		return true
 	case ErrorErrorNoSession:
 		return true
@@ -79,22 +92,37 @@ func (e ErrorError) Valid() bool {
 
 // Defines values for FieldErrorCode.
 const (
-	FieldErrorCodeInvalid  FieldErrorCode = "invalid"
-	FieldErrorCodeRequired FieldErrorCode = "required"
-	FieldErrorCodeTaken    FieldErrorCode = "taken"
-	FieldErrorCodeTooLong  FieldErrorCode = "too_long"
+	FieldErrorCodeAboveOwner    FieldErrorCode = "above_owner"
+	FieldErrorCodeBelowOccupied FieldErrorCode = "below_occupied"
+	FieldErrorCodeConflict      FieldErrorCode = "conflict"
+	FieldErrorCodeInvalid       FieldErrorCode = "invalid"
+	FieldErrorCodeLevelTooLow   FieldErrorCode = "level_too_low"
+	FieldErrorCodeRequired      FieldErrorCode = "required"
+	FieldErrorCodeTaken         FieldErrorCode = "taken"
+	FieldErrorCodeTooLong       FieldErrorCode = "too_long"
+	FieldErrorCodeTooShort      FieldErrorCode = "too_short"
 )
 
 // Valid indicates whether the value is a known member of the FieldErrorCode enum.
 func (e FieldErrorCode) Valid() bool {
 	switch e {
+	case FieldErrorCodeAboveOwner:
+		return true
+	case FieldErrorCodeBelowOccupied:
+		return true
+	case FieldErrorCodeConflict:
+		return true
 	case FieldErrorCodeInvalid:
+		return true
+	case FieldErrorCodeLevelTooLow:
 		return true
 	case FieldErrorCodeRequired:
 		return true
 	case FieldErrorCodeTaken:
 		return true
 	case FieldErrorCodeTooLong:
+		return true
+	case FieldErrorCodeTooShort:
 		return true
 	default:
 		return false
@@ -103,28 +131,49 @@ func (e FieldErrorCode) Valid() bool {
 
 // Defines values for FieldErrorField.
 const (
-	FieldErrorFieldClassId  FieldErrorField = "classId"
-	FieldErrorFieldLevel    FieldErrorField = "level"
-	FieldErrorFieldLink     FieldErrorField = "link"
-	FieldErrorFieldNick     FieldErrorField = "nick"
-	FieldErrorFieldPortrait FieldErrorField = "portrait"
-	FieldErrorFieldRole     FieldErrorField = "role"
+	FieldErrorFieldCharacterId FieldErrorField = "characterId"
+	FieldErrorFieldClassId     FieldErrorField = "classId"
+	FieldErrorFieldInstanceId  FieldErrorField = "instanceId"
+	FieldErrorFieldLevel       FieldErrorField = "level"
+	FieldErrorFieldLink        FieldErrorField = "link"
+	FieldErrorFieldMinLevel    FieldErrorField = "minLevel"
+	FieldErrorFieldNick        FieldErrorField = "nick"
+	FieldErrorFieldNote        FieldErrorField = "note"
+	FieldErrorFieldPortrait    FieldErrorField = "portrait"
+	FieldErrorFieldReason      FieldErrorField = "reason"
+	FieldErrorFieldRole        FieldErrorField = "role"
+	FieldErrorFieldSlots       FieldErrorField = "slots"
+	FieldErrorFieldStartsAt    FieldErrorField = "startsAt"
 )
 
 // Valid indicates whether the value is a known member of the FieldErrorField enum.
 func (e FieldErrorField) Valid() bool {
 	switch e {
+	case FieldErrorFieldCharacterId:
+		return true
 	case FieldErrorFieldClassId:
+		return true
+	case FieldErrorFieldInstanceId:
 		return true
 	case FieldErrorFieldLevel:
 		return true
 	case FieldErrorFieldLink:
 		return true
+	case FieldErrorFieldMinLevel:
+		return true
 	case FieldErrorFieldNick:
+		return true
+	case FieldErrorFieldNote:
 		return true
 	case FieldErrorFieldPortrait:
 		return true
+	case FieldErrorFieldReason:
+		return true
 	case FieldErrorFieldRole:
+		return true
+	case FieldErrorFieldSlots:
+		return true
+	case FieldErrorFieldStartsAt:
 		return true
 	default:
 		return false
@@ -161,6 +210,99 @@ func (e HealthStatus) Valid() bool {
 	case HealthStatusDegraded:
 		return true
 	case HealthStatusOk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InstanceReset.
+const (
+	InstanceResetDaily     InstanceReset = "daily"
+	InstanceResetHours     InstanceReset = "hours"
+	InstanceResetThreeDays InstanceReset = "three_days"
+	InstanceResetWeekly    InstanceReset = "weekly"
+)
+
+// Valid indicates whether the value is a known member of the InstanceReset enum.
+func (e InstanceReset) Valid() bool {
+	switch e {
+	case InstanceResetDaily:
+		return true
+	case InstanceResetHours:
+		return true
+	case InstanceResetThreeDays:
+		return true
+	case InstanceResetWeekly:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LobbyInstanceReset.
+const (
+	LobbyInstanceResetDaily     LobbyInstanceReset = "daily"
+	LobbyInstanceResetHours     LobbyInstanceReset = "hours"
+	LobbyInstanceResetThreeDays LobbyInstanceReset = "three_days"
+	LobbyInstanceResetWeekly    LobbyInstanceReset = "weekly"
+)
+
+// Valid indicates whether the value is a known member of the LobbyInstanceReset enum.
+func (e LobbyInstanceReset) Valid() bool {
+	switch e {
+	case LobbyInstanceResetDaily:
+		return true
+	case LobbyInstanceResetHours:
+		return true
+	case LobbyInstanceResetThreeDays:
+		return true
+	case LobbyInstanceResetWeekly:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LobbyOwnerPortrait.
+const (
+	LobbyOwnerPortraitRetrato1 LobbyOwnerPortrait = "retrato-1"
+	LobbyOwnerPortraitRetrato2 LobbyOwnerPortrait = "retrato-2"
+	LobbyOwnerPortraitRetrato3 LobbyOwnerPortrait = "retrato-3"
+	LobbyOwnerPortraitRetrato4 LobbyOwnerPortrait = "retrato-4"
+)
+
+// Valid indicates whether the value is a known member of the LobbyOwnerPortrait enum.
+func (e LobbyOwnerPortrait) Valid() bool {
+	switch e {
+	case LobbyOwnerPortraitRetrato1:
+		return true
+	case LobbyOwnerPortraitRetrato2:
+		return true
+	case LobbyOwnerPortraitRetrato3:
+		return true
+	case LobbyOwnerPortraitRetrato4:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LobbyStatus.
+const (
+	LobbyStatusCancelled LobbyStatus = "cancelled"
+	LobbyStatusOpen      LobbyStatus = "open"
+	LobbyStatusStarted   LobbyStatus = "started"
+)
+
+// Valid indicates whether the value is a known member of the LobbyStatus enum.
+func (e LobbyStatus) Valid() bool {
+	switch e {
+	case LobbyStatusCancelled:
+		return true
+	case LobbyStatusOpen:
+		return true
+	case LobbyStatusStarted:
 		return true
 	default:
 		return false
@@ -225,6 +367,12 @@ func (e ValidationErrorError) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// CancelLobby defines model for CancelLobby.
+type CancelLobby struct {
+	// Reason De 10 a 250 caracteres.
+	Reason string `json:"reason"`
 }
 
 // Character defines model for Character.
@@ -330,6 +478,104 @@ type HealthDatabase string
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// Instance defines model for Instance.
+type Instance struct {
+	// Id Example: templo-do-demonio-rei
+	Id string `json:"id"`
+
+	// Level Nível de entrada.
+	//
+	// Example: 160
+	Level int `json:"level"`
+
+	// Name Example: Templo do Demônio Rei
+	Name string `json:"name"`
+
+	// Reset Tempo de retorno da instância, como o bROWiki agrupa.
+	Reset InstanceReset `json:"reset"`
+}
+
+// InstanceReset Tempo de retorno da instância, como o bROWiki agrupa.
+type InstanceReset string
+
+// Lobby defines model for Lobby.
+type Lobby struct {
+	CancelReason *string            `json:"cancelReason"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	Id           openapi_types.UUID `json:"id"`
+	Instance     LobbyInstance      `json:"instance"`
+	MinLevel     int                `json:"minLevel"`
+	Note         *string            `json:"note"`
+	Occupied     Slots              `json:"occupied"`
+	Owner        LobbyOwner         `json:"owner"`
+	Slots        Slots              `json:"slots"`
+	StartsAt     time.Time          `json:"startsAt"`
+	Status       LobbyStatus        `json:"status"`
+}
+
+// LobbyInput defines model for LobbyInput.
+type LobbyInput struct {
+	// CharacterId Um dos personagens do Usuário da sessão.
+	CharacterId string `json:"characterId"`
+
+	// InstanceId ID de uma instância de GET /instances.
+	InstanceId string `json:"instanceId"`
+	MinLevel   int    `json:"minLevel"`
+
+	// Note Opcional, até 250 caracteres.
+	Note  *string `json:"note,omitempty"`
+	Slots Slots   `json:"slots"`
+
+	// StartsAt Início em UTC; o web converte o dia e a hora de Brasília (D-04).
+	StartsAt time.Time `json:"startsAt"`
+}
+
+// LobbyInstance defines model for LobbyInstance.
+type LobbyInstance struct {
+	Id    string `json:"id"`
+	Level int    `json:"level"`
+
+	// Name Nome guardado na criação (D-02).
+	Name string `json:"name"`
+
+	// Reset Nulo se a instância saiu do catálogo.
+	Reset *LobbyInstanceReset `json:"reset"`
+}
+
+// LobbyInstanceReset Nulo se a instância saiu do catálogo.
+type LobbyInstanceReset string
+
+// LobbyOwner defines model for LobbyOwner.
+type LobbyOwner struct {
+	// CharacterId Nulo se o personagem foi excluído depois do início (D-01).
+	CharacterId *openapi_types.UUID `json:"characterId"`
+	ClassId     *string             `json:"classId"`
+	DiscordName string              `json:"discordName"`
+	Level       *int                `json:"level"`
+	Nick        *string             `json:"nick"`
+
+	// Portrait Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
+	Portrait *LobbyOwnerPortrait `json:"portrait"`
+
+	// Role Função do personagem (RN-08).
+	Role   Role               `json:"role"`
+	UserId openapi_types.UUID `json:"userId"`
+}
+
+// LobbyOwnerPortrait Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
+type LobbyOwnerPortrait string
+
+// LobbyStatus defines model for LobbyStatus.
+type LobbyStatus string
+
+// LobbyUpdate defines model for LobbyUpdate.
+type LobbyUpdate struct {
+	MinLevel int       `json:"minLevel"`
+	Note     *string   `json:"note,omitempty"`
+	Slots    Slots     `json:"slots"`
+	StartsAt time.Time `json:"startsAt"`
+}
+
 // Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
 type Portrait string
 
@@ -341,6 +587,13 @@ type SessionCreated struct {
 	// SessionToken Vai só para o cookie HttpOnly do web; o banco guarda o hash (RN-07).
 	SessionToken string `json:"sessionToken"`
 	User         User   `json:"user"`
+}
+
+// Slots defines model for Slots.
+type Slots struct {
+	Dps     int `json:"dps"`
+	Support int `json:"support"`
+	Tank    int `json:"tank"`
 }
 
 // User defines model for User.
@@ -363,14 +616,29 @@ type ValidationErrorError string
 // CharacterId defines model for CharacterId.
 type CharacterId = string
 
+// LobbyId defines model for LobbyId.
+type LobbyId = string
+
 // Invalid defines model for Invalid.
 type Invalid = ValidationError
+
+// LobbyNotFound defines model for LobbyNotFound.
+type LobbyNotFound = Error
+
+// LobbyNotOpen defines model for LobbyNotOpen.
+type LobbyNotOpen = Error
 
 // NoSession defines model for NoSession.
 type NoSession = Error
 
 // NotFound defines model for NotFound.
 type NotFound = Error
+
+// ListLobbiesParams defines parameters for ListLobbies.
+type ListLobbiesParams struct {
+	From openapi_types.Date `form:"from" json:"from"`
+	To   openapi_types.Date `form:"to" json:"to"`
+}
 
 // CreateSessionFromDiscordJSONRequestBody defines body for CreateSessionFromDiscord for application/json ContentType.
 type CreateSessionFromDiscordJSONRequestBody = DiscordLogin
@@ -380,6 +648,15 @@ type CreateCharacterJSONRequestBody = CharacterInput
 
 // UpdateCharacterJSONRequestBody defines body for UpdateCharacter for application/json ContentType.
 type UpdateCharacterJSONRequestBody = CharacterInput
+
+// CreateLobbyJSONRequestBody defines body for CreateLobby for application/json ContentType.
+type CreateLobbyJSONRequestBody = LobbyInput
+
+// UpdateLobbyJSONRequestBody defines body for UpdateLobby for application/json ContentType.
+type UpdateLobbyJSONRequestBody = LobbyUpdate
+
+// CancelLobbyJSONRequestBody defines body for CancelLobby for application/json ContentType.
+type CancelLobbyJSONRequestBody = CancelLobby
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -407,6 +684,24 @@ type ServerInterface interface {
 	// GetHealthz Estado da API e do banco
 	// (GET /healthz)
 	GetHealthz(w http.ResponseWriter, r *http.Request)
+	// ListInstances Catálogo de instâncias
+	// (GET /instances)
+	ListInstances(w http.ResponseWriter, r *http.Request)
+	// ListLobbies Lobbies abertos num intervalo de dias
+	// (GET /lobbies)
+	ListLobbies(w http.ResponseWriter, r *http.Request, params ListLobbiesParams)
+	// CreateLobby Cria um lobby
+	// (POST /lobbies)
+	CreateLobby(w http.ResponseWriter, r *http.Request)
+	// GetLobby Detalhe do lobby
+	// (GET /lobbies/{id})
+	GetLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
+	// UpdateLobby Edita o lobby
+	// (PUT /lobbies/{id})
+	UpdateLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
+	// CancelLobby Cancela o lobby
+	// (POST /lobbies/{id}/cancel)
+	CancelLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
@@ -563,6 +858,158 @@ func (siw *ServerInterfaceWrapper) GetHealthz(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealthz(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListInstances operation middleware
+func (siw *ServerInterfaceWrapper) ListInstances(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInstances(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListLobbies operation middleware
+func (siw *ServerInterfaceWrapper) ListLobbies(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListLobbiesParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListLobbies(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateLobby operation middleware
+func (siw *ServerInterfaceWrapper) CreateLobby(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateLobby(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetLobby operation middleware
+func (siw *ServerInterfaceWrapper) GetLobby(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLobby(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateLobby operation middleware
+func (siw *ServerInterfaceWrapper) UpdateLobby(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateLobby(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelLobby operation middleware
+func (siw *ServerInterfaceWrapper) CancelLobby(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelLobby(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -730,11 +1177,21 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/characters/{id}", wrapper.DeleteCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}", wrapper.UpdateCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/main", wrapper.SetMainCharacter)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instances", wrapper.ListInstances)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies", wrapper.ListLobbies)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies", wrapper.CreateLobby)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}", wrapper.GetLobby)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}", wrapper.UpdateLobby)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/cancel", wrapper.CancelLobby)
 
 	return m
 }
 
 type InvalidJSONResponse ValidationError
+
+type LobbyNotFoundJSONResponse Error
+
+type LobbyNotOpenJSONResponse Error
 
 type NoSessionJSONResponse Error
 
@@ -933,6 +1390,20 @@ func (response DeleteCharacter404JSONResponse) VisitDeleteCharacterResponse(w ht
 	return err
 }
 
+type DeleteCharacter409JSONResponse Error
+
+func (response DeleteCharacter409JSONResponse) VisitDeleteCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UpdateCharacterRequestObject struct {
 	Id   CharacterId `json:"id"`
 	Body *UpdateCharacterJSONRequestBody
@@ -980,6 +1451,20 @@ func (response UpdateCharacter404JSONResponse) VisitUpdateCharacterResponse(w ht
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCharacter409JSONResponse Error
+
+func (response UpdateCharacter409JSONResponse) VisitUpdateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1098,6 +1583,321 @@ func (response GetHealthz503JSONResponse) VisitGetHealthzResponse(w http.Respons
 	return err
 }
 
+type ListInstancesRequestObject struct {
+}
+
+type ListInstancesResponseObject interface {
+	VisitListInstancesResponse(w http.ResponseWriter) error
+}
+
+type ListInstances200JSONResponse []Instance
+
+func (response ListInstances200JSONResponse) VisitListInstancesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLobbiesRequestObject struct {
+	Params ListLobbiesParams
+}
+
+type ListLobbiesResponseObject interface {
+	VisitListLobbiesResponse(w http.ResponseWriter) error
+}
+
+type ListLobbies200JSONResponse []Lobby
+
+func (response ListLobbies200JSONResponse) VisitListLobbiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLobbies400JSONResponse Error
+
+func (response ListLobbies400JSONResponse) VisitListLobbiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLobbyRequestObject struct {
+	Body *CreateLobbyJSONRequestBody
+}
+
+type CreateLobbyResponseObject interface {
+	VisitCreateLobbyResponse(w http.ResponseWriter) error
+}
+
+type CreateLobby201JSONResponse Lobby
+
+func (response CreateLobby201JSONResponse) VisitCreateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLobby401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response CreateLobby401JSONResponse) VisitCreateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLobby409JSONResponse Error
+
+func (response CreateLobby409JSONResponse) VisitCreateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateLobby422JSONResponse struct{ InvalidJSONResponse }
+
+func (response CreateLobby422JSONResponse) VisitCreateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetLobbyRequestObject struct {
+	Id LobbyId `json:"id"`
+}
+
+type GetLobbyResponseObject interface {
+	VisitGetLobbyResponse(w http.ResponseWriter) error
+}
+
+type GetLobby200JSONResponse Lobby
+
+func (response GetLobby200JSONResponse) VisitGetLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetLobby404JSONResponse struct{ LobbyNotFoundJSONResponse }
+
+func (response GetLobby404JSONResponse) VisitGetLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLobbyRequestObject struct {
+	Id   LobbyId `json:"id"`
+	Body *UpdateLobbyJSONRequestBody
+}
+
+type UpdateLobbyResponseObject interface {
+	VisitUpdateLobbyResponse(w http.ResponseWriter) error
+}
+
+type UpdateLobby200JSONResponse Lobby
+
+func (response UpdateLobby200JSONResponse) VisitUpdateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLobby401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response UpdateLobby401JSONResponse) VisitUpdateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLobby404JSONResponse struct{ LobbyNotFoundJSONResponse }
+
+func (response UpdateLobby404JSONResponse) VisitUpdateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLobby409JSONResponse struct{ LobbyNotOpenJSONResponse }
+
+func (response UpdateLobby409JSONResponse) VisitUpdateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateLobby422JSONResponse struct{ InvalidJSONResponse }
+
+func (response UpdateLobby422JSONResponse) VisitUpdateLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelLobbyRequestObject struct {
+	Id   LobbyId `json:"id"`
+	Body *CancelLobbyJSONRequestBody
+}
+
+type CancelLobbyResponseObject interface {
+	VisitCancelLobbyResponse(w http.ResponseWriter) error
+}
+
+type CancelLobby200JSONResponse Lobby
+
+func (response CancelLobby200JSONResponse) VisitCancelLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelLobby401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response CancelLobby401JSONResponse) VisitCancelLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelLobby404JSONResponse struct{ LobbyNotFoundJSONResponse }
+
+func (response CancelLobby404JSONResponse) VisitCancelLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelLobby409JSONResponse struct{ LobbyNotOpenJSONResponse }
+
+func (response CancelLobby409JSONResponse) VisitCancelLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelLobby422JSONResponse struct{ InvalidJSONResponse }
+
+func (response CancelLobby422JSONResponse) VisitCancelLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetMeRequestObject struct {
 }
 
@@ -1174,6 +1974,24 @@ type StrictServerInterface interface {
 	// GetHealthz Estado da API e do banco
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
+	// ListInstances Catálogo de instâncias
+	// (GET /instances)
+	ListInstances(ctx context.Context, request ListInstancesRequestObject) (ListInstancesResponseObject, error)
+	// ListLobbies Lobbies abertos num intervalo de dias
+	// (GET /lobbies)
+	ListLobbies(ctx context.Context, request ListLobbiesRequestObject) (ListLobbiesResponseObject, error)
+	// CreateLobby Cria um lobby
+	// (POST /lobbies)
+	CreateLobby(ctx context.Context, request CreateLobbyRequestObject) (CreateLobbyResponseObject, error)
+	// GetLobby Detalhe do lobby
+	// (GET /lobbies/{id})
+	GetLobby(ctx context.Context, request GetLobbyRequestObject) (GetLobbyResponseObject, error)
+	// UpdateLobby Edita o lobby
+	// (PUT /lobbies/{id})
+	UpdateLobby(ctx context.Context, request UpdateLobbyRequestObject) (UpdateLobbyResponseObject, error)
+	// CancelLobby Cancela o lobby
+	// (POST /lobbies/{id}/cancel)
+	CancelLobby(ctx context.Context, request CancelLobbyRequestObject) (CancelLobbyResponseObject, error)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
@@ -1433,6 +2251,179 @@ func (sh *strictHandler) GetHealthz(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHealthzResponseObject); ok {
 		if err := validResponse.VisitGetHealthzResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListInstances operation middleware
+func (sh *strictHandler) ListInstances(w http.ResponseWriter, r *http.Request) {
+	var request ListInstancesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInstances(ctx, request.(ListInstancesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInstances")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInstancesResponseObject); ok {
+		if err := validResponse.VisitListInstancesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListLobbies operation middleware
+func (sh *strictHandler) ListLobbies(w http.ResponseWriter, r *http.Request, params ListLobbiesParams) {
+	var request ListLobbiesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListLobbies(ctx, request.(ListLobbiesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListLobbies")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListLobbiesResponseObject); ok {
+		if err := validResponse.VisitListLobbiesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateLobby operation middleware
+func (sh *strictHandler) CreateLobby(w http.ResponseWriter, r *http.Request) {
+	var request CreateLobbyRequestObject
+
+	var body CreateLobbyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateLobby(ctx, request.(CreateLobbyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateLobby")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateLobbyResponseObject); ok {
+		if err := validResponse.VisitCreateLobbyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLobby operation middleware
+func (sh *strictHandler) GetLobby(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request GetLobbyRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLobby(ctx, request.(GetLobbyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLobby")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLobbyResponseObject); ok {
+		if err := validResponse.VisitGetLobbyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateLobby operation middleware
+func (sh *strictHandler) UpdateLobby(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request UpdateLobbyRequestObject
+
+	request.Id = id
+
+	var body UpdateLobbyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateLobby(ctx, request.(UpdateLobbyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateLobby")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateLobbyResponseObject); ok {
+		if err := validResponse.VisitUpdateLobbyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelLobby operation middleware
+func (sh *strictHandler) CancelLobby(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request CancelLobbyRequestObject
+
+	request.Id = id
+
+	var body CancelLobbyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelLobby(ctx, request.(CancelLobbyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelLobby")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelLobbyResponseObject); ok {
+		if err := validResponse.VisitCancelLobbyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

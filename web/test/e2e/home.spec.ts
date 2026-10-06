@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import { apiLogin, createCharacter, createLobby, rand } from './seed';
 
-// Ponta a ponta da Home (spec home-local). Os dados são fictícios e as datas dependem do
-// relógio real, então os testes leem dias e contagens da própria tela.
+// Ponta a ponta da Home (spec home-local). As datas dependem do relógio real, então os
+// testes leem dias e contagens da própria tela.
 
 const cards = (page: Page) => page.getByTestId('lobby-card');
 const dayTabs = (page: Page) => page.getByRole('tablist', { name: 'Dias' }).getByRole('tab');
@@ -76,63 +77,130 @@ async function expectFocusRingOnEveryTabStop(page: Page) {
 	expect(missing.map((s) => s.name)).toEqual([]);
 }
 
+// Spec lobbies (T-10): a Home mostra os lobbies reais. Antes dos testes, uma conta cria
+// lobbies conhecidos amanhã (dia 1) e depois de amanhã (dia 2), direto na API; o banco do
+// ponta a ponta começa vazio. Outros arquivos podem criar lobbies em paralelo, então os
+// testes conferem os lobbies desta conta pelo anfitrião, e as contagens pela própria tela.
+const s = rand();
+const host = { tank: `Tk${s}`, support: `Sp${s}`, dps: `Dp${s}` };
+
+test.beforeAll(async ({ request }) => {
+	const token = await apiLogin(request, `home${s}`);
+	const tank = await createCharacter(request, token, {
+		nick: host.tank,
+		classId: 'guardiao-real',
+		level: 200,
+		role: 'tank'
+	});
+	const support = await createCharacter(request, token, {
+		nick: host.support,
+		classId: 'arcebispo',
+		level: 200,
+		role: 'support'
+	});
+	const dps = await createCharacter(request, token, {
+		nick: host.dps,
+		classId: 'feiticeiro',
+		level: 200,
+		role: 'dps'
+	});
+	const lobbies = [
+		{ instanceId: 'vila-dos-porings', day: 1, time: '18:00', characterId: tank.id, minLevel: 30 },
+		{
+			instanceId: 'mansao-da-desilusao',
+			day: 1,
+			time: '19:00',
+			characterId: support.id,
+			minLevel: 200
+		},
+		{
+			instanceId: 'templo-do-demonio-rei',
+			day: 1,
+			time: '21:30',
+			characterId: dps.id,
+			minLevel: 160
+		},
+		// Lotado: só a vaga do dono.
+		{
+			instanceId: 'caverna-de-mors',
+			day: 1,
+			time: '23:00',
+			characterId: support.id,
+			minLevel: 160,
+			slots: { tank: 0, support: 1, dps: 0 }
+		},
+		{ instanceId: 'sala-final', day: 2, time: '20:00', characterId: tank.id, minLevel: 150 }
+	];
+	for (const l of lobbies) await createLobby(request, token, l);
+});
+
+const ownCards = (page: Page) =>
+	cards(page).filter({ hasText: new RegExp(`${host.tank}|${host.support}|${host.dps}`) });
+
 test.describe('Home no desktop', () => {
 	test.use({ viewport: { width: 1280, height: 900 } });
 
-	test('CA-02.1: grupos de hoje em ordem de horário, com os dados do card', async ({ page }) => {
+	test('CA-02.1 / CA-02.1 (lobbies): os grupos do dia em ordem de horário, com os dados do card', async ({
+		page
+	}) => {
 		await page.goto('/');
 		await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grupos para hoje');
-		await expect(cards(page)).toHaveCount(await dayCount(page, 0));
+		await dayTabs(page).nth(1).click();
+		await expect(cards(page)).toHaveCount(await dayCount(page, 1));
 		const times = await cardTimes(page);
 		expect(times).toEqual([...times].sort());
-		const first = cards(page).first();
-		await expect(first.getByRole('heading', { level: 3 })).not.toBeEmpty();
-		await expect(first).toContainText(/Nv \d+\+/);
-		await expect(first).toContainText(/\d+\/\d+/);
-	});
-
-	test('CA-02.6: o HTML do servidor já traz os cards de hoje', async ({ request }) => {
-		const html = await (await request.get('/')).text();
-		expect(html).toContain('data-testid="lobby-card"');
-		expect(html).toContain('Grupos para hoje');
-	});
-
-	test('CA-02.5: ações sem backend desabilitadas, com "Disponível em breve"', async ({ page }) => {
-		await page.goto('/');
+		await expect(ownCards(page)).toHaveCount(4);
+		const vila = cards(page).filter({ hasText: 'Vila dos Porings' }).filter({ hasText: host.tank });
+		await expect(vila).toContainText('18:00');
+		await expect(vila).toContainText('Guardião Real');
+		await expect(vila).toContainText('Nv 30+');
+		await expect(vila).toContainText('1/6');
+		// RN-14 (home-local): o lobby só com a vaga do dono está lotado.
 		await expect(
-			page.getByRole('banner').getByRole('button', { name: 'Criar lobby', exact: true })
-		).toBeDisabled();
-		// RN-14 (login-discord): "Entrar com Discord" deixou de ser "em breve".
+			cards(page).filter({ hasText: 'Caverna de Mors' }).filter({ hasText: host.support })
+		).toHaveAttribute('data-edge', 'full');
+	});
+
+	test('CA-02.6: o HTML do servidor já traz a Home com o seletor de dias', async ({ request }) => {
+		const html = await (await request.get('/')).text();
+		expect(html).toContain('Grupos para hoje');
+		expect(html.match(/role="tab"/g)).toHaveLength(14);
+	});
+
+	test('CA-02.5: "Candidatar" segue desabilitado, com "Disponível em breve"', async ({ page }) => {
+		await page.goto('/');
+		await dayTabs(page).nth(1).click();
+		// RN-14 (login-discord) e RN-23 (lobbies): "Entrar com Discord" e "Criar lobby" já funcionam.
 		await expect(
 			page.getByRole('banner').getByRole('link', { name: 'Entrar com Discord' })
 		).toHaveAttribute('href', '/auth/discord/login?next=%2F');
-		const apply = cards(page).getByRole('button', { name: 'Candidatar' }).first();
+		await expect(
+			page.getByRole('banner').getByRole('link', { name: 'Criar lobby' })
+		).toHaveAttribute('href', '/lobbies/novo');
+		const apply = ownCards(page).getByRole('button', { name: 'Candidatar' }).first();
 		await expect(apply).toBeDisabled();
 		await apply.hover();
 		await expect(page.getByRole('tooltip', { name: 'Disponível em breve' }).first()).toBeVisible();
-		// Clicar não faz nada: a tela continua igual.
-		await apply.click({ force: true });
-		await expect(page).toHaveURL('/');
 	});
 
 	test('CA-03.2: trocar o dia mostra os grupos daquele dia', async ({ page }) => {
 		await page.goto('/');
-		const count = await dayCount(page, 1);
-		await dayTabs(page).nth(1).click();
-		await expect(dayTabs(page).nth(1)).toHaveAttribute('aria-selected', 'true');
+		const count = await dayCount(page, 2);
+		expect(count).toBeGreaterThan(0);
+		await dayTabs(page).nth(2).click();
+		await expect(dayTabs(page).nth(2)).toHaveAttribute('aria-selected', 'true');
 		await expect(page.getByRole('heading', { level: 1 })).toHaveText(
 			/^Grupos para \w{3}, \d+ \w{3}$/
 		);
 		await expect(cards(page)).toHaveCount(count);
-		const times = await cardTimes(page);
-		expect(times).toEqual([...times].sort());
+		await expect(ownCards(page)).toHaveCount(1);
 	});
 
 	test('CA-03.3: dia sem grupos mostra "Nenhum grupo neste dia"', async ({ page }) => {
 		await page.goto('/');
 		let index = -1;
-		for (let i = 0; i < 14 && index < 0; i++) if ((await dayCount(page, i)) === 0) index = i;
-		expect(index, 'os dados fictícios têm dias sem grupos').toBeGreaterThan(0);
+		for (let i = 13; i > 0 && index < 0; i--) if ((await dayCount(page, i)) === 0) index = i;
+		expect(index, 'algum dia sem grupos no banco do ponta a ponta').toBeGreaterThan(0);
 		await dayTabs(page).nth(index).click();
 		await expect(page.getByTestId('empty-state')).toContainText('Nenhum grupo neste dia');
 		await expect(page.getByRole('button', { name: 'Limpar filtros' })).toHaveCount(0);
@@ -140,23 +208,25 @@ test.describe('Home no desktop', () => {
 
 	test('CA-04.1: filtro de instância', async ({ page }) => {
 		await page.goto('/');
+		await dayTabs(page).nth(1).click();
 		const sidebar = page.getByRole('complementary', { name: 'Filtros' });
-		await sidebar.getByRole('combobox', { name: 'Instância' }).selectOption('Torre sem fim');
+		await sidebar.getByRole('combobox', { name: 'Instância' }).selectOption('Vila dos Porings');
 		await expect(cards(page).first()).toBeVisible();
 		for (const label of await cards(page).evaluateAll((els) =>
 			els.map((e) => e.getAttribute('aria-label'))
 		)) {
-			expect(label).toMatch(/^Torre sem fim às /);
+			expect(label).toMatch(/^Vila dos Porings às /);
 		}
-		await expect(page.getByTestId('list-subheading')).toContainText(/\d+ de \d+ grupos/);
+		await expect(page.getByTestId('list-subheading')).toContainText(/\d+ de \d+ grupos?/);
 	});
 
 	test('CA-04.7: filtros sem resultado e "Limpar filtros"', async ({ page }) => {
 		await page.goto('/');
-		const total = await dayCount(page, 0);
+		await dayTabs(page).nth(1).click();
+		const total = await dayCount(page, 1);
 		const sidebar = page.getByRole('complementary', { name: 'Filtros' });
-		// Nos dados fictícios, a Caverna de gelo é às 18:00, fora da faixa 22h–00h.
-		await sidebar.getByRole('combobox', { name: 'Instância' }).selectOption('Caverna de gelo');
+		// Os lobbies de Vila dos Porings do ponta a ponta são às 18:00, fora da faixa 22h–00h.
+		await sidebar.getByRole('combobox', { name: 'Instância' }).selectOption('Vila dos Porings');
 		await sidebar.getByText('22h–00h').click();
 		await expect(page.getByTestId('empty-state')).toContainText('Nenhum grupo com esses filtros');
 		await page.getByRole('button', { name: 'Limpar filtros' }).click();
@@ -165,7 +235,6 @@ test.describe('Home no desktop', () => {
 
 	test('RNF-01: dá para trocar o dia e filtrar só com o teclado', async ({ page }) => {
 		await page.goto('/');
-		// Dia: Tab chega no primeiro dia, Tab vai para o próximo e Enter seleciona.
 		await dayTabs(page).first().focus();
 		await page.keyboard.press('Tab');
 		await expect(dayTabs(page).nth(1)).toBeFocused();
@@ -173,7 +242,6 @@ test.describe('Home no desktop', () => {
 		await expect(dayTabs(page).nth(1)).toHaveAttribute('aria-selected', 'true');
 		await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Grupos para hoje');
 
-		// Filtro: o checkbox recebe foco pelo teclado e marca com Espaço.
 		const sidebar = page.getByRole('complementary', { name: 'Filtros' });
 		const tank = sidebar.getByRole('checkbox', { name: 'Tank' });
 		await sidebar.getByRole('combobox', { name: 'Instância' }).focus();
@@ -185,6 +253,7 @@ test.describe('Home no desktop', () => {
 
 	test('RNF-01: todo ponto de Tab mostra o anel de foco âmbar', async ({ page }) => {
 		await page.goto('/');
+		await dayTabs(page).nth(1).click();
 		await expectFocusRingOnEveryTabStop(page);
 	});
 
@@ -215,6 +284,7 @@ test.describe('Home no celular', () => {
 
 	test('CA-06.2: botão mostra "Filtros (2)" com 2 filtros ativos', async ({ page }) => {
 		await page.goto('/');
+		await dayTabs(page).nth(1).click();
 		await page.getByRole('button', { name: /^Filtros/ }).click();
 		const drawer = page.getByRole('dialog', { name: 'Filtros' });
 		await drawer.getByText('Tank', { exact: true }).click();
@@ -230,8 +300,7 @@ test.describe('Home no celular', () => {
 
 	test('RN-19: "Criar lobby" vira botão só com ícone', async ({ page }) => {
 		await page.goto('/');
-		const banner = page.getByRole('banner');
-		const create = banner.getByRole('button', { name: 'Criar lobby', exact: true });
+		const create = page.getByRole('banner').getByRole('link', { name: 'Criar lobby' });
 		// A versão com texto fica com display:none e sai da árvore de acessibilidade.
 		await expect(create).toHaveCount(1);
 		await expect(create).toBeVisible();

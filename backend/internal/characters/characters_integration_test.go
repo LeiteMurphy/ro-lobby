@@ -447,3 +447,84 @@ func TestCreate_RN01_UnknownUser(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+// ownLobby cria, direto no banco, um lobby com o personagem como dono, começando em
+// startsAt; cancelled marca como cancelado.
+func (e *env) ownLobby(t *testing.T, userID, characterID string, role string, startsAt time.Time, cancelled bool) {
+	t.Helper()
+	q := db.New(e.pool)
+	var uid, cid pgtype.UUID
+	_ = uid.Scan(userID)
+	_ = cid.Scan(characterID)
+	id, err := q.CreateLobby(t.Context(), db.CreateLobbyParams{
+		OwnerID: uid, InstanceID: "templo-do-demonio-rei", InstanceName: "Templo do Demônio Rei",
+		InstanceLevel: 160, StartsAt: startsAt, SlotsTank: 1, SlotsSupport: 2, SlotsDps: 3,
+		MinLevel: 160, OwnerCharacterID: cid, OwnerRole: role, Now: e.clock,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cancelled {
+		if err := q.CancelLobby(t.Context(), db.CancelLobbyParams{ID: id, Now: e.clock, Reason: "Cancelado no teste"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// CA-06.4 (lobbies) / RN-21: o personagem dono de um lobby aberto não é excluído nem muda
+// de função; os outros campos mudam.
+func TestOwnerOfOpenLobby_CA06_4_Locked(t *testing.T) {
+	e := setup(t)
+	ana := e.user(t, "1")
+	lirien := e.create(t, ana, "Lirien") // Suporte, nível 178
+	e.ownLobby(t, ana, lirien.ID, "support", e.clock.Add(48*time.Hour), false)
+
+	if err := e.svc.Delete(t.Context(), ana, lirien.ID); !errors.Is(err, ErrInOpenLobby) {
+		t.Errorf("excluir: err = %v, quer ErrInOpenLobby", err)
+	}
+	_, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "dps"})
+	if !errors.Is(err, ErrInOpenLobby) {
+		t.Errorf("mudar a função: err = %v, quer ErrInOpenLobby", err)
+	}
+	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 180, Role: "support", Portrait: "retrato-2"})
+	if err != nil || got.Level != 180 || got.Role != "support" {
+		t.Errorf("mudar o nível: %+v, %v", got, err)
+	}
+	if list := e.list(t, ana); len(list) != 1 || list[0].Role != "support" {
+		t.Errorf("personagem mudou: %+v", list)
+	}
+}
+
+// RN-21: depois do início, ou com o lobby cancelado, o personagem volta a ser livre.
+func TestOwnerOfStartedOrCancelledLobby_RN21_Free(t *testing.T) {
+	e := setup(t)
+	ana := e.user(t, "1")
+	started := e.create(t, ana, "Lirien")
+	cancelled := e.create(t, ana, "Brasa")
+	e.ownLobby(t, ana, started.ID, "support", e.clock.Add(-time.Hour), false)
+	e.ownLobby(t, ana, cancelled.ID, "support", e.clock.Add(48*time.Hour), true)
+
+	if _, err := e.svc.Update(t.Context(), ana, cancelled.ID, Input{Nick: "Brasa", ClassID: "arcebispo", Level: 178, Role: "tank"}); err != nil {
+		t.Errorf("mudar a função com o lobby cancelado: %v", err)
+	}
+	for _, c := range []Character{started, cancelled} {
+		if err := e.svc.Delete(t.Context(), ana, c.ID); err != nil {
+			t.Errorf("excluir %s: %v", c.Nick, err)
+		}
+	}
+}
+
+// RN-02: personagem de outro Usuário continua 404 mesmo sendo dono de lobby aberto (não
+// revela o lobby).
+func TestOwnerOfOpenLobby_RN02_OtherUserStillNotFound(t *testing.T) {
+	e := setup(t)
+	ana, bia := e.user(t, "1"), e.user(t, "2")
+	lirien := e.create(t, ana, "Lirien")
+	e.ownLobby(t, ana, lirien.ID, "support", e.clock.Add(48*time.Hour), false)
+	if err := e.svc.Delete(t.Context(), bia, lirien.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("excluir de outro: %v", err)
+	}
+	if _, err := e.svc.Update(t.Context(), bia, lirien.ID, Input{Nick: "X", ClassID: "aprendiz", Level: 1, Role: "dps"}); !errors.Is(err, ErrNotFound) {
+		t.Errorf("editar de outro: %v", err)
+	}
+}

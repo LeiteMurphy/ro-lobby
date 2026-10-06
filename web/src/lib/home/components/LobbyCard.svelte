@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Badge from '$lib/ui/Badge.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -11,9 +12,11 @@
 	interface Props {
 		lobby: Lobby;
 		relative: string;
+		/** Prévia na criação de lobby (spec lobbies, 1b): sem link nem ações. */
+		preview?: boolean;
 	}
 
-	let { lobby, relative }: Props = $props();
+	let { lobby, relative, preview = false }: Props = $props();
 
 	const art = $derived(instanceArt(lobby.instance));
 	const full = $derived(isFull(lobby.composition));
@@ -38,7 +41,18 @@
 	</div>
 	<div class="body">
 		<div class="title-row">
-			<h3>{lobby.instance}</h3>
+			<!-- spec lobbies, RN-23: o nome da instância leva ao detalhe ("Ver grupo"). -->
+			<h3>
+				{#if preview}
+					{lobby.instance}
+				{:else}
+					<a
+						class="detail"
+						href={resolve('/lobbies/[id]', { id: lobby.id })}
+						aria-label="Ver grupo: {lobby.instance} às {lobby.time}">{lobby.instance}</a
+					>
+				{/if}
+			</h3>
 			<span class="headcount" title="Vagas ocupadas">
 				<Icon name="users" size={14} color="var(--fg-3)" />{count.filled}/{count.total}
 			</span>
@@ -47,7 +61,9 @@
 		<div class="footer">
 			<RoleComposition composition={lobby.composition} />
 			<div class="action">
-				{#if full}
+				{#if preview}
+					<!-- Prévia: sem ações. -->
+				{:else if full}
 					<Badge icon="lock">Lotado</Badge>
 				{:else}
 					<Button size="sm" variant="outline" iconLeft="user-plus" soon>Candidatar</Button>
@@ -58,6 +74,28 @@
 </article>
 
 <style>
+	/* O link do título cobre o card inteiro: clicar em qualquer ponto abre o lobby. */
+	.detail {
+		color: inherit;
+		text-decoration: none;
+	}
+	.detail::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+	}
+	.card:has(.detail) {
+		cursor: pointer;
+	}
+	.card:has(.detail:hover) h3 {
+		color: var(--gold-200);
+	}
+	/* As ações continuam clicáveis por cima do link. */
+	.action {
+		position: relative;
+		z-index: 2;
+	}
 	.card {
 		position: relative;
 		display: flex;

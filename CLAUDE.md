@@ -4,13 +4,11 @@ Lobby para jogadores de Ragnarok Online montarem grupos para instâncias difíce
 É um projeto de fã, sem vínculo com a Gravity.
 
 ## Estado atual
-A fundação está implementada: backend Go com `GET /healthz`, PostgreSQL pelo Compose,
-migrações, contrato OpenAPI com código gerado e CI. A Home do Claude Design ("RO Lobby
-Home v2") está em `/`, com dados fictícios, e a página de status em `/status`. A pilha
-completa roda em containers com `docker compose --profile app up` (ADR-06). Ainda não
-há login, personagens, lobbies nem tabelas de domínio; a próxima feature é o login com
-Discord. O setup local e os comandos estão no `README.md`. As decisões de arquitetura
-ficam em `docs/adr/`.
+Prontos: fundação (backend Go com `GET /healthz`, PostgreSQL, migrações, OpenAPI e CI), a
+Home do Claude Design em `/` (ainda com dados fictícios), login com Discord e o perfil com
+os personagens em `/perfil`. A pilha completa roda com `docker compose --profile app up`
+(ADR-06). Em andamento: lobbies (`.specs/lobbies/`). O setup local e os comandos estão no
+`README.md`. As decisões de arquitetura ficam em `docs/adr/`.
 
 ## Produto
 - Problema: é difícil montar grupos para instâncias difíceis. Um grupo tem até 12
@@ -64,6 +62,8 @@ antes de haver um ADR.
 - Qualidade faz parte do objetivo, já que o projeto é portfólio de quem vem de QA.
   Toda regra de domínio tem teste, e cada teste cita o ID do critério de aceite.
 - Idioma: documentação, specs e commits em português. Código e identificadores em inglês.
-- Não usar logos, artes nem sprites da Gravity. Nomes de classe do jogo podem ser usados:
-  seguem a nomenclatura do [bROWiki](https://browiki.org/wiki/Classes), que acompanha os
-  dados do Ragnarok LATAM.
+- Não usar logos, artes nem sprites da Gravity. Nomes de classe e de instância do jogo
+  podem ser usados: seguem a nomenclatura do bROWiki
+  ([Classes](https://browiki.org/wiki/Classes),
+  [Instâncias](https://browiki.org/wiki/Inst%C3%A2ncias)), que acompanha os dados do
+  Ragnarok LATAM.
