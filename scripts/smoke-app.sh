@@ -44,8 +44,10 @@ for svc in app-postgres api web; do
 	[[ "$health" == "healthy" ]] && ok "$svc saudável" || fail "$svc está $health"
 done
 home=$(curl -fsS "$BASE/") || fail "GET / não respondeu 200"
-grep -q 'Grupos para hoje' <<<"$home" && grep -q 'data-testid="lobby-card"' <<<"$home" &&
-	ok "GET / mostra a Home com os cards" || fail "GET / não mostrou a Home"
+# Spec lobbies (D-09): a Home busca os lobbies na API; com o banco vazio não há cards, então
+# confere o título e o seletor de 14 dias.
+grep -q 'Grupos para hoje' <<<"$home" && [[ $(grep -o 'role="tab"' <<<"$home" | wc -l) -eq 14 ]] &&
+	ok "GET / mostra a Home com o seletor de dias" || fail "GET / não mostrou a Home"
 status=$(curl -fsS "$BASE/status") || fail "GET /status não respondeu 200"
 grep -q 'API online' <<<"$status" && ok "/status mostra \"API online\"" || fail "/status não mostrou \"API online\""
 

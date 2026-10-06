@@ -236,3 +236,6 @@ Todos os 31 critérios da spec estão cobertos.
   "Anfitrião"); a API devolve o retrato do dono (`owner.portrait`); o card inteiro abre o
   lobby. Spec atualizada (RN-15 e RN-23). As páginas de perfil, criar e editar também
   ganharam o fundo da Home.
+- 2026-10-06 — A CI do PR #17 falhou no teste de fumaça da pilha app, que ainda esperava
+  os cards fictícios na Home (só roda na CI, por isso escapou da validação). — O
+  `scripts/smoke-app.sh` passou a conferir o título e o seletor de 14 dias.
