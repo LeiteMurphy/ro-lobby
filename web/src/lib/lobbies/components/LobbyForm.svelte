@@ -75,11 +75,11 @@
 	const className = (id: string) => classes.find((c) => c.id === id)?.name ?? id;
 	const total = $derived(slots.tank + slots.support + slots.dps);
 
-	// RN-07: o nível mínimo começa no da instância; ao trocar de instância, sobe se ficou
-	// abaixo do novo nível de entrada.
+	// RN-07: o nível mínimo padrão é o da instância; ao trocar de instância, ele volta para o
+	// nível de entrada da nova.
 	function onInstanceChange() {
 		const level = instances.find((i) => i.id === instanceId)?.level;
-		if (level && (minLevel === '' || Number(minLevel) < level)) minLevel = String(level);
+		if (level) minLevel = String(level);
 	}
 
 	function step(role: Role, delta: number) {

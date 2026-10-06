@@ -33,7 +33,9 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
 	}));
 	const mine = characters.ok ? characters.data : [];
 	const main = mine.find((c) => c.isMain) ?? mine[0];
-	const firstInstance = instances.ok ? instances.data[0] : undefined;
+	// A instância inicial é a mais alta que o personagem principal alcança (RN-02, RN-08).
+	const catalog = instances.ok ? instances.data : [];
+	const firstInstance = catalog.find((i) => main && i.level <= main.level) ?? catalog[0];
 	const values: LobbyFormValues = {
 		instanceId: firstInstance?.id ?? '',
 		date: days[1]?.date ?? today,

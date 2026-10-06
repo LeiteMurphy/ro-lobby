@@ -98,7 +98,7 @@ describe('/lobbies/novo', () => {
 		expect(isRedirect(e) && e.location).toBe('/auth/discord/login?next=%2Flobbies%2Fnovo');
 	});
 
-	it('CA-01.1 / RN-06 / RN-07 / RN-08: padrões 1/2/3, nível da primeira instância e o principal', async () => {
+	it('CA-01.1 / RN-06 / RN-07 / RN-08: padrões 1/2/3, a instância mais alta que o principal alcança e o principal', async () => {
 		const { fn } = fakeFetch({
 			'GET /characters': json(200, [BRASA, LIRIEN]),
 			'GET /instances': json(200, INSTANCES),
@@ -106,11 +106,11 @@ describe('/lobbies/novo', () => {
 		});
 		const data = (await novo.load(novoLoad(ANA, fakeCookies('t'), fn))) as Record<string, unknown>;
 		expect(data.values).toMatchObject({
-			instanceId: 'torre-da-constelacao',
+			instanceId: 'templo-do-demonio-rei',
 			tank: '1',
 			support: '2',
 			dps: '3',
-			minLevel: '240',
+			minLevel: '160',
 			characterId: LIRIEN.id
 		});
 		expect((data.days as unknown[]).length).toBe(14);
@@ -259,5 +259,89 @@ describe('/lobbies/[id]/editar', () => {
 			status: 409,
 			data: { message: 'Esse lobby já começou ou foi cancelado.' }
 		});
+	});
+});
+
+const detalhe = await import('./[id]/+page.server');
+type DetailLoad = Parameters<typeof detalhe.load>[0];
+type CancelAction = Parameters<(typeof detalhe.actions)['cancel']>[0];
+
+describe('/lobbies/[id]', () => {
+	const detailFetch = (lobby: Response) =>
+		fakeFetch({
+			[`GET /lobbies/${TEMPLE.id}`]: lobby,
+			'GET /classes': json(200, [{ id: 'arcebispo', name: 'Arcebispo' }])
+		}).fn;
+	const detailLoad = (user: unknown, f: typeof fetch) =>
+		({ params: { id: TEMPLE.id }, locals: { user }, fetch: f }) as unknown as DetailLoad;
+
+	it('CA-03.1 / RN-15: público, com a classe do dono pelo nome', async () => {
+		const data = (await detalhe.load(detailLoad(null, detailFetch(json(200, TEMPLE))))) as Record<
+			string,
+			unknown
+		>;
+		expect(data.lobby).toEqual(TEMPLE);
+		expect(data.ownerClass).toBe('Arcebispo');
+		expect(data.isOwner).toBe(false);
+	});
+
+	it('CA-03.3 / RN-16: o dono é reconhecido pela sessão', async () => {
+		const data = (await detalhe.load(detailLoad(ANA, detailFetch(json(200, TEMPLE))))) as Record<
+			string,
+			unknown
+		>;
+		expect(data.isOwner).toBe(true);
+		const other = (await detalhe.load(detailLoad(BIA, detailFetch(json(200, TEMPLE))))) as Record<
+			string,
+			unknown
+		>;
+		expect(other.isOwner).toBe(false);
+	});
+
+	it('CA-03.2: lobby inexistente é 404', async () => {
+		const e = await thrown(() =>
+			detalhe.load(detailLoad(null, detailFetch(json(404, { error: 'not_found' }))))
+		);
+		expect(isHttpError(e) && e.status).toBe(404);
+	});
+
+	const cancel = (reason: string, f: typeof fetch, cookies = fakeCookies('t')) =>
+		detalhe.actions.cancel({
+			params: { id: TEMPLE.id },
+			request: (() => {
+				const d = new FormData();
+				d.set('reason', reason);
+				return new Request(`http://web/lobbies/${TEMPLE.id}`, { method: 'POST', body: d });
+			})(),
+			cookies,
+			fetch: f
+		} as unknown as CancelAction);
+
+	it('CA-05.1 / RN-19: cancelar manda o motivo', async () => {
+		const { fn, calls } = fakeFetch({
+			[`POST /lobbies/${TEMPLE.id}/cancel`]: json(200, { ...TEMPLE, status: 'cancelled' })
+		});
+		expect(await cancel('Metade do grupo não pode', fn)).toEqual({ done: 'cancel' });
+		expect(calls[0].body).toEqual({ reason: 'Metade do grupo não pode' });
+	});
+
+	it('CA-05.2: motivo curto volta com a mensagem e o texto digitado', async () => {
+		const { fn } = fakeFetch({
+			[`POST /lobbies/${TEMPLE.id}/cancel`]: json(422, {
+				error: 'validation',
+				fields: [{ field: 'reason', code: 'too_short' }]
+			})
+		});
+		expect(await cancel('não dá', fn)).toMatchObject({
+			status: 422,
+			data: { reason: 'não dá', errors: { reason: 'Escreva de 10 a 250 caracteres' } }
+		});
+	});
+
+	it('RN-04: sem sessão, cancelar leva ao login com volta para o lobby', async () => {
+		const { fn, calls } = fakeFetch({});
+		const e = await thrown(() => cancel('Metade do grupo não pode', fn, fakeCookies()));
+		expect(isRedirect(e) && e.location).toBe(`/auth/discord/login?next=%2Flobbies%2F${TEMPLE.id}`);
+		expect(calls).toEqual([]);
 	});
 });

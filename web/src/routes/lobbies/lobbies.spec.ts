@@ -1,6 +1,8 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import LobbyForm from '$lib/lobbies/components/LobbyForm.svelte';
+import { TEMPLE } from '$lib/lobbies/fixtures';
+import Detalhe from './[id]/+page.svelte';
 import Novo from './novo/+page.svelte';
 
 // Formulário de lobby e página de criação renderizados no servidor (spec lobbies, T-07).
@@ -112,5 +114,74 @@ describe('/lobbies/novo renderizada no servidor', () => {
 		expect(html).toContain('Cadastre um personagem para criar lobbies');
 		expect(html).toMatch(/<a href="\/perfil"[^>]*>[\s\S]*?Ir para o perfil/);
 		expect(html).not.toContain('name="instanceId"');
+	});
+});
+
+describe('/lobbies/[id] renderizada no servidor', () => {
+	const renderDetail = (lobby: Record<string, unknown>, isOwner: boolean) =>
+		render(Detalhe, {
+			props: {
+				data: {
+					user: isOwner ? { id: 'u', username: 'ana', globalName: null } : null,
+					lobby: { ...TEMPLE, ...lobby },
+					ownerClass: 'Arcebispo',
+					isOwner,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body;
+
+	it('CA-03.1 / RN-15: instância, dia e hora de Brasília, nível, vagas com o dono e observação', () => {
+		const html = renderDetail({ note: 'Chamar no Discord 15 min antes' }, false);
+		expect(html).toContain('Templo do Demônio Rei');
+		expect(html).toMatch(/qua, 7 out · 20:00/);
+		expect(html).toMatch(/Nível mínimo <b[^>]*>160<\/b>/);
+		expect(html).toContain('Retorno diário');
+		expect(html).toContain('1 de 6');
+		expect(html).toMatch(
+			/data-testid="owner-slot"[\s\S]*?Lirien[\s\S]*?Arcebispo · Nv 178 · anfitrião/
+		);
+		expect(html.match(/Vaga aberta/g)).toHaveLength(5);
+		expect(html).toContain('Chamar no Discord 15 min antes');
+		expect(html).toContain('Grimbold');
+	});
+
+	it('CA-03.3 / RN-16: o dono vê Editar e Cancelar; os outros, Candidatar em breve', () => {
+		const owner = renderDetail({}, true);
+		expect(owner).toContain(`href="/lobbies/${TEMPLE.id}/editar"`);
+		expect(owner).toContain('Editar');
+		expect(owner).toContain('Cancelar lobby');
+		expect(owner).not.toContain('Candidatar');
+		const other = renderDetail({}, false);
+		expect(other).not.toContain('Cancelar lobby');
+		expect(other).toMatch(/aria-disabled="true"[^>]*>[\s\S]*?Candidatar/);
+		expect(other).toContain('Disponível em breve');
+	});
+
+	it('CA-05.1 / RN-19: cancelado mostra o selo e o motivo, sem ações', () => {
+		const html = renderDetail(
+			{ status: 'cancelled', cancelReason: 'Metade do grupo não pode' },
+			true
+		);
+		expect(html).toMatch(/data-testid="lobby-status"[^>]*>\s*Cancelado/);
+		expect(html).toContain('Motivo do cancelamento');
+		expect(html).toContain('Metade do grupo não pode');
+		expect(html).not.toContain('Cancelar lobby');
+		expect(html).not.toContain('/editar');
+	});
+
+	it('D-01: personagem do dono excluído depois do início aparece como "Personagem excluído"', () => {
+		const html = renderDetail(
+			{
+				status: 'started',
+				owner: { ...TEMPLE.owner, characterId: null, nick: null, classId: null, level: null }
+			},
+			false
+		);
+		expect(html).toContain('Personagem excluído');
+		expect(html).toMatch(/data-testid="lobby-status"[^>]*>\s*Iniciado/);
 	});
 });
