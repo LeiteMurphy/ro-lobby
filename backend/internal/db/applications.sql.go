@@ -84,6 +84,29 @@ func (q *Queries) ExpirePendingForLobby(ctx context.Context, arg ExpirePendingFo
 	return items, nil
 }
 
+const getApplication = `-- name: GetApplication :one
+SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at FROM applications WHERE id = $1
+`
+
+// Leitura sem trava, para descobrir o candidato antes de travar (D-05).
+func (q *Queries) GetApplication(ctx context.Context, id pgtype.UUID) (Application, error) {
+	row := q.db.QueryRow(ctx, getApplication, id)
+	var i Application
+	err := row.Scan(
+		&i.ID,
+		&i.LobbyID,
+		&i.UserID,
+		&i.CharacterID,
+		&i.Role,
+		&i.Message,
+		&i.Status,
+		&i.Reason,
+		&i.CreatedAt,
+		&i.DecidedAt,
+	)
+	return i, err
+}
+
 const getApplicationForUpdate = `-- name: GetApplicationForUpdate :one
 SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at FROM applications WHERE id = $1 FOR UPDATE
 `

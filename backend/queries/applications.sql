@@ -72,3 +72,7 @@ SELECT * FROM application_events WHERE application_id = @application_id ORDER BY
 -- name: LockLobby :one
 -- D-05: trava o lobby no aceite, depois do Usuário do candidato.
 SELECT id FROM lobbies WHERE id = @id FOR UPDATE;
+
+-- name: GetApplication :one
+-- Leitura sem trava, para descobrir o candidato antes de travar (D-05).
+SELECT * FROM applications WHERE id = @id;

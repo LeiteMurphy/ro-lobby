@@ -168,12 +168,15 @@ type Lobby struct {
 	StartsAt      time.Time
 	Status        string
 	Slots         Slots
-	Occupied      Slots
-	MinLevel      int
-	Note          string
-	Owner         Owner
-	CancelReason  string
-	CreatedAt     time.Time
+	// Occupied são o dono e os membros aceitos por função (D-03 da candidatura).
+	Occupied Slots
+	// PendingCount é a quantidade de candidaturas pendentes, pública (RN-28).
+	PendingCount int
+	MinLevel     int
+	Note         string
+	Owner        Owner
+	CancelReason string
+	CreatedAt    time.Time
 }
 
 type Service struct {
@@ -205,7 +208,8 @@ func (s *Service) List(ctx context.Context, from, to string) ([]Lobby, error) {
 	}
 	out := make([]Lobby, len(rows))
 	for i, r := range rows {
-		out[i] = s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName})
+		out[i] = s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName},
+			counts{r.AcceptedTank, r.AcceptedSupport, r.AcceptedDps, r.PendingCount})
 	}
 	return out, nil
 }
@@ -227,7 +231,8 @@ func (s *Service) get(ctx context.Context, q *db.Queries, id pgtype.UUID) (Lobby
 	if err != nil {
 		return Lobby{}, fmt.Errorf("lobbies: buscar: %w", err)
 	}
-	return s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName}), nil
+	return s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName},
+		counts{r.AcceptedTank, r.AcceptedSupport, r.AcceptedDps, r.PendingCount}), nil
 }
 
 // Create valida e cria o lobby com o personagem do dono na vaga dele (RN-04 a RN-11).
@@ -352,8 +357,13 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 		if current.Lobby.OwnerCharacterID.Valid && in.MinLevel > int(current.OwnerLevel.Int16) {
 			return fieldError(FieldMinLevel, CodeAboveOwner) // RN-18
 		}
-		if in.Slots.of(current.Lobby.OwnerRole) < 1 {
-			return fieldError(FieldSlots, CodeBelowOccupied) // RN-18
+		// RN-18: as vagas não ficam abaixo dos ocupantes, o dono e os membros (D-03 da
+		// candidatura).
+		occupied := s.toLobby(current.Lobby, owner{}, counts{current.AcceptedTank, current.AcceptedSupport, current.AcceptedDps, 0}).Occupied
+		for _, role := range []string{"tank", "support", "dps"} {
+			if in.Slots.of(role) < occupied.of(role) {
+				return fieldError(FieldSlots, CodeBelowOccupied)
+			}
 		}
 		if current.Lobby.OwnerCharacterID.Valid {
 			if err := checkConflict(ctx, q, current.Lobby.OwnerCharacterID, lid, in.StartsAt); err != nil {
@@ -407,7 +417,22 @@ func (s *Service) Cancel(ctx context.Context, userID, id, reason string) (Lobby,
 		if err := q.CancelLobby(ctx, db.CancelLobbyParams{ID: lid, Now: now, Reason: reason}); err != nil {
 			return err
 		}
-		var err error
+		// RN-16 da candidatura: as pendentes expiram, com evento no histórico (D-02).
+		expired, err := q.ExpirePendingForLobby(ctx, db.ExpirePendingForLobbyParams{LobbyID: lid, Now: now})
+		if err != nil {
+			return err
+		}
+		for _, id := range expired {
+			if err := q.InsertApplicationEvent(ctx, db.InsertApplicationEventParams{
+				ApplicationID: id,
+				FromStatus:    pgtype.Text{String: "pending", Valid: true},
+				ToStatus:      "expired",
+				ActorID:       uid,
+				Now:           now,
+			}); err != nil {
+				return err
+			}
+		}
 		cancelled, err = s.get(ctx, q, lid)
 		return err
 	})
@@ -517,6 +542,11 @@ func wrap(err error, action string) error {
 	}
 }
 
+// counts são as contagens de candidaturas que GetLobby e ListOpenLobbies trazem (D-03).
+type counts struct {
+	tank, support, dps, pending int64
+}
+
 // owner são as colunas do dono que GetLobby e ListOpenLobbies trazem junto do lobby.
 type owner struct {
 	nick, classID pgtype.Text
@@ -526,7 +556,7 @@ type owner struct {
 	globalName    pgtype.Text
 }
 
-func (s *Service) toLobby(l db.Lobby, o owner) Lobby {
+func (s *Service) toLobby(l db.Lobby, o owner, c counts) Lobby {
 	now := s.Now()
 	status := StatusOpen
 	switch {
@@ -559,14 +589,17 @@ func (s *Service) toLobby(l db.Lobby, o owner) Lobby {
 	if i, ok := catalog.InstanceByID(l.InstanceID); ok {
 		out.InstanceReset = string(i.Reset)
 	}
-	// D-01: o dono ocupa a vaga da função dele (P-02); a candidatura soma os aceitos depois.
+	// D-01: o dono ocupa a vaga da função dele (P-02); os membros aceitos somam (D-03 da
+	// candidatura).
+	out.Occupied = Slots{Tank: int(c.tank), Support: int(c.support), Dps: int(c.dps)}
+	out.PendingCount = int(c.pending)
 	switch l.OwnerRole {
 	case "tank":
-		out.Occupied.Tank = 1
+		out.Occupied.Tank++
 	case "support":
-		out.Occupied.Support = 1
+		out.Occupied.Support++
 	default:
-		out.Occupied.Dps = 1
+		out.Occupied.Dps++
 	}
 	if l.OwnerCharacterID.Valid {
 		out.Owner.CharacterID = l.OwnerCharacterID.String()
