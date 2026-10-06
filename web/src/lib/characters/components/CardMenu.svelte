@@ -82,7 +82,15 @@
 	{#if open}
 		<div class="menu" id={menuId} role="menu" aria-label="Ações de {nick}" bind:this={menu}>
 			{#if !isMain}
-				<form method="POST" action="?/main" use:enhance={() => () => close(false)}>
+				<form
+					method="POST"
+					action="?/main"
+					use:enhance={() =>
+						async ({ update }) => {
+							await update(); // recarrega a lista, com o novo principal primeiro
+							close(false);
+						}}
+				>
 					<input type="hidden" name="id" value={id} />
 					<button type="submit" role="menuitem" class="item">
 						<Icon name="star" size={15} color="var(--gold-300)" />Tornar principal
