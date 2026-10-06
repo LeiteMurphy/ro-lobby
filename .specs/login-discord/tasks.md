@@ -137,7 +137,7 @@
 
 ## US-01 a US-05 — Ponta a ponta
 
-### T-08 — Playwright com o Discord falso e CI  [ ]
+### T-08 — Playwright com o Discord falso e CI  [x]
 - Cobre: CA-01.1, CA-01.3, CA-02.1, CA-02.4, CA-03.1, CA-04.1, CA-04.2, CA-05.1, RNF-02,
   RNF-04, RNF-05
 - Depende de: T-07
