@@ -55,7 +55,7 @@
 - Pronto quando: a migração aplica e reverte num banco vazio; testes de integração das
   queries passam (upsert pelo `discord_id`, sessão por hash, vencimento); nenhuma coluna
   guarda token em texto nem avatar.
-- Commit: —
+- Commit: `2cffbc9`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff81bfbb38f9cc7350b37d
 
 ### T-02 — Cliente do Discord e Discord falso  [P] [x]
@@ -67,7 +67,7 @@
 - Pronto quando: testes do cliente contra o falso passam para código aceito, código
   recusado e Discord lento (erro em até 5 s); o pedido de token vai como
   `application/x-www-form-urlencoded` com o `redirect_uri`.
-- Commit: —
+- Commit: `596e60b`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff8146bc6ddac5e0160af2
 
 ### T-03 — Serviço de autenticação  [x]
@@ -78,7 +78,7 @@
 - Pronto quando: testes de integração passam para primeiro login, login seguinte
   (mesmo Usuário, nome atualizado), sessão renovada pelo uso, sessão vencida, renovação
   gravada no máximo uma vez por hora e sair sem afetar outra sessão.
-- Commit: —
+- Commit: `3adeb68`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff81d9a931c29fe5cca219
 
 ### T-04 — Contrato e rotas da API  [x]
@@ -89,7 +89,7 @@
   `backend/cmd/api/main.go`, `backend/internal/config/`
 - Pronto quando: o contrato descreve as três rotas; o código gerado está em dia; testes
   das rotas passam (201, 400, 502, 200, 401, 204), com o Discord falso.
-- Commit: —
+- Commit: `86113c6`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff810a99fac5e2f7a06c5d
 
 ## US-01, US-04 e US-05 — Fluxo no web
@@ -104,7 +104,7 @@
 - Pronto quando: testes Vitest cobrem a URL de autorização (escopo, `state`), o cookie de
   `state` de uso único, os erros sem chamar a API, o destino só relativo e os atributos
   dos cookies.
-- Commit: —
+- Commit: `688e230`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff819dadf8f88780fe3403
 
 ## US-02 e US-03 — Barra superior
@@ -118,7 +118,7 @@
 - Pronto quando: logado, a barra mostra a inicial e o nome (ou o nome de usuário) com o
   menu "Sair"; deslogado, "Entrar com Discord" funciona; `?login=erro` mostra a
   mensagem; testes de renderização no servidor passam.
-- Commit: —
+- Commit: `9cc27da`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff810db721c0d2aed94a44
 
 ## US-01 — Ambiente e segurança
@@ -132,7 +132,7 @@
 - Pronto quando: a pilha `app` sobe com as variáveis do Discord; o README explica o
   aplicativo do Developer Portal e os Redirects; um teste confere que o Client Secret não
   aparece no build do web.
-- Commit: —
+- Commit: `263fc6d`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff812cbd5ccdb46338b651
 
 ## US-01 a US-05 — Ponta a ponta
@@ -147,7 +147,7 @@
 - Pronto quando: o Playwright sobe o Discord falso, a API e o web e prova entrar, ver o
   nome, sair, cancelar e voltar para a página de origem; o menu funciona pelo teclado;
   nenhuma requisição sai para fora do servidor; o job da CI roda sem rede externa.
-- Commit: —
+- Commit: `c34c049`
 - Notion: https://app.notion.com/p/3f0d4a3a5eff813d9c3bd81e3bd0826f
 
 ## Matriz de cobertura
