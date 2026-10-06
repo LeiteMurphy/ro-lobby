@@ -66,7 +66,7 @@ Schemas novos:
 - `Lobby`:
   - `id`, `instance` e `startsAt`;
   - `status` (`open`, `started` ou `cancelled`), `slots`, `occupied`, `minLevel`, `note`;
-  - `owner`: `{userId, discordName, characterId, nick, classId, level, role}`. O
+  - `owner`: `{userId, discordName, characterId, nick, classId, level, portrait, role}`. O
     `characterId` e os dados do personagem ficam nulos se ele foi excluído depois do
     início;
   - `cancelReason`, `createdAt`.

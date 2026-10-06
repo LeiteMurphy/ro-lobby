@@ -1,9 +1,9 @@
-# Relatório de validação — lobbies (ciclo 2)
+# Relatório de validação — lobbies (ciclo 3)
 
 **Veredito geral:** APROVADO
-**Execução:** testes passou: backend unitários 14/14 pacotes · backend integração 14/14 pacotes ok, 0 falhas · Vitest 193/193 (19 arquivos) · Playwright 39/39 (rodado de novo neste ciclo, com o banco `ro_lobby_e2e` recriado) (inclui os ponta a ponta de `login-discord`, `personagens`, `home-local` e `status`) · lint ok (golangci-lint 0 issues; Prettier e ESLint ok; svelte-check com 0 erros e 0 avisos) · build ok
+**Execução:** testes passou: backend unitários 11/11 pacotes com teste · backend integração 15/15 pacotes com teste, 0 falhas (`-count=1`, sem cache) · Vitest 193/193 (19 arquivos) · Playwright 39/39 (banco `ro_lobby_e2e` recriado; inclui os ponta a ponta de `login-discord`, `personagens`, `home-local` e `status`) · lint ok (golangci-lint 0 issues; Prettier e ESLint ok; svelte-check com 0 erros e 0 avisos em 487 arquivos) · build ok
 
-Intervalo validado: `origin/main..HEAD` (15 commits, de `516685b` a `698a382`), na branch `feature/lobbies`. Desde o ciclo 1 entraram `cd51c5d` (relatório do ciclo 1) e `698a382` (correção do nome e e2e da Home depois da edição). Todos os comandos foram executados de novo neste ciclo (integração com `-count=1`, sem cache).
+Intervalo validado: `origin/main..HEAD` (17 commits, de `516685b` a `c02abdd`), na branch `feature/lobbies`. Desde o ciclo 2 entrou `628da48` (relatório do ciclo 2) e `c02abdd` (ajustes do teste do usuário: `owner.portrait` no contrato, detalhe com o fundo da Home e vagas maiores com retrato, card inteiro clicável, fundo das páginas de perfil, criar, editar e erro). Todos os comandos foram executados de novo neste ciclo.
 
 ## Resumo
 | Tipo | ✅ | ⚠️ | ❌ | 🚫 |
@@ -12,103 +12,77 @@ Intervalo validado: `origin/main..HEAD` (15 commits, de `516685b` a `698a382`), 
 | Critérios (CA) | 31 | 0 | 0 | 0 |
 | Não funcionais | 5 | 0 | 0 | 0 |
 
-A pendência do ciclo 1 (nome "Sarah vs Fenril") foi corrigida em `698a382`, e a observação de CA-04.1 (conferir a Home depois da edição) também foi atendida. Não há ❌, 🚫 nem ⚠️.
+O commit `c02abdd` cumpre as versões novas da RN-15 (retrato, nick, classe, nível e selo "Anfitrião") e da RN-23 (clicar em qualquer ponto do card abre o detalhe), com testes que conferem os dois comportamentos. Nada do que estava ✅ no ciclo 2 regrediu.
 
 ## Detalhe por item
 
-### Regras
+### Itens tocados por `c02abdd`
 | ID | Veredito | Evidência (código) | Evidência (teste) | Observação |
 |---|---|---|---|---|
-| RN-01 | ✅ | backend/internal/catalog/instances.go:34-93; server/lobbies.go `ListInstances` (sem sessão) | TestInstances_CA06_1_GroupInstancesFromBROWiki, TestInstances_RN01_IDsAreUniqueKebabCase, TestInstances_CA06_1_PublicCatalog, TestGet_RN01_InstanceLeftCatalog | Baixei de novo https://browiki.org/wiki/Inst%C3%A2ncias em 2026-10-06 e comparei por script: as 51 linhas não "Solo" da página batem uma a uma com os 51 nomes do catálogo, com o mesmo nível de entrada; as 5 "Solo" (Edda do Quarto Crescente, Torneio de Magia, Salão de Ymir, Palácio das Mágoas, Invasão ao Aeroplano) ficaram de fora. `instances.go:92` agora traz "Sarah vs Fenrir" (id `sarah-vs-fenrir`), como no bROWiki; não sobrou nenhuma ocorrência de "Fenril" no repositório. |
-| RN-02 | ✅ | catalog/instances.go:106-121; LobbyForm.svelte:66-69 (dois `optgroup`) | TestInstances_CA06_2_ChoiceOrder; lobbies.spec.ts "CA-06.2 / RN-02" | |
-| RN-03 | ✅ | web/src/lib/home/catalog.ts `instanceArt` → capa e ícone padrão | home.spec.ts "RN-03 (lobbies)" | Os SVG antigos `/brand/inst-*.svg` ficaram sem uso (ver observações). |
-| RN-04 | ✅ | server/lobbies.go `CreateLobby` (`currentUser`, 401); novo/+page.server.ts `toLogin` | TestLobbies_CA06_3_WritesRequireSession; lobbies.server.spec.ts "CA-02.3 / RN-04"; e2e CA-02.3 | |
-| RN-05 | ✅ | lobbies.go:438-454 `checkStart` (fuso SP, hoje a hoje+13); web/src/lib/lobbies/time.ts | TestCreate_CA01_2_StartWindow, TestCreate_RN05_DayTurnInSaoPaulo; lobbies.spec.ts "borda de RN-05" | |
-| RN-06 | ✅ | lobbies.go:457-467; migração 00004 (CHECK por função e soma); padrão 1/2/3 em novo/+page.server.ts | TestCreate_CA01_3_to_CA01_12_FieldErrors (CA-01.3); TestLobbies_RN06_RN07_RN09_RN19_ChecksRejectInvalidValues; lobbies.server.spec.ts "CA-01.1 / RN-06…" | |
-| RN-07 | ✅ | lobbies.go:249-251, 347-349; CHECK `min_level >= instance_level`; LobbyForm `onInstanceChange` | CA-01.4 no TestCreate_CA01_3_to_CA01_12_FieldErrors; TestUpdate_CA04_2_CA04_3_Limits (150 < 160) | |
-| RN-08 | ✅ | lobbies.go:266-278 (personagem próprio, nível, vaga da função) | CA-01.5, CA-01.6, CA-01.7 no TestCreate_CA01_3_to_CA01_12_FieldErrors; TestCreate_CA01_1_Defaults (ocupados) | |
-| RN-09 | ✅ | lobbies.go:469-475 (trim + 250 runas); CHECK no banco | CA-01.11; TestUpdate_CA04_1 (trim) | |
-| RN-10 | ✅ | lobbies.go:478-492; queries/lobbies.sql `HasScheduleConflict` (não cancelados, `IS DISTINCT FROM`) | TestCreate_CA01_8_ScheduleConflict, TestLobbies_RN10_ScheduleConflictWindow, TestCancel_CA05_1_CA05_2 (cancelado não conflita), TestUpdate_CA04_1 (não conflita consigo) | |
-| RN-11 | ✅ | lobbies.go:279-285 | TestCreate_CA01_9_LimitOfFive, TestCreate_CA06_5_Concurrent | |
-| RN-12 | ✅ | novo/+page.svelte (aviso + link /perfil); messages.ts `NO_CHARACTER_MESSAGE` | lobbies.spec.ts "CA-01.10 / RN-12"; e2e CA-02.3 / CA-01.10 | |
-| RN-13 | ✅ | lobbies.go:518-526 (estado derivado); design §4 | TestList_CA02_2_OnlyOpen | |
-| RN-14 | ✅ | queries/lobbies.sql `ListOpenLobbies` (`cancelled_at IS NULL AND starts_at > now`) | TestList_CA02_2_OnlyOpen, TestLobbies_RN13_RN14_ListOnlyOpen; e2e (cancelado sai da Home) | |
-| RN-15 | ✅ | server `GetLobby` sem sessão, 404; routes/lobbies/[id]/+page.server.ts | TestGetLobby_CA03_2_NotFound, TestGet_CA03_2_NotFound; lobbies.spec.ts "CA-03.1 / RN-15"; e2e CA-03.1 | |
-| RN-16 | ✅ | [id]/+page.svelte:86-99 | lobbies.spec.ts "CA-03.3 / RN-16"; e2e CA-03.3 | |
-| RN-17 | ✅ | lobbies.go:318-379 (sem instância nem personagem no `UpdateInput`); editar/+page.server.ts | TestUpdate_CA04_1, TestUpdate_CA04_4_OtherOrNotOpen; lobbies.spec.ts "RN-17" | |
-| RN-18 | ✅ | lobbies.go:350-355 | TestUpdate_CA04_2_CA04_3_Limits | |
-| RN-19 | ✅ | lobbies.go:382-416; CHECK `cancel_reason` 10..250; CancelDialog.svelte | TestCancel_CA05_1_CA05_2, TestLobbies_RN19_CancelNeedsReason; lobbies.server.spec.ts CA-05.1/CA-05.2; e2e | |
-| RN-20 | ✅ | lobbies.go:419-434 (`GetOwnLobbyForUpdate` por dono → ErrNotFound) | TestUpdate_CA04_4_OtherOrNotOpen; TestLobbyWrites_CA04_4_CA05_3_NotFoundAndNotOpen; lobbies.server.spec.ts "RN-20" | |
-| RN-21 | ✅ | characters.go `checkNotInOpenLobby` em `Update` (só se a função muda) e `Delete`, dentro de `inTx`; server/characters.go 409 | TestOwnerOfOpenLobby_CA06_4_Locked, TestOwnerOfStartedOrCancelledLobby_RN21_Free; TestCharacters_CA06_4_InOpenLobbyIs409; perfil/page.server.spec.ts "CA-06.4"; e2e | |
-| RN-22 | ✅ | routes/+page.server.ts (GET /lobbies dos 14 dias); lib/lobbies/toHome.ts | home.server.spec.ts "CA-02.1 / RN-22"; lobbies.spec.ts "CA-02.1"; e2e home e lobbies | |
-| RN-23 | ✅ | TopBar.svelte (link /lobbies/novo); LobbyCard.svelte e FeaturedLobby.svelte (link do detalhe); LobbyForm com prévia | home.spec.ts "CA-02.3 / CA-02.4 / RN-23"; e2e CA-02.3, CA-02.4 | |
+| RN-15 | ✅ | queries/lobbies.sql (`c.portrait AS owner_portrait` em `GetLobby` e `ListOpenLobbies`); lobbies.go `toLobby` (`Owner.Portrait` só com personagem); server/lobbies.go:228-231 (`portrait` no corpo, nulo se vazio); openapi.yaml `LobbyOwner.portrait` (enum dos 4 retratos, nullable, required); `[id]/+page.svelte` (vaga do dono com `<img src="/portraits/…svg">`, nick, "Classe · Nv", selo "Anfitrião"; card "Anfitrião" lateral) | TestCreate_CA01_1_Defaults (integração: `Portrait: "retrato-1"` lido do banco); TestLobbies_RN22_PublicList (JSON com `"portrait": "retrato-2"`); lobbies.spec.ts "CA-03.1 / RN-15" (regex: retrato-2.svg → Lirien → "Arcebispo · Nv 178" → "Anfitrião"); e2e CA-03.1 (`owner-slot` com nick, "Arcebispo · Nv 178" e "Anfitrião") | Estado, data e hora, nível mínimo, observação e 404 continuam cobertos como no ciclo 2. Caso nulo sem teste próprio (ver observações). |
+| RN-23 | ✅ | LobbyCard.svelte: `.detail::after` com `position:absolute; inset:0; z-index:1` sobre o `.card` (`position:relative`); `.action` com `z-index:2` mantém "Candidatar" por cima; prévia (`preview`) continua sem link | e2e lobbies "CA-02.4": confere o link "Ver grupo: … às 20:00" visível e clica na posição (24, 24) do card, sobre a capa, longe do título → URL do detalhe; home.spec.ts "CA-02.3 / CA-02.4 / RN-23 (lobbies)"; e2e home CA-02.5 ("Candidatar" segue desabilitado no card) passa | O destaque (`FeaturedLobby`) não ficou clicável por inteiro; ele mantém o botão "Ver grupo" (ver observações). |
+| CA-02.4 | ✅ | LobbyCard.svelte, FeaturedLobby.svelte | e2e lobbies CA-02.4; home.spec.ts | |
+| CA-03.1 | ✅ | `[id]/+page.svelte` | lobbies.spec.ts "CA-03.1 / RN-15"; e2e CA-03.1 | |
+| CA-03.2 | ✅ | `+error.svelte` (só perdeu o fundo próprio, agora vem do `body`) | lobbies.server.spec.ts "CA-03.2"; TestGetLobby_CA03_2_NotFound; e2e (`error-page`) | |
+| RNF-01 | ✅ | O link do card segue sendo o único ponto focável do título; o `::after` não muda a ordem do Tab | e2e home "RNF-01: todo ponto de Tab mostra o anel de foco âmbar" (desktop e celular) e lobbies "RNF-01" passam | |
+| RNF-02 | ✅ | Os retratos vêm de `/portraits/*.svg` do próprio web | e2e lobbies "RNF-02: criação e detalhe não carregam nada de fora do servidor"; home RNF-02 | |
 
-### Critérios
-| ID | Veredito | Evidência (código) | Evidência (teste) | Observação |
-|---|---|---|---|---|
-| CA-01.1 | ✅ | lobbies.go `Create`, `toLobby` | TestCreate_CA01_1_Defaults; lobbies.server.spec.ts (padrões e UTC); e2e CA-01.1 | |
-| CA-01.2 | ✅ | `checkStart` | TestCreate_CA01_2_StartWindow (passado, agora, dia 14, vazio; dia 13 às 23:30 aceito) | |
-| CA-01.3 | ✅ | `checkSlots` | subtestes "CA-01.3 total 0/13" | |
-| CA-01.4 | ✅ | lobbies.go:249 | subteste "CA-01.4" (Torre da Constelação, 200) | |
-| CA-01.5 | ✅ | lobbies.go:273 | subteste "CA-01.5" (`characterId/level_too_low`) | |
-| CA-01.6 | ✅ | lobbies.go:276 | subteste "CA-01.6" | |
-| CA-01.7 | ✅ | lobbies.go:266-268 | subtestes "CA-01.7"; TestCreateLobby_CA01_7_CA01_12_ValidationIs422 | |
-| CA-01.8 | ✅ | `checkConflict`; messages.ts | TestCreate_CA01_8_ScheduleConflict (21:30 recusado, 22:00 aceito); e2e CA-01.8 (mensagem junto do campo) | |
-| CA-01.9 | ✅ | lobbies.go:283; messages.ts `LOBBY_LIMIT_MESSAGE` | TestCreate_CA01_9_LimitOfFive; TestCreateLobby_CA01_9_LimitIs409; lobbies.server.spec.ts "CA-01.9" | |
-| CA-01.10 | ✅ | novo/+page.svelte | lobbies.spec.ts "CA-01.10"; e2e | |
-| CA-01.11 | ✅ | `checkNote` | subteste "CA-01.11" | |
-| CA-01.12 | ✅ | lobbies.go:240-246 | subteste "CA-01.12"; TestCreateLobby_CA01_7_CA01_12_ValidationIs422 (422 com `instanceId`) | |
-| CA-02.1 | ✅ | +page.server.ts, toHome.ts | home.server.spec.ts; e2e home "CA-02.1 (lobbies)" e lobbies "CA-02.1" | |
-| CA-02.2 | ✅ | `ListOpenLobbies` | TestList_CA02_2_OnlyOpen (iniciado há 1 min e cancelado fora); e2e (cancelado sai da Home) | |
-| CA-02.3 | ✅ | TopBar.svelte; novo/+page.server.ts `toLogin` | home.spec.ts; lobbies.server.spec.ts; e2e CA-02.3 | |
-| CA-02.4 | ✅ | LobbyCard.svelte, FeaturedLobby.svelte | home.spec.ts; e2e CA-02.4 | |
-| CA-03.1 | ✅ | [id]/+page.svelte | lobbies.spec.ts "CA-03.1"; e2e | |
-| CA-03.2 | ✅ | [id]/+page.server.ts `error(404)`; routes/+error.svelte | lobbies.server.spec.ts "CA-03.2"; TestGetLobby_CA03_2_NotFound; e2e (`error-page`) | |
-| CA-03.3 | ✅ | [id]/+page.svelte:86-99 | lobbies.spec.ts "CA-03.3"; e2e CA-03.3 (outra conta vê "Candidatar" desabilitado) | |
-| CA-04.1 | ✅ | `Update`; editar/+page.server.ts | TestUpdate_CA04_1; TestLobbyWrites_CA04_1_CA05_1_PassData; e2e lobbies.spec.ts:209-226 | O e2e confere o detalhe (21:00 e "0 de 5" em Dano) e, desde `698a382`, também a Home: o card do lobby no dia 5 mostra "21:00" e "1/8" (1 Tank + 2 Suportes + 5 Danos, 1 ocupado). A conferência das 5 vagas de Dano na Home é pelo total, não pela linha da função (ver observações). |
-| CA-04.2 | ✅ | lobbies.go:353 | TestUpdate_CA04_2_CA04_3_Limits; lobbies.server.spec.ts "CA-04.2" | |
-| CA-04.3 | ✅ | lobbies.go:350 | TestUpdate_CA04_2_CA04_3_Limits | |
-| CA-04.4 | ✅ | `ownOpenLobby`; server 404/409 | TestUpdate_CA04_4_OtherOrNotOpen (confere que o lobby não mudou); TestLobbyWrites_CA04_4_CA05_3_NotFoundAndNotOpen | |
-| CA-05.1 | ✅ | `Cancel`; [id]/+page.svelte (selo e motivo) | TestCancel_CA05_1_CA05_2; lobbies.spec.ts "CA-05.1"; e2e | |
-| CA-05.2 | ✅ | lobbies.go:391-397 | TestCancel_CA05_1_CA05_2 ("não dá" → `reason/too_short`); lobbies.server.spec.ts; e2e | |
-| CA-05.3 | ✅ | `ownOpenLobby` → 404 | TestUpdate_CA04_4_OtherOrNotOpen; TestLobbyWrites_CA04_4_CA05_3_NotFoundAndNotOpen | |
-| CA-06.1 | ✅ | catalog/instances.go; `ListInstances` | TestInstances_CA06_1_PublicCatalog (51 itens, sem sessão), TestInstances_CA06_1_GroupInstancesFromBROWiki (inclui `sarah-vs-fenrir`, 145, semanal) | Nomes conferidos contra o bROWiki (ver RN-01). |
-| CA-06.2 | ✅ | LobbyForm.svelte `optgroup` | lobbies.spec.ts "CA-06.2"; TestInstances_CA06_2_ChoiceOrder | |
-| CA-06.3 | ✅ | server/lobbies.go (401 nas três escritas) | TestLobbies_CA06_3_WritesRequireSession (sem token e com token desconhecido) | |
-| CA-06.4 | ✅ | characters.go; server/characters.go; perfil/messages.ts | TestOwnerOfOpenLobby_CA06_4_Locked; TestCharacters_CA06_4_InOpenLobbyIs409; perfil/page.server.spec.ts; e2e (mensagem exata) | |
-| CA-06.5 | ✅ | `inTx` com `LockUser` (D-05) | TestCreate_CA06_5_Concurrent (8 simultâneos → 5 e 3; 4 em conflito → 1) | |
+### Demais regras e critérios
+Sem mudança desde o ciclo 2; testes reexecutados neste ciclo, todos passando. A evidência por item é a mesma do relatório do ciclo 2 (commit `628da48`):
 
-### Não funcionais
-| ID | Veredito | Evidência (código) | Evidência (teste) | Observação |
-|---|---|---|---|---|
-| RNF-01 | ✅ | rótulos e `aria-describedby` no LobbyForm; CancelDialog com `aria-labelledby`/`describedby` | lobbies.spec.ts "RNF-01"; e2e "RNF-01: formulário e diálogo de cancelamento pelo teclado" | |
-| RNF-02 | ✅ | — | e2e "RNF-02: criação e detalhe não carregam nada de fora do servidor"; home "RNF-02" | |
-| RNF-03 | ✅ | — | Todos os testes novos citam IDs | Um ID de teste aponta para outra spec sem dizer (ver observações). |
-| RNF-04 | ✅ | form.ts (só formato de dia e hora no web); todas as regras no serviço Go e nos CHECK | lobbies.server.spec.ts "RNF-04"; testes de integração do serviço | |
-| RNF-05 | ✅ | routes/+page.server.ts | home.spec.ts (SSR); e2e "CA-02.6: o HTML do servidor já traz a Home" | |
+| ID | Veredito | Evidência (código) | Evidência (teste) |
+|---|---|---|---|
+| RN-01 | ✅ | catalog/instances.go (51 instâncias de grupo, "Sarah vs Fenrir"); `ListInstances` sem sessão | TestInstances_CA06_1_GroupInstancesFromBROWiki, TestInstances_CA06_1_PublicCatalog, TestGet_RN01_InstanceLeftCatalog |
+| RN-02 | ✅ | catalog/instances.go (ordem); LobbyForm.svelte (dois `optgroup`) | TestInstances_CA06_2_ChoiceOrder; lobbies.spec.ts "CA-06.2 / RN-02" |
+| RN-03 | ✅ | lib/home/catalog.ts `instanceArt` (capa e ícone padrão) | home.spec.ts "RN-03 (lobbies)" |
+| RN-04 | ✅ | server/lobbies.go (401); novo/+page.server.ts `toLogin` | TestLobbies_CA06_3_WritesRequireSession; e2e CA-02.3 |
+| RN-05 | ✅ | lobbies.go `checkStart` | TestCreate_CA01_2_StartWindow, TestCreate_RN05_DayTurnInSaoPaulo |
+| RN-06 | ✅ | lobbies.go `checkSlots`; CHECK da migração 00004 | TestCreate_CA01_3_to_CA01_12_FieldErrors; TestLobbies_RN06_RN07_RN09_RN19_ChecksRejectInvalidValues |
+| RN-07 | ✅ | lobbies.go; CHECK `min_level >= instance_level` | subteste CA-01.4; TestUpdate_CA04_2_CA04_3_Limits |
+| RN-08 | ✅ | lobbies.go (personagem próprio, nível, vaga da função) | subtestes CA-01.5..CA-01.7; TestCreate_CA01_1_Defaults |
+| RN-09 | ✅ | lobbies.go `checkNote`; CHECK | subteste CA-01.11 |
+| RN-10 | ✅ | `checkConflict`; `HasScheduleConflict` | TestCreate_CA01_8_ScheduleConflict, TestLobbies_RN10_ScheduleConflictWindow |
+| RN-11 | ✅ | lobbies.go (limite 5 com usuário travado) | TestCreate_CA01_9_LimitOfFive, TestCreate_CA06_5_Concurrent |
+| RN-12 | ✅ | novo/+page.svelte | lobbies.spec.ts "CA-01.10"; e2e |
+| RN-13 | ✅ | lobbies.go `toLobby` (estado derivado) | TestList_CA02_2_OnlyOpen |
+| RN-14 | ✅ | `ListOpenLobbies` | TestList_CA02_2_OnlyOpen, TestLobbies_RN13_RN14_ListOnlyOpen; e2e |
+| RN-16 | ✅ | `[id]/+page.svelte` (ações do dono / "Candidatar" em breve) | lobbies.spec.ts "CA-03.3 / RN-16"; e2e CA-03.3 |
+| RN-17 | ✅ | lobbies.go `Update` | TestUpdate_CA04_1, TestUpdate_CA04_4_OtherOrNotOpen |
+| RN-18 | ✅ | lobbies.go | TestUpdate_CA04_2_CA04_3_Limits |
+| RN-19 | ✅ | lobbies.go `Cancel`; CHECK; CancelDialog.svelte | TestCancel_CA05_1_CA05_2, TestLobbies_RN19_CancelNeedsReason; e2e |
+| RN-20 | ✅ | `ownOpenLobby` (404) | TestLobbyWrites_CA04_4_CA05_3_NotFoundAndNotOpen |
+| RN-21 | ✅ | characters.go `checkNotInOpenLobby` | TestOwnerOfOpenLobby_CA06_4_Locked; TestCharacters_CA06_4_InOpenLobbyIs409; e2e |
+| RN-22 | ✅ | routes/+page.server.ts; lib/lobbies/toHome.ts | home.server.spec.ts "CA-02.1 / RN-22"; e2e |
+| CA-01.1..CA-01.12 | ✅ | lobbies.go `Create` e validações | TestCreate_CA01_1_Defaults, TestCreate_CA01_2_StartWindow, TestCreate_CA01_3_to_CA01_12_FieldErrors, TestCreate_CA01_8_ScheduleConflict, TestCreate_CA01_9_LimitOfFive, TestCreateLobby_CA01_7_CA01_12_ValidationIs422; lobbies.spec.ts CA-01.10; e2e CA-01.1, CA-01.8, CA-01.10 |
+| CA-02.1..CA-02.3 | ✅ | +page.server.ts; `ListOpenLobbies`; TopBar.svelte | home.server.spec.ts; TestList_CA02_2_OnlyOpen; e2e CA-02.1, CA-02.3 |
+| CA-03.3 | ✅ | `[id]/+page.svelte` | lobbies.spec.ts; e2e |
+| CA-04.1..CA-04.4 | ✅ | lobbies.go `Update`; server 404/409 | TestUpdate_CA04_1, TestUpdate_CA04_2_CA04_3_Limits, TestUpdate_CA04_4_OtherOrNotOpen; e2e (detalhe e Home) |
+| CA-05.1..CA-05.3 | ✅ | lobbies.go `Cancel`; `[id]/+page.svelte` | TestCancel_CA05_1_CA05_2; TestLobbyWrites_CA04_4_CA05_3_NotFoundAndNotOpen; e2e |
+| CA-06.1..CA-06.5 | ✅ | catalog; server/lobbies.go; characters.go; `inTx` + `LockUser` | TestInstances_CA06_1_*, TestInstances_CA06_2_ChoiceOrder, TestLobbies_CA06_3_WritesRequireSession, TestOwnerOfOpenLobby_CA06_4_Locked, TestCreate_CA06_5_Concurrent |
+| RNF-03 | ✅ | — | Os testes alterados em `c02abdd` seguem citando IDs (CA-03.1 / RN-15, CA-02.4, RN-23) |
+| RNF-04 | ✅ | Regras no serviço Go e nos CHECK; o web só repete o formato | lobbies.server.spec.ts "RNF-04" |
+| RNF-05 | ✅ | routes/+page.server.ts | home.spec.ts (SSR); e2e "CA-02.6" |
 
 ### Design e rastreabilidade
-- Contratos: `openapi.yaml` com as 6 rotas, os schemas `Instance`, `Slots`, `LobbyInput`, `LobbyUpdate` e `Lobby` e os códigos de erro novos; TestContract_CA06_3_LobbyRoutesAreDescribed passa. O código gerado está em dia (o build e o lint passam).
-- Modelo de dados: a migração `00004_lobbies.sql` bate com o design §4, com um CHECK a mais, `min_level >= instance_level`, coerente com a RN-07.
-- D-01 a D-09 respeitadas. D-04: `time/tzdata` embutido (lobbies.go:18). D-05: criar, editar, cancelar, excluir personagem e mudar a função rodam com o Usuário travado.
-- Commits: os 15 seguem Conventional Commits e citam IDs. As tasks T-01 a T-10 estão marcadas `[x]` com commits que existem no intervalo.
-- Features anteriores: os testes de `login-discord`, `personagens`, `home-local` e `status` (Go, Vitest e Playwright) passam todos.
+- Contrato: `openapi.yaml` ganhou `LobbyOwner.portrait` (enum `retrato-1..4`, nullable, required), e o código gerado em Go (`api.gen.go`) e em TypeScript (`schema.gen.ts`) está em dia (build, lint e svelte-check passam). O enum bate com o catálogo de retratos (TestContract dos retratos em characters_test.go).
+- Modelo de dados: sem migração nova; o retrato vem de `characters.portrait` (NOT NULL) pelo `LEFT JOIN` já existente, e fica nulo quando o personagem foi excluído (`ON DELETE SET NULL`).
+- Commits: os 17 seguem Conventional Commits e citam IDs; `c02abdd` cita US-02, US-03, RN-15, RN-23, CA-02.4 e CA-03.1. A spec registra a revisão (cabeçalho "Última revisão" e RN-15/RN-23), e a última entrada de "Descobertas" do tasks.md descreve o ajuste.
+- Features anteriores: `login-discord`, `personagens`, `home-local` e `status` continuam passando (Go, Vitest e Playwright). A troca de fundo no `/perfil` não quebrou nenhum teste da `personagens`.
 
 ## Pendências para correção
 Nenhuma.
 
 ## Scope creep
-- Nenhum. A correção `698a382` toca só o catálogo, o teste dele e o e2e de CA-04.1. As mudanças fora de `lobbies` têm ligação com a spec ou com as tasks:
-  - `backend/cmd/migrate` e `internal/migrate/fresh.go`: banco próprio do e2e (T-10, registrado em Descobertas);
-  - `web/src/lib/api/request.ts`: extraído de `characters/api.ts` (Descobertas);
-  - `web/src/lib/auth/session.ts`: login com volta, RN-04 e RN-23;
-  - `+error.svelte`: CA-03.2.
+- Nenhum. As mudanças de `c02abdd` fora do detalhe e do card (fundo do `/perfil`, `/lobbies/novo`, `/lobbies/[id]/editar` e `+error.svelte`, que só removem `background: var(--ink-0)` para herdar o céu do `body`) são ajustes visuais pedidos pelo usuário e registrados em "Descobertas". Não tocam itens de "Fora de escopo".
 
 ## Observações (não bloqueantes)
-- [CA-04.1] O e2e da Home confere "1/8", o que implica as 5 vagas de Dano só porque Tank e Suporte não mudaram. Uma asserção na linha de composição de Dano do card deixaria o teste mais direto.
-- [RN-01] O id da instância mudou de `sarah-vs-fenril` para `sarah-vs-fenrir`. Algum lobby de desenvolvimento gravado com o id antigo cai no caso de borda "instância que saiu do catálogo" (continua aparecendo com o nome guardado). Não há dados de produção.
-- [RNF-03] `TestLobbies_RN21_UnexpectedErrorIs500` (backend/internal/server/lobbies_test.go:224) cita "RN-21", que nesta spec é o personagem travado. O comentário explica que se refere à RN-21 da `personagens`, mas o nome do teste confunde. Sugestão: `TestLobbies_RN21Personagens_…` ou citar só o comentário.
-- [RN-18, borda "personagem cai abaixo do nível mínimo"] `Update` recusa com `minLevel/above_owner` qualquer edição enquanto o nível mínimo atual estiver acima do nível novo do dono, mesmo que o dono só mude o horário. É uma leitura possível de "só a edição do nível mínimo passa a respeitar o nível novo", mas na prática obriga a baixar o nível mínimo para editar qualquer coisa. Vale confirmar com o usuário.
-- [RN-03] Os arquivos `/brand/inst-*.svg` (arte das instâncias inventadas) ficaram sem uso no web. Podem ser removidos ou guardados para a futura arte por instância.
-- [RN-02] O desempate por nome usa `cmp.Compare` em bytes. Com os nomes atuais a ordem sai certa, mas um nome com acento na primeira letra (ex.: "Ó…") iria para o fim. Um `collate` pt-BR evitaria isso no futuro.
-- A criação começa pela instância mais alta que o principal alcança, não pela primeira do catálogo (ajuste registrado em Descobertas). Isso não contraria a spec.
+- [Design] O `design.md` (§ contratos, linha 69) ainda lista `owner` como `{userId, discordName, characterId, nick, classId, level, role}`, sem `portrait`. Vale atualizar o design para bater com o `openapi.yaml`.
+- [RN-15] Falta teste do retrato nulo: `toAPILobby` só preenche `portrait` com valor, mas nenhum teste do servidor confere `"portrait": null` para o personagem excluído. No web, o teste "D-01: personagem do dono excluído" (lobbies.spec.ts:176) espalha `TEMPLE.owner` e mantém `portrait: 'retrato-2'` com `nick: null`, uma combinação que a API não produz; o ramo sem `<img>` do detalhe fica sem teste. Sugestão: pôr `portrait: null` nesse fixture e conferir que não há `/portraits/` no HTML.
+- [RN-23] O card do destaque (`FeaturedLobby`) não ficou clicável por inteiro; ele continua abrindo o detalhe só pelo botão "Ver grupo". A spec fala em "card", e o destaque é um bloco à parte na `home-local`, então não conta como falha, mas pode surpreender o usuário. Vale confirmar.
+- [RN-23] O `::after` do link cobre a capa, a linha do anfitrião e a composição; hoje nenhum desses tem elemento interativo. Se a composição ou o anfitrião ganharem link ou tooltip no futuro, eles precisam de `position: relative; z-index: 2`, como `.action`.
+- Mantidas do ciclo 2, ainda válidas:
+  - [CA-04.1] O e2e da Home confere "1/8", não a linha de Dano do card.
+  - [RNF-03] `TestLobbies_RN21_UnexpectedErrorIs500` (server/lobbies_test.go:224) cita a RN-21 de outra spec.
+  - [RN-18] Com o dono abaixo do nível mínimo atual, qualquer edição é recusada até baixar o nível mínimo.
+  - [RN-03] Os arquivos `/brand/inst-*.svg` seguem sem uso.
+  - [RN-02] O desempate por nome compara bytes, não usa collation pt-BR.
