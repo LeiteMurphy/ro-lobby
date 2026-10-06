@@ -152,7 +152,7 @@
 
 ## US-01 a US-06 — Ponta a ponta
 
-### T-10 — Ponta a ponta dos lobbies  [ ]
+### T-10 — Ponta a ponta dos lobbies  [x]
 - Cobre: CA-01.1, CA-01.8, CA-01.10, CA-02.1, CA-02.3, CA-02.4, CA-03.1, CA-03.3,
   CA-04.1, CA-05.1, CA-06.4, RNF-01, RNF-02
 - Depende de: T-07, T-08, T-09
@@ -168,7 +168,7 @@
   - nada carregado de fora do servidor.
 
   O ponta a ponta da Home deixa de depender dos dados fictícios.
-- Commit:
+- Commit: `90d9a23`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff813a826af52e8712af56
 
 ## Matriz de cobertura
