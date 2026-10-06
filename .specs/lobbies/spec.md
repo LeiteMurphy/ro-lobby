@@ -3,7 +3,8 @@
 - Feature: `lobbies` · Nível: G · Status: Aprovada
 - Design: Claude Design, `Lobby.dc.html`: criação como página `/lobbies/novo` com prévia do
   card (1b), detalhe (1c) e cancelamento (1d)
-- Última revisão: 2026-10-06 — teste do usuário no localhost: card inteiro clicável
+- Última revisão: 2026-10-06 — teste do usuário no localhost: card inteiro clicável; criar
+  lobby a partir do dia escolhido na Home (RN-24)
   (RN-23), retrato do dono nas vagas (RN-15) e detalhe com o fundo da Home
 
 ## 1. Contexto
@@ -107,6 +108,12 @@ por função, até 12), P-02 (o personagem do dono ocupa uma vaga desde a criaç
 - **RN-23** — "Criar lobby" passa a funcionar e leva à página `/lobbies/novo`, que mostra
   ao lado uma prévia do card como vai aparecer na Home. Visitante vai ao login e volta para
   `/lobbies/novo`. "Ver grupo" abre o detalhe, e clicar em qualquer ponto do card também.
+- **RN-24** — "Criar lobby" na Home (cabeçalho e aviso de lista vazia) abre a criação com o
+  dia escolhido no seletor já preenchido (a Home abre em hoje). Fora da Home, ou com um dia
+  fora dos 14 do seletor, o padrão é amanhã. A hora
+  padrão é 20:00; se o dia for hoje e 20:00 já passou, é a próxima hora cheia. Se não sobra
+  hora cheia hoje (depois das 23:00), o padrão vira amanhã às 20:00. O visitante passa pelo
+  login e volta com o dia preenchido.
 
 ## 5. Critérios de aceite
 
@@ -196,6 +203,17 @@ CA-02.4 — Ver grupo  [US-02, RN-23]
 Given um card na Home
 When o visitante usa "Ver grupo"
 Then abre o detalhe daquele lobby
+
+CA-02.5 — Criar lobby no dia escolhido  [US-02, RN-24]
+Given o Usuário escolheu sexta, 9 out no seletor de dias da Home
+When ele usa "Criar lobby"
+Then a criação abre com o dia sexta, 9 out e a hora 20:00 preenchidos
+
+CA-02.6 — Hora padrão de hoje  [US-02, RN-24]
+Given hoje são 20:40 em Brasília e o Usuário escolheu hoje na Home
+When ele usa "Criar lobby"
+Then a criação abre com hoje e 21:00 preenchidos
+  And às 23:10 abre com amanhã e 20:00
 ```
 
 ### US-03 — Detalhe
