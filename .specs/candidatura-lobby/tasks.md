@@ -52,7 +52,7 @@
 
 ## US-01, US-02, US-10 — Tela do lobby
 
-### T-05 — Detalhe do lobby com candidatura, painel do jogador e decisão do dono  [ ]
+### T-05 — Detalhe do lobby com candidatura, painel do jogador e decisão do dono  [x]
 - Cobre: RN-28, RN-31, RN-32, CA-01.1, CA-02.1, CA-02.2, CA-10.1, CA-10.2, CA-10.3,
   RNF-01 (teclado)
 - Depende de: T-04
@@ -60,12 +60,12 @@
 - Pronto quando: testes Vitest passam para o painel (seleção e conteúdo por papel), o
   diálogo de candidatura (personagens habilitados e motivos), aceitar, recusar com
   justificativa, retirar e as mensagens de cada código de erro.
-- Commit:
+- Commit: 050ae3b
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81018cc5ebd9f412b538
 
 ## US-03, US-10 — Acompanhamento
 
-### T-06 — Minhas candidaturas, selo de pendentes e aviso no perfil  [ ]
+### T-06 — Minhas candidaturas, selo de pendentes e aviso no perfil  [x]
 - Cobre: RN-25, RN-33, RN-34, CA-03.1, CA-03.2, CA-10.4, CA-10.5
 - Depende de: T-04
 - Paralelizável: [P] com T-05
@@ -73,12 +73,12 @@
   `web/src/routes/perfil/`
 - Pronto quando: testes Vitest passam para a lista com estados e justificativa, retirar,
   o item no menu, o selo só para o dono e a mensagem nova da trava.
-- Commit:
+- Commit: 14e677d
 - Notion: https://app.notion.com/p/3f1d4a3a5eff8148a136db1b1c93af05
 
 ## US-01 a US-04, US-10 — Ponta a ponta
 
-### T-07 — Ponta a ponta da candidatura com três contas  [ ]
+### T-07 — Ponta a ponta da candidatura com três contas  [x]
 - Cobre: CA-01.1, CA-01.7, CA-01.11, CA-02.1, CA-02.2, CA-02.10, CA-03.1, CA-03.2,
   CA-03.7, CA-04.2, CA-09.1, CA-10.1 a CA-10.5, RNF-01
 - Depende de: T-05, T-06
@@ -87,7 +87,7 @@
   pendente só como dono, aceitar, recusar com justificativa, retirar, "Minhas
   candidaturas", o selo, o painel com e sem Discord, a trava de nível no perfil e a
   expiração pelo cancelamento.
-- Commit:
+- Commit: 42095c9
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81c19f88f4b7d49eaaad
 
 ## Matriz de cobertura (Parte 1)
