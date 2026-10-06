@@ -16,7 +16,7 @@ import (
 // satisfaz.
 type LobbyService interface {
 	List(ctx context.Context, from, to string) ([]lobbies.Lobby, error)
-	Get(ctx context.Context, id string) (lobbies.Lobby, error)
+	Detail(ctx context.Context, id, viewerID string) (lobbies.Detail, error)
 	Create(ctx context.Context, userID string, in lobbies.Input) (lobbies.Lobby, error)
 	Update(ctx context.Context, userID, id string, in lobbies.UpdateInput) (lobbies.Lobby, error)
 	Cancel(ctx context.Context, userID, id, reason string) (lobbies.Lobby, error)
@@ -60,16 +60,21 @@ func (h lobbiesHandler) ListLobbies(ctx context.Context, req api.ListLobbiesRequ
 	return body, nil
 }
 
-// GetLobby devolve o lobby em qualquer estado, sem sessão (RN-15).
+// GetLobby devolve o lobby em qualquer estado (RN-15), com o que quem olha pode ver; a
+// sessão é opcional (D-06 da candidatura).
 func (h lobbiesHandler) GetLobby(ctx context.Context, req api.GetLobbyRequestObject) (api.GetLobbyResponseObject, error) {
-	l, err := h.lobbies.Get(ctx, req.Id)
+	viewerID, _, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	l, err := h.lobbies.Detail(ctx, req.Id, viewerID)
 	if errors.Is(err, lobbies.ErrNotFound) {
 		return api.GetLobby404JSONResponse{LobbyNotFoundJSONResponse: api.LobbyNotFoundJSONResponse(lobbyNotFound)}, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	body, err := toAPILobby(l)
+	body, err := toAPIDetail(l)
 	return api.GetLobby200JSONResponse(body), err
 }
 
@@ -208,6 +213,7 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 		Status:       api.LobbyStatus(l.Status),
 		Slots:        toAPISlots(l.Slots),
 		Occupied:     toAPISlots(l.Occupied),
+		PendingCount: l.PendingCount,
 		MinLevel:     l.MinLevel,
 		Note:         optional(l.Note),
 		CancelReason: optional(l.CancelReason),
@@ -219,6 +225,7 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 			Nick:        optional(l.Owner.Nick),
 			ClassId:     optional(l.Owner.ClassID),
 			Level:       optional(l.Owner.Level),
+			Link:        optional(l.Owner.Link),
 		},
 	}
 	if l.InstanceReset != "" {

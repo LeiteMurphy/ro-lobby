@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/applications"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/auth"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/characters"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
@@ -56,7 +57,7 @@ func TestLobbiesFlowIntegration_CA01_1_CA04_1_CA05_1_CA06_4(t *testing.T) {
 		return token
 	}
 	ana, bia := session("1"), session("2")
-	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), lobbies.NewService(pool))
+	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), lobbies.NewService(pool), applications.NewService(pool))
 
 	rec, lirien := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"LirienL","classId":"arcebispo","level":178,"role":"support"}`)
 	if rec.Code != http.StatusCreated {

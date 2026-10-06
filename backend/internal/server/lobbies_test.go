@@ -38,6 +38,7 @@ type fakeLobbies struct {
 	gotUpd   lobbies.UpdateInput
 	gotWhy   string
 	listCall bool
+	detail   *lobbies.Detail
 }
 
 func (f *fakeLobbies) List(_ context.Context, from, to string) ([]lobbies.Lobby, error) {
@@ -45,9 +46,12 @@ func (f *fakeLobbies) List(_ context.Context, from, to string) ([]lobbies.Lobby,
 	return []lobbies.Lobby{temple}, f.err
 }
 
-func (f *fakeLobbies) Get(_ context.Context, id string) (lobbies.Lobby, error) {
-	f.gotID = id
-	return temple, f.err
+func (f *fakeLobbies) Detail(_ context.Context, id, viewerID string) (lobbies.Detail, error) {
+	f.gotID, f.gotUser = id, viewerID
+	if f.detail != nil {
+		return *f.detail, f.err
+	}
+	return lobbies.Detail{Lobby: temple}, f.err
 }
 
 func (f *fakeLobbies) Create(_ context.Context, userID string, in lobbies.Input) (lobbies.Lobby, error) {
@@ -66,7 +70,7 @@ func (f *fakeLobbies) Cancel(_ context.Context, userID, id, reason string) (lobb
 }
 
 func newLobbiesServer(f *fakeLobbies) http.Handler {
-	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, f)
+	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, f, &fakeApps{})
 }
 
 const templeJSON = `{"instanceId":"templo-do-demonio-rei","startsAt":"2026-10-07T23:00:00Z","slots":{"tank":1,"support":2,"dps":3},"minLevel":160,"characterId":"` + charID + `","note":"Chamar no Discord"}`
@@ -120,11 +124,12 @@ func TestLobbies_RN22_PublicList(t *testing.T) {
 		"id":       lobbyID,
 		"instance": map[string]any{"id": "templo-do-demonio-rei", "name": "Templo do Demônio Rei", "level": float64(160), "reset": "daily"},
 		"startsAt": "2026-10-07T23:00:00Z", "status": "open",
-		"slots":    map[string]any{"tank": float64(1), "support": float64(2), "dps": float64(3)},
-		"occupied": map[string]any{"tank": float64(0), "support": float64(1), "dps": float64(0)},
-		"minLevel": float64(160), "note": nil, "cancelReason": nil, "createdAt": "2026-10-06T19:40:00Z",
+		"slots":        map[string]any{"tank": float64(1), "support": float64(2), "dps": float64(3)},
+		"occupied":     map[string]any{"tank": float64(0), "support": float64(1), "dps": float64(0)},
+		"pendingCount": float64(0),
+		"minLevel":     float64(160), "note": nil, "cancelReason": nil, "createdAt": "2026-10-06T19:40:00Z",
 		"owner": map[string]any{"userId": userID, "discordName": "Grimbold", "characterId": charID, "nick": "Lirien",
-			"classId": "arcebispo", "level": float64(178), "portrait": "retrato-2", "role": "support"},
+			"classId": "arcebispo", "level": float64(178), "portrait": "retrato-2", "link": nil, "role": "support"},
 	}
 	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got)

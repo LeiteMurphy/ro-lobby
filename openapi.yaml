@@ -338,7 +338,14 @@ paths:
     get:
       operationId: getLobby
       summary: Detalhe do lobby
-      description: O lobby em qualquer estado (RN-15). Não exige sessão.
+      description: >
+        O lobby em qualquer estado (RN-15). A sessão é opcional e muda o que vem: todos
+        veem os membros e a quantidade de pendentes; o Discord dos membros só vai para o
+        dono e para os membros (RN-32); os pendentes só vão para o dono (RN-28); quem se
+        candidatou recebe a própria candidatura (RN-29, D-06).
+      security:
+        - {}
+        - sessionToken: []
       responses:
         "200":
           description: O lobby.
@@ -407,6 +414,132 @@ paths:
           $ref: "#/components/responses/LobbyNotOpen"
         "422":
           $ref: "#/components/responses/Invalid"
+  /lobbies/{id}/applications:
+    parameters:
+      - $ref: "#/components/parameters/LobbyId"
+    post:
+      operationId: applyToLobby
+      summary: Candidata-se ao lobby
+      description: >
+        Com um dos próprios personagens, na função dele, se houver vaga e nível (RN-01 a
+        RN-07, RN-30). A candidatura fica pendente até o dono decidir.
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyInput"
+      responses:
+        "201":
+          description: Candidatura pendente criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/LobbyNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /applications/{id}/accept:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      operationId: acceptApplication
+      summary: O dono aceita a candidatura
+      description: >
+        Só o dono e só candidatura pendente, com vaga, nível e sem conflito de horário no
+        momento do aceite (RN-08, RN-10, RN-11, RN-12, RN-30).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Candidatura aceita.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/ApplicationNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+  /applications/{id}/reject:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      operationId: rejectApplication
+      summary: O dono recusa a candidatura
+      description: Só o dono e só candidatura pendente, com justificativa de 10 a 250 caracteres (RN-08, RN-09).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: Candidatura recusada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/ApplicationNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /applications/{id}/withdraw:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      operationId: withdrawApplication
+      summary: O candidato retira a candidatura pendente
+      description: Só a própria candidatura, enquanto pendente (RN-13).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Candidatura retirada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/ApplicationNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+  /me/applications:
+    get:
+      operationId: listMyApplications
+      summary: Minhas candidaturas
+      description: As candidaturas do Usuário da sessão, as mais recentes primeiro (RN-33, CA-03.1).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Candidaturas do Usuário.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyApplication"
+        "401":
+          $ref: "#/components/responses/NoSession"
 components:
   parameters:
     LobbyId:
@@ -416,6 +549,13 @@ components:
       description: >
         ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde
         404 do mesmo jeito (RN-20, D-08).
+      schema:
+        type: string
+    ApplicationId:
+      name: id
+      in: path
+      required: true
+      description: ID da candidatura. Desconhecido ou malformado responde 404.
       schema:
         type: string
     CharacterId:
@@ -428,6 +568,23 @@ components:
       schema:
         type: string
   responses:
+    ApplicationNotFound:
+      description: A candidatura não existe.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: not_found
+    ApplicationRule:
+      description: Uma regra da candidatura impede a ação; o web traduz o código (D-07).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApplicationRuleError"
+          example:
+            error: application_rule
+            code: role_full
     LobbyNotFound:
       description: O lobby não existe ou, nas escritas, é de outro Usuário (RN-20).
       content:
@@ -623,7 +780,7 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message]
         code:
           type: string
           enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low]
@@ -735,7 +892,7 @@ components:
     LobbyOwner:
       type: object
       additionalProperties: false
-      required: [userId, discordName, characterId, nick, classId, level, portrait, role]
+      required: [userId, discordName, characterId, nick, classId, level, portrait, link, role]
       properties:
         userId:
           type: string
@@ -761,12 +918,16 @@ components:
           enum: [retrato-1, retrato-2, retrato-3, retrato-4]
           nullable: true
           description: Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
+        link:
+          type: string
+          nullable: true
+          description: Link externo do personagem do dono, para o painel do jogador (RN-31).
         role:
           $ref: "#/components/schemas/Role"
     Lobby:
       type: object
       additionalProperties: false
-      required: [id, instance, startsAt, status, slots, occupied, minLevel, note, owner, cancelReason, createdAt]
+      required: [id, instance, startsAt, status, slots, occupied, pendingCount, minLevel, note, owner, cancelReason, createdAt]
       properties:
         id:
           type: string
@@ -782,6 +943,21 @@ components:
           $ref: "#/components/schemas/Slots"
         occupied:
           $ref: "#/components/schemas/Slots"
+        pendingCount:
+          type: integer
+          description: Candidaturas pendentes; zero depois do início (RN-28, D-02).
+        members:
+          type: array
+          description: Membros aceitos. Só no detalhe (D-06).
+          items:
+            $ref: "#/components/schemas/LobbyParticipant"
+        pending:
+          type: array
+          description: Candidaturas pendentes. Só no detalhe e só para o dono (RN-28).
+          items:
+            $ref: "#/components/schemas/LobbyParticipant"
+        myApplication:
+          $ref: "#/components/schemas/ViewerApplication"
         minLevel:
           type: integer
         note:
@@ -795,3 +971,180 @@ components:
         createdAt:
           type: string
           format: date-time
+    ApplicationStatus:
+      type: string
+      enum: [pending, accepted, rejected, withdrawn, expired, left, removed, cancelled]
+      description: Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
+    ApplyInput:
+      type: object
+      required: [characterId]
+      properties:
+        characterId:
+          type: string
+          description: Um dos personagens do Usuário da sessão.
+        message:
+          type: string
+          description: Opcional, até 250 caracteres (RN-06).
+    RejectInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: De 10 a 250 caracteres (RN-09).
+    ApplicationRuleError:
+      type: object
+      additionalProperties: false
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          enum: [application_rule]
+        code:
+          type: string
+          enum: [not_open, own_lobby, already_active, role_full, rejected_before, below_min_level, schedule_conflict, not_pending, not_owner, not_yours]
+    Application:
+      type: object
+      additionalProperties: false
+      required: [id, lobbyId, characterId, role, message, status, reason, createdAt, decidedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        lobbyId:
+          type: string
+          format: uuid
+        characterId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Nulo se o personagem foi excluído depois do lobby (RN-26).
+        role:
+          $ref: "#/components/schemas/Role"
+        message:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        reason:
+          type: string
+          nullable: true
+          description: Justificativa da recusa (RN-29).
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ViewerApplication:
+      type: object
+      additionalProperties: false
+      required: [id, characterId, role, message, status, reason, createdAt, decidedAt]
+      description: A candidatura mais recente de quem olha o lobby (RN-29, D-06).
+      properties:
+        id:
+          type: string
+          format: uuid
+        characterId:
+          type: string
+          format: uuid
+          nullable: true
+        role:
+          $ref: "#/components/schemas/Role"
+        message:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        reason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+    LobbyParticipant:
+      type: object
+      additionalProperties: false
+      required: [applicationId, userId, discordName, characterId, nick, classId, level, portrait, link, role, message, createdAt]
+      description: Membro aceito ou candidato pendente, como quem olha pode ver (RN-31, RN-32).
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        discordName:
+          type: string
+          nullable: true
+          description: Só para o dono e para os membros (RN-32).
+        characterId:
+          type: string
+          format: uuid
+          nullable: true
+        nick:
+          type: string
+          nullable: true
+        classId:
+          type: string
+          nullable: true
+        level:
+          type: integer
+          nullable: true
+        portrait:
+          type: string
+          enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+          nullable: true
+        link:
+          type: string
+          nullable: true
+        role:
+          $ref: "#/components/schemas/Role"
+        message:
+          type: string
+          nullable: true
+          description: Mensagem da candidatura, só para o dono (RN-28).
+        createdAt:
+          type: string
+          format: date-time
+    MyApplication:
+      type: object
+      additionalProperties: false
+      required: [application, lobby, character]
+      description: Uma candidatura do Usuário com o lobby e o personagem (RN-33).
+      properties:
+        application:
+          $ref: "#/components/schemas/Application"
+        lobby:
+          type: object
+          additionalProperties: false
+          required: [instanceName, startsAt, status]
+          properties:
+            instanceName:
+              type: string
+            startsAt:
+              type: string
+              format: date-time
+            status:
+              $ref: "#/components/schemas/LobbyStatus"
+        character:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [nick, classId, level, portrait]
+          description: Nulo se o personagem foi excluído depois do lobby (RN-26).
+          properties:
+            nick:
+              type: string
+            classId:
+              type: string
+            level:
+              type: integer
+            portrait:
+              type: string
+              enum: [retrato-1, retrato-2, retrato-3, retrato-4]

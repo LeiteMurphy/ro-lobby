@@ -8,7 +8,7 @@ RETURNING id;
 -- name: GetLobby :one
 -- RN-15: o lobby em qualquer estado, com o personagem e o Discord do dono.
 SELECT sqlc.embed(lobbies),
-       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
+       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait, c.link AS owner_link,
        u.username AS owner_username, u.global_name AS owner_global_name,
        -- D-03 (candidatura): membros aceitos por função e pendentes.
        (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'tank') AS accepted_tank,
@@ -23,7 +23,7 @@ WHERE lobbies.id = @id;
 -- name: ListOpenLobbies :many
 -- RN-13 / RN-14: só abertos (não cancelados e ainda não iniciados), por início.
 SELECT sqlc.embed(lobbies),
-       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
+       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait, c.link AS owner_link,
        u.username AS owner_username, u.global_name AS owner_global_name,
        -- D-03 (candidatura): membros aceitos por função e pendentes.
        (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'tank') AS accepted_tank,

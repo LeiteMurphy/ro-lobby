@@ -399,17 +399,10 @@ func transition(ctx context.Context, q *db.Queries, app db.Application, to strin
 	return updated, err
 }
 
-// EffectiveStatus é o estado lido da candidatura: pendente de lobby iniciado conta como
+// effectiveStatus é o estado lido da candidatura: pendente de lobby iniciado conta como
 // expirada (D-02, RN-16).
-func EffectiveStatus(status string, startsAt, now time.Time) string {
-	if status == StatusPending && !startsAt.After(now) {
-		return StatusExpired
-	}
-	return status
-}
-
 func effectiveStatus(status string, l db.Lobby, now time.Time) string {
-	return EffectiveStatus(status, l.StartsAt, now)
+	return lobbies.ApplicationStatus(status, l.StartsAt, now)
 }
 
 func isOpen(l db.Lobby, now time.Time) bool {

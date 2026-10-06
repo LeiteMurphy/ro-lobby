@@ -138,6 +138,20 @@ func TestContract_CA07_CharacterRoutesAreDescribed(t *testing.T) {
 	}
 }
 
+// requiresSession diz se a operação exige sessão: tem segurança e nenhuma alternativa
+// vazia ("- {}" marca a sessão opcional, D-06 da candidatura-lobby).
+func requiresSession(op *openapi3.Operation) bool {
+	if op.Security == nil || len(*op.Security) == 0 {
+		return false
+	}
+	for _, req := range *op.Security {
+		if len(req) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // CA-06.1 / CA-06.3 / D-06 (lobbies): o catálogo de instâncias e as rotas de lobbies estão
 // no contrato; leituras são públicas e escritas exigem sessão.
 func TestContract_CA06_3_LobbyRoutesAreDescribed(t *testing.T) {
@@ -168,8 +182,7 @@ func TestContract_CA06_3_LobbyRoutesAreDescribed(t *testing.T) {
 				t.Errorf("%s %s: resposta %d não descrita", r.method, r.path, status)
 			}
 		}
-		hasSession := op.Security != nil && len(*op.Security) > 0
-		if hasSession != r.needsSession {
+		if hasSession := requiresSession(op); hasSession != r.needsSession {
 			t.Errorf("%s %s: exige sessão = %v, esperado %v", r.method, r.path, hasSession, r.needsSession)
 		}
 	}
@@ -181,4 +194,40 @@ func toAny(m map[string]string) map[string]any {
 		out[k] = v
 	}
 	return out
+}
+
+// D-06 / D-07 (candidatura-lobby): as rotas de candidatura estão no contrato e exigem
+// sessão; o detalhe do lobby aceita sessão opcional.
+func TestContract_T04_ApplicationRoutesAreDescribed(t *testing.T) {
+	doc := loadContract(t)
+	routes := []struct {
+		path, method string
+		statuses     []int
+	}{
+		{"/lobbies/{id}/applications", "POST", []int{201, 401, 404, 409, 422}},
+		{"/applications/{id}/accept", "POST", []int{200, 401, 404, 409}},
+		{"/applications/{id}/reject", "POST", []int{200, 401, 404, 409, 422}},
+		{"/applications/{id}/withdraw", "POST", []int{200, 401, 404, 409}},
+		{"/me/applications", "GET", []int{200, 401}},
+	}
+	for _, r := range routes {
+		item := doc.Paths.Find(r.path)
+		if item == nil || item.GetOperation(r.method) == nil {
+			t.Errorf("%s %s não está no contrato", r.method, r.path)
+			continue
+		}
+		op := item.GetOperation(r.method)
+		for _, status := range r.statuses {
+			if op.Responses.Status(status) == nil {
+				t.Errorf("%s %s: resposta %d não descrita", r.method, r.path, status)
+			}
+		}
+		if !requiresSession(op) {
+			t.Errorf("%s %s: devia exigir sessão", r.method, r.path)
+		}
+	}
+	get := doc.Paths.Find("/lobbies/{id}").Get
+	if get.Security == nil || len(*get.Security) != 2 || requiresSession(get) {
+		t.Errorf("GET /lobbies/{id}: sessão devia ser opcional, segurança = %v", get.Security)
+	}
 }

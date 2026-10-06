@@ -117,7 +117,7 @@ func (q *Queries) CreateLobby(ctx context.Context, arg CreateLobbyParams) (pgtyp
 
 const getLobby = `-- name: GetLobby :one
 SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at,
-       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
+       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait, c.link AS owner_link,
        u.username AS owner_username, u.global_name AS owner_global_name,
        -- D-03 (candidatura): membros aceitos por função e pendentes.
        (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'tank') AS accepted_tank,
@@ -136,6 +136,7 @@ type GetLobbyRow struct {
 	OwnerClassID    pgtype.Text
 	OwnerLevel      pgtype.Int2
 	OwnerPortrait   pgtype.Text
+	OwnerLink       pgtype.Text
 	OwnerUsername   string
 	OwnerGlobalName pgtype.Text
 	AcceptedTank    int64
@@ -169,6 +170,7 @@ func (q *Queries) GetLobby(ctx context.Context, id pgtype.UUID) (GetLobbyRow, er
 		&i.OwnerClassID,
 		&i.OwnerLevel,
 		&i.OwnerPortrait,
+		&i.OwnerLink,
 		&i.OwnerUsername,
 		&i.OwnerGlobalName,
 		&i.AcceptedTank,
@@ -251,7 +253,7 @@ func (q *Queries) HasScheduleConflict(ctx context.Context, arg HasScheduleConfli
 
 const listOpenLobbies = `-- name: ListOpenLobbies :many
 SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at,
-       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
+       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait, c.link AS owner_link,
        u.username AS owner_username, u.global_name AS owner_global_name,
        -- D-03 (candidatura): membros aceitos por função e pendentes.
        (SELECT count(*) FROM applications a WHERE a.lobby_id = lobbies.id AND a.status = 'accepted' AND a.role = 'tank') AS accepted_tank,
@@ -280,6 +282,7 @@ type ListOpenLobbiesRow struct {
 	OwnerClassID    pgtype.Text
 	OwnerLevel      pgtype.Int2
 	OwnerPortrait   pgtype.Text
+	OwnerLink       pgtype.Text
 	OwnerUsername   string
 	OwnerGlobalName pgtype.Text
 	AcceptedTank    int64
@@ -319,6 +322,7 @@ func (q *Queries) ListOpenLobbies(ctx context.Context, arg ListOpenLobbiesParams
 			&i.OwnerClassID,
 			&i.OwnerLevel,
 			&i.OwnerPortrait,
+			&i.OwnerLink,
 			&i.OwnerUsername,
 			&i.OwnerGlobalName,
 			&i.AcceptedTank,

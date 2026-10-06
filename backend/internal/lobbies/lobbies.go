@@ -155,7 +155,9 @@ type Owner struct {
 	Level       int
 	// Portrait é o retrato do personagem (RN-15), vazio se ele foi excluído.
 	Portrait string
-	Role     string
+	// Link é o link externo do personagem, para o painel do jogador (RN-31).
+	Link string
+	Role string
 }
 
 type Lobby struct {
@@ -208,7 +210,7 @@ func (s *Service) List(ctx context.Context, from, to string) ([]Lobby, error) {
 	}
 	out := make([]Lobby, len(rows))
 	for i, r := range rows {
-		out[i] = s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName},
+		out[i] = s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerLink, r.OwnerUsername, r.OwnerGlobalName},
 			counts{r.AcceptedTank, r.AcceptedSupport, r.AcceptedDps, r.PendingCount})
 	}
 	return out, nil
@@ -231,7 +233,7 @@ func (s *Service) get(ctx context.Context, q *db.Queries, id pgtype.UUID) (Lobby
 	if err != nil {
 		return Lobby{}, fmt.Errorf("lobbies: buscar: %w", err)
 	}
-	return s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName},
+	return s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerLink, r.OwnerUsername, r.OwnerGlobalName},
 		counts{r.AcceptedTank, r.AcceptedSupport, r.AcceptedDps, r.PendingCount}), nil
 }
 
@@ -552,6 +554,7 @@ type owner struct {
 	nick, classID pgtype.Text
 	level         pgtype.Int2
 	portrait      pgtype.Text
+	link          pgtype.Text
 	username      string
 	globalName    pgtype.Text
 }
@@ -592,7 +595,9 @@ func (s *Service) toLobby(l db.Lobby, o owner, c counts) Lobby {
 	// D-01: o dono ocupa a vaga da função dele (P-02); os membros aceitos somam (D-03 da
 	// candidatura).
 	out.Occupied = Slots{Tank: int(c.tank), Support: int(c.support), Dps: int(c.dps)}
-	out.PendingCount = int(c.pending)
+	if status == StatusOpen {
+		out.PendingCount = int(c.pending) // D-02: no início, as pendentes contam como expiradas
+	}
 	switch l.OwnerRole {
 	case "tank":
 		out.Occupied.Tank++
@@ -607,6 +612,7 @@ func (s *Service) toLobby(l db.Lobby, o owner, c counts) Lobby {
 		out.Owner.ClassID = o.classID.String
 		out.Owner.Level = int(o.level.Int16)
 		out.Owner.Portrait = o.portrait.String
+		out.Owner.Link = o.link.String
 	}
 	return out
 }

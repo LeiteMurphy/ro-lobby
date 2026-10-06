@@ -234,7 +234,7 @@ export interface paths {
         };
         /**
          * Detalhe do lobby
-         * @description O lobby em qualquer estado (RN-15). Não exige sessão.
+         * @description O lobby em qualquer estado (RN-15). A sessão é opcional e muda o que vem: todos veem os membros e a quantidade de pendentes; o Discord dos membros só vai para o dono e para os membros (RN-32); os pendentes só vão para o dono (RN-28); quem se candidatou recebe a própria candidatura (RN-29, D-06).
          */
         get: operations["getLobby"];
         /**
@@ -266,6 +266,118 @@ export interface paths {
          * @description Só o dono e só com o lobby aberto, com motivo de 10 a 250 caracteres (RN-19).
          */
         post: operations["cancelLobby"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lobbies/{id}/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Candidata-se ao lobby
+         * @description Com um dos próprios personagens, na função dele, se houver vaga e nível (RN-01 a RN-07, RN-30). A candidatura fica pendente até o dono decidir.
+         */
+        post: operations["applyToLobby"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O dono aceita a candidatura
+         * @description Só o dono e só candidatura pendente, com vaga, nível e sem conflito de horário no momento do aceite (RN-08, RN-10, RN-11, RN-12, RN-30).
+         */
+        post: operations["acceptApplication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O dono recusa a candidatura
+         * @description Só o dono e só candidatura pendente, com justificativa de 10 a 250 caracteres (RN-08, RN-09).
+         */
+        post: operations["rejectApplication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O candidato retira a candidatura pendente
+         * @description Só a própria candidatura, enquanto pendente (RN-13).
+         */
+        post: operations["withdrawApplication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Minhas candidaturas
+         * @description As candidaturas do Usuário da sessão, as mais recentes primeiro (RN-33, CA-03.1).
+         */
+        get: operations["listMyApplications"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -366,7 +478,7 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message";
             /** @enum {string} */
             code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low";
         };
@@ -453,6 +565,8 @@ export interface components {
              * @enum {string|null}
              */
             portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | null;
+            /** @description Link externo do personagem do dono, para o painel do jogador (RN-31). */
+            link: string | null;
             role: components["schemas"]["Role"];
         };
         Lobby: {
@@ -464,6 +578,13 @@ export interface components {
             status: components["schemas"]["LobbyStatus"];
             slots: components["schemas"]["Slots"];
             occupied: components["schemas"]["Slots"];
+            /** @description Candidaturas pendentes; zero depois do início (RN-28, D-02). */
+            pendingCount: number;
+            /** @description Membros aceitos. Só no detalhe (D-06). */
+            members?: components["schemas"]["LobbyParticipant"][];
+            /** @description Candidaturas pendentes. Só no detalhe e só para o dono (RN-28). */
+            pending?: components["schemas"]["LobbyParticipant"][];
+            myApplication?: components["schemas"]["ViewerApplication"];
             minLevel: number;
             note: string | null;
             owner: components["schemas"]["LobbyOwner"];
@@ -471,8 +592,133 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /**
+         * @description Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
+         * @enum {string}
+         */
+        ApplicationStatus: "pending" | "accepted" | "rejected" | "withdrawn" | "expired" | "left" | "removed" | "cancelled";
+        ApplyInput: {
+            /** @description Um dos personagens do Usuário da sessão. */
+            characterId: string;
+            /** @description Opcional, até 250 caracteres (RN-06). */
+            message?: string;
+        };
+        RejectInput: {
+            /** @description De 10 a 250 caracteres (RN-09). */
+            reason: string;
+        };
+        ApplicationRuleError: {
+            /** @enum {string} */
+            error: "application_rule";
+            /** @enum {string} */
+            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours";
+        };
+        Application: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            lobbyId: string;
+            /**
+             * Format: uuid
+             * @description Nulo se o personagem foi excluído depois do lobby (RN-26).
+             */
+            characterId: string | null;
+            role: components["schemas"]["Role"];
+            message: string | null;
+            status: components["schemas"]["ApplicationStatus"];
+            /** @description Justificativa da recusa (RN-29). */
+            reason: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: string | null;
+        };
+        /** @description A candidatura mais recente de quem olha o lobby (RN-29, D-06). */
+        ViewerApplication: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            characterId: string | null;
+            role: components["schemas"]["Role"];
+            message: string | null;
+            status: components["schemas"]["ApplicationStatus"];
+            reason: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: string | null;
+        };
+        /** @description Membro aceito ou candidato pendente, como quem olha pode ver (RN-31, RN-32). */
+        LobbyParticipant: {
+            /** Format: uuid */
+            applicationId: string;
+            /** Format: uuid */
+            userId: string;
+            /** @description Só para o dono e para os membros (RN-32). */
+            discordName: string | null;
+            /** Format: uuid */
+            characterId: string | null;
+            nick: string | null;
+            classId: string | null;
+            level: number | null;
+            /** @enum {string|null} */
+            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | null;
+            link: string | null;
+            role: components["schemas"]["Role"];
+            /** @description Mensagem da candidatura, só para o dono (RN-28). */
+            message: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @description Uma candidatura do Usuário com o lobby e o personagem (RN-33). */
+        MyApplication: {
+            application: components["schemas"]["Application"];
+            lobby: {
+                instanceName: string;
+                /** Format: date-time */
+                startsAt: string;
+                status: components["schemas"]["LobbyStatus"];
+            };
+            /** @description Nulo se o personagem foi excluído depois do lobby (RN-26). */
+            character: {
+                nick: string;
+                classId: string;
+                level: number;
+                /** @enum {string} */
+                portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4";
+            } | null;
+        };
     };
     responses: {
+        /** @description A candidatura não existe. */
+        ApplicationNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "not_found"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Uma regra da candidatura impede a ação; o web traduz o código (D-07). */
+        ApplicationRule: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "application_rule",
+                 *       "code": "role_full"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ApplicationRuleError"];
+            };
+        };
         /** @description O lobby não existe ou, nas escritas, é de outro Usuário (RN-20). */
         LobbyNotFound: {
             headers: {
@@ -553,6 +799,8 @@ export interface components {
     parameters: {
         /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
         LobbyId: string;
+        /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+        ApplicationId: string;
         /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
         CharacterId: string;
     };
@@ -1073,6 +1321,141 @@ export interface operations {
             404: components["responses"]["LobbyNotFound"];
             409: components["responses"]["LobbyNotOpen"];
             422: components["responses"]["Invalid"];
+        };
+    };
+    applyToLobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyInput"];
+            };
+        };
+        responses: {
+            /** @description Candidatura pendente criada. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["LobbyNotFound"];
+            409: components["responses"]["ApplicationRule"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    acceptApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Candidatura aceita. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["ApplicationNotFound"];
+            409: components["responses"]["ApplicationRule"];
+        };
+    };
+    rejectApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectInput"];
+            };
+        };
+        responses: {
+            /** @description Candidatura recusada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["ApplicationNotFound"];
+            409: components["responses"]["ApplicationRule"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    withdrawApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Candidatura retirada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["ApplicationNotFound"];
+            409: components["responses"]["ApplicationRule"];
+        };
+    };
+    listMyApplications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Candidaturas do Usuário. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyApplication"][];
+                };
+            };
+            401: components["responses"]["NoSession"];
         };
     };
 }
