@@ -166,6 +166,8 @@ transversais de personagem.
   quando houver, e permite retirar as pendentes.
 - **RN-34** — Na Home, o card de um lobby do próprio Usuário mostra o selo
   "N pendentes" quando há candidaturas pendentes. Os outros não veem o selo.
+- **RN-35** — Na Home, o botão "Candidatar" do card e do destaque leva ao detalhe do
+  lobby, onde a candidatura acontece.
 
 ## 5. Critérios de aceite
 
@@ -608,6 +610,11 @@ Given um lobby do Usuário com 2 candidaturas pendentes
 When ele abre a Home
 Then o card do lobby mostra "2 pendentes"
   And outro jogador não vê o selo
+
+CA-10.6 — "Candidatar" da Home abre o lobby  [US-10, RN-35]
+Given um lobby aberto com vaga na Home
+When o jogador clica em "Candidatar" no card
+Then ele vai para o detalhe do lobby
 ```
 
 ## 6. Casos de borda
@@ -697,3 +704,9 @@ Then o card do lobby mostra "2 pendentes"
 - Painel de detalhes do jogador no detalhe do lobby (RN-31); Discord só para o dono e
   os membros (RN-32); página "Minhas candidaturas" (RN-33); selo de pendentes para o
   dono (RN-34).
+
+### Decisões de 2026-10-06, depois da implementação
+- O dono pode subir o nível mínimo acima do nível de um membro já aceito. O membro
+  continua no grupo; o mínimo novo vale para os próximos aceites (RN-30).
+- O botão "Candidatar" da Home vira um atalho para o detalhe do lobby (RN-35, CA-10.6).
+- O Discord do anfitrião segue a RN-32: visitantes e candidatos não o veem.
