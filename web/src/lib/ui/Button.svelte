@@ -16,6 +16,8 @@
 		 * com aria-disabled e mostra a dica "Disponível em breve".
 		 */
 		soon?: boolean;
+		/** Com href, vira um link com o visual do botão (ex.: "Entrar com Discord"). */
+		href?: string;
 		onclick?: (event: MouseEvent) => void;
 		children: Snippet;
 		class?: string;
@@ -28,6 +30,7 @@
 		block = false,
 		disabled = false,
 		soon = false,
+		href,
 		onclick,
 		children,
 		class: className
@@ -46,19 +49,27 @@
 </script>
 
 <span class="wrap" class:block>
-	<button
-		type="button"
-		class="btn btn--{variant} btn--{size} {className ?? ''}"
-		class:btn--block={block}
-		class:btn--soon={soon}
-		{disabled}
-		aria-disabled={soon ? 'true' : undefined}
-		aria-describedby={soon ? hintId : undefined}
-		onclick={handleClick}
-	>
-		{#if iconLeft}<Icon name={iconLeft} size={iconSize} />{/if}
-		{@render children()}
-	</button>
+	{#if href && !soon}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- quem chama já resolve o caminho -->
+		<a {href} class="btn btn--{variant} btn--{size} {className ?? ''}" class:btn--block={block}>
+			{#if iconLeft}<Icon name={iconLeft} size={iconSize} />{/if}
+			{@render children()}
+		</a>
+	{:else}
+		<button
+			type="button"
+			class="btn btn--{variant} btn--{size} {className ?? ''}"
+			class:btn--block={block}
+			class:btn--soon={soon}
+			{disabled}
+			aria-disabled={soon ? 'true' : undefined}
+			aria-describedby={soon ? hintId : undefined}
+			onclick={handleClick}
+		>
+			{#if iconLeft}<Icon name={iconLeft} size={iconSize} />{/if}
+			{@render children()}
+		</button>
+	{/if}
 	{#if soon}
 		<span id={hintId} role="tooltip" class="hint">Disponível em breve</span>
 	{/if}
@@ -86,11 +97,15 @@
 		border: 1px solid transparent;
 		cursor: pointer;
 		white-space: nowrap;
+		text-decoration: none;
 		transition:
 			background var(--dur-fast) var(--ease-out),
 			border-color var(--dur-fast) var(--ease-out),
 			color var(--dur-fast) var(--ease-out),
 			transform var(--dur-fast) var(--ease-out);
+	}
+	.btn:hover {
+		text-decoration: none;
 	}
 	.btn:active:not(:disabled, .btn--soon) {
 		transform: translateY(1px);

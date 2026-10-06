@@ -63,6 +63,17 @@ dev_services=$(docker compose config --services | tr '\n' ' ' | xargs)
 [[ "$dev_services" == "postgres" ]] && ok "docker compose up sem perfil sobe: $dev_services" ||
 	fail "sem perfil sobe: $dev_services"
 
+echo "== CA-01.5 (login-discord) — o Client Secret não chega ao web"
+web_env=$(docker inspect "$(app ps -q web)" --format '{{range .Config.Env}}{{println .}}{{end}}')
+grep -q '^DISCORD_CLIENT_SECRET=' <<<"$web_env" && fail "o container do web recebeu DISCORD_CLIENT_SECRET" ||
+	ok "o container do web não recebe DISCORD_CLIENT_SECRET"
+secret=$(grep -E '^DISCORD_CLIENT_SECRET=' .env | cut -d= -f2-)
+if [[ -n "$secret" ]] && grep -qF "$secret" <<<"$home$status"; then
+	fail "o Client Secret aparece nas respostas do web"
+else
+	ok "o Client Secret não aparece nas respostas do web"
+fi
+
 echo "== CA-01.5 — imagens enxutas e sem root"
 for image in ro-lobby-api:local ro-lobby-web:local; do
 	user=$(docker image inspect "$image" --format '{{.Config.User}}')

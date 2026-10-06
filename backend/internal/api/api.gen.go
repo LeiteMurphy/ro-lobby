@@ -11,7 +11,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for ErrorError.
+const (
+	DiscordUnavailable ErrorError = "discord_unavailable"
+	InvalidCode        ErrorError = "invalid_code"
+	NoSession          ErrorError = "no_session"
+)
+
+// Valid indicates whether the value is a known member of the ErrorError enum.
+func (e ErrorError) Valid() bool {
+	switch e {
+	case DiscordUnavailable:
+		return true
+	case InvalidCode:
+		return true
+	case NoSession:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for HealthDatabase.
 const (
@@ -49,6 +72,22 @@ func (e HealthStatus) Valid() bool {
 	}
 }
 
+// DiscordLogin defines model for DiscordLogin.
+type DiscordLogin struct {
+	Code string `json:"code"`
+
+	// RedirectUri O mesmo redirect_uri usado na autorização (D-08).
+	RedirectUri string `json:"redirectUri"`
+}
+
+// Error defines model for Error.
+type Error struct {
+	Error ErrorError `json:"error"`
+}
+
+// ErrorError defines model for Error.Error.
+type ErrorError string
+
 // Health defines model for Health.
 type Health struct {
 	Database HealthDatabase `json:"database"`
@@ -61,11 +100,38 @@ type HealthDatabase string
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// SessionCreated defines model for SessionCreated.
+type SessionCreated struct {
+	// SessionToken Vai só para o cookie HttpOnly do web; o banco guarda o hash (RN-07).
+	SessionToken string `json:"sessionToken"`
+	User         User   `json:"user"`
+}
+
+// User defines model for User.
+type User struct {
+	// GlobalName Nome de exibição no Discord; nulo quando a pessoa não definiu.
+	GlobalName *string            `json:"globalName"`
+	Id         openapi_types.UUID `json:"id"`
+	Username   string             `json:"username"`
+}
+
+// CreateSessionFromDiscordJSONRequestBody defines body for CreateSessionFromDiscord for application/json ContentType.
+type CreateSessionFromDiscordJSONRequestBody = DiscordLogin
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// CreateSessionFromDiscord Troca o código do Discord por uma sessão
+	// (POST /auth/discord)
+	CreateSessionFromDiscord(w http.ResponseWriter, r *http.Request)
 	// GetHealthz Estado da API e do banco
 	// (GET /healthz)
 	GetHealthz(w http.ResponseWriter, r *http.Request)
+	// GetMe Usuário da sessão
+	// (GET /me)
+	GetMe(w http.ResponseWriter, r *http.Request)
+	// DeleteSession Encerra a sessão atual
+	// (DELETE /session)
+	DeleteSession(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -77,11 +143,53 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// CreateSessionFromDiscord operation middleware
+func (siw *ServerInterfaceWrapper) CreateSessionFromDiscord(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateSessionFromDiscord(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealthz operation middleware
 func (siw *ServerInterfaceWrapper) GetHealthz(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealthz(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMe operation middleware
+func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteSession operation middleware
+func (siw *ServerInterfaceWrapper) DeleteSession(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteSession(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -212,8 +320,61 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/healthz", wrapper.GetHealthz)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/auth/discord", wrapper.CreateSessionFromDiscord)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetMe)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/session", wrapper.DeleteSession)
 
 	return m
+}
+
+type CreateSessionFromDiscordRequestObject struct {
+	Body *CreateSessionFromDiscordJSONRequestBody
+}
+
+type CreateSessionFromDiscordResponseObject interface {
+	VisitCreateSessionFromDiscordResponse(w http.ResponseWriter) error
+}
+
+type CreateSessionFromDiscord201JSONResponse SessionCreated
+
+func (response CreateSessionFromDiscord201JSONResponse) VisitCreateSessionFromDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSessionFromDiscord400JSONResponse Error
+
+func (response CreateSessionFromDiscord400JSONResponse) VisitCreateSessionFromDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSessionFromDiscord502JSONResponse Error
+
+func (response CreateSessionFromDiscord502JSONResponse) VisitCreateSessionFromDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetHealthzRequestObject struct {
@@ -251,11 +412,70 @@ func (response GetHealthz503JSONResponse) VisitGetHealthzResponse(w http.Respons
 	return err
 }
 
+type GetMeRequestObject struct {
+}
+
+type GetMeResponseObject interface {
+	VisitGetMeResponse(w http.ResponseWriter) error
+}
+
+type GetMe200JSONResponse User
+
+func (response GetMe200JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMe401JSONResponse Error
+
+func (response GetMe401JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteSessionRequestObject struct {
+}
+
+type DeleteSessionResponseObject interface {
+	VisitDeleteSessionResponse(w http.ResponseWriter) error
+}
+
+type DeleteSession204Response struct {
+}
+
+func (response DeleteSession204Response) VisitDeleteSessionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// CreateSessionFromDiscord Troca o código do Discord por uma sessão
+	// (POST /auth/discord)
+	CreateSessionFromDiscord(ctx context.Context, request CreateSessionFromDiscordRequestObject) (CreateSessionFromDiscordResponseObject, error)
 	// GetHealthz Estado da API e do banco
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
+	// GetMe Usuário da sessão
+	// (GET /me)
+	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+	// DeleteSession Encerra a sessão atual
+	// (DELETE /session)
+	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -297,6 +517,37 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
+// CreateSessionFromDiscord operation middleware
+func (sh *strictHandler) CreateSessionFromDiscord(w http.ResponseWriter, r *http.Request) {
+	var request CreateSessionFromDiscordRequestObject
+
+	var body CreateSessionFromDiscordJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateSessionFromDiscord(ctx, request.(CreateSessionFromDiscordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateSessionFromDiscord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateSessionFromDiscordResponseObject); ok {
+		if err := validResponse.VisitCreateSessionFromDiscordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHealthz operation middleware
 func (sh *strictHandler) GetHealthz(w http.ResponseWriter, r *http.Request) {
 	var request GetHealthzRequestObject
@@ -314,6 +565,54 @@ func (sh *strictHandler) GetHealthz(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHealthzResponseObject); ok {
 		if err := validResponse.VisitGetHealthzResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMe operation middleware
+func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	var request GetMeRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMe(ctx, request.(GetMeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMe")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMeResponseObject); ok {
+		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteSession operation middleware
+func (sh *strictHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
+	var request DeleteSessionRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteSession(ctx, request.(DeleteSessionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteSession")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteSessionResponseObject); ok {
+		if err := validResponse.VisitDeleteSessionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

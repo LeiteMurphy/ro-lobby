@@ -99,11 +99,13 @@ test.describe('Home no desktop', () => {
 
 	test('CA-02.5: ações sem backend desabilitadas, com "Disponível em breve"', async ({ page }) => {
 		await page.goto('/');
-		for (const name of ['Criar lobby', 'Entrar com Discord']) {
-			await expect(
-				page.getByRole('banner').getByRole('button', { name, exact: true })
-			).toBeDisabled();
-		}
+		await expect(
+			page.getByRole('banner').getByRole('button', { name: 'Criar lobby', exact: true })
+		).toBeDisabled();
+		// RN-14 (login-discord): "Entrar com Discord" deixou de ser "em breve".
+		await expect(
+			page.getByRole('banner').getByRole('link', { name: 'Entrar com Discord' })
+		).toHaveAttribute('href', '/auth/discord/login?next=%2F');
 		const apply = cards(page).getByRole('button', { name: 'Candidatar' }).first();
 		await expect(apply).toBeDisabled();
 		await apply.hover();

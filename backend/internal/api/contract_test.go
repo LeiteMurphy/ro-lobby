@@ -66,6 +66,43 @@ func TestContract_CA04_1_HealthzIsDescribed(t *testing.T) {
 	}
 }
 
+// RN-16 (login-discord): as rotas de autenticação estão no contrato, com as respostas
+// previstas, e as que exigem sessão declaram o token de sessão.
+func TestContract_RN16_AuthRoutesAreDescribed(t *testing.T) {
+	doc := loadContract(t)
+	routes := []struct {
+		path, method string
+		statuses     []int
+		needsSession bool
+	}{
+		{"/auth/discord", "POST", []int{201, 400, 502}, false},
+		{"/me", "GET", []int{200, 401}, true},
+		{"/session", "DELETE", []int{204}, true},
+	}
+	for _, r := range routes {
+		item := doc.Paths.Find(r.path)
+		if item == nil || item.GetOperation(r.method) == nil {
+			t.Errorf("%s %s não está no contrato", r.method, r.path)
+			continue
+		}
+		op := item.GetOperation(r.method)
+		for _, status := range r.statuses {
+			if op.Responses.Status(status) == nil {
+				t.Errorf("%s %s: resposta %d não descrita", r.method, r.path, status)
+			}
+		}
+		hasSession := op.Security != nil && len(*op.Security) > 0
+		if hasSession != r.needsSession {
+			t.Errorf("%s %s: exige sessão = %v, esperado %v", r.method, r.path, hasSession, r.needsSession)
+		}
+	}
+	// O usuário devolvido não tem avatar (RN-06 e RN-15 da login-discord).
+	user := doc.Components.Schemas["User"].Value
+	if _, ok := user.Properties["avatar"]; ok {
+		t.Error("o schema User não deveria ter avatar")
+	}
+}
+
 func toAny(m map[string]string) map[string]any {
 	out := make(map[string]any, len(m))
 	for k, v := range m {

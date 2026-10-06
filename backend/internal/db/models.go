@@ -3,3 +3,25 @@
 //   sqlc v1.31.1
 
 package db
+
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type Session struct {
+	TokenHash  []byte
+	UserID     pgtype.UUID
+	CreatedAt  time.Time
+	LastUsedAt time.Time
+}
+
+type User struct {
+	ID          pgtype.UUID
+	DiscordID   string
+	Username    string
+	GlobalName  pgtype.Text
+	CreatedAt   time.Time
+	LastLoginAt time.Time
+}

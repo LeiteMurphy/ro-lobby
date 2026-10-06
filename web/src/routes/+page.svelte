@@ -22,6 +22,7 @@
 	import TopBar from '$lib/home/components/TopBar.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Drawer from '$lib/ui/Drawer.svelte';
+	import { LOGIN_ERROR_MESSAGE } from '$lib/auth/oauth';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -73,7 +74,11 @@
 </svelte:head>
 
 <div class="page">
-	<TopBar />
+	<TopBar user={data.user} loginHref={data.loginHref} />
+
+	{#if data.loginError}
+		<div class="login-error" role="alert">{LOGIN_ERROR_MESSAGE}</div>
+	{/if}
 
 	<div class="days-bar">
 		<div class="container">
@@ -170,6 +175,16 @@
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
+	}
+	/* RN-13 (login-discord): aviso de falha no login, com as cores de erro do design system. */
+	.login-error {
+		margin: 14px 28px 0;
+		padding: 10px 14px;
+		border-radius: var(--radius-md);
+		background: var(--status-error-soft);
+		border: 1px solid rgba(240, 100, 140, 0.4);
+		color: var(--status-error);
+		font: 600 14px/1.4 var(--font-ui);
 	}
 	.days-bar {
 		background: rgba(17, 24, 34, 0.55);

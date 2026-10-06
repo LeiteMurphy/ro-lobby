@@ -9,27 +9,44 @@
 		size?: 'sm' | 'md' | 'lg';
 		/** Ação que ainda não existe (RN-18 da home-local). */
 		soon?: boolean;
+		/** Com href, vira um link com o visual do botão. */
+		href?: string;
 		onclick?: (event: MouseEvent) => void;
 	}
 
-	let { icon, label, variant = 'ghost', size = 'md', soon = false, onclick }: Props = $props();
+	let {
+		icon,
+		label,
+		variant = 'ghost',
+		size = 'md',
+		soon = false,
+		href,
+		onclick
+	}: Props = $props();
 	const iconSize = $derived(size === 'sm' ? 14 : size === 'lg' ? 20 : 18);
 	const hintId = $props.id();
 </script>
 
 <span class="wrap">
-	<button
-		type="button"
-		class="ib ib--{variant} ib--{size}"
-		class:ib--soon={soon}
-		aria-label={label}
-		aria-disabled={soon ? 'true' : undefined}
-		aria-describedby={soon ? hintId : undefined}
-		title={soon ? undefined : label}
-		onclick={(event) => (soon ? event.preventDefault() : onclick?.(event))}
-	>
-		<Icon name={icon} size={iconSize} />
-	</button>
+	{#if href && !soon}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- quem chama já resolve o caminho -->
+		<a {href} class="ib ib--{variant} ib--{size}" aria-label={label} title={label}>
+			<Icon name={icon} size={iconSize} />
+		</a>
+	{:else}
+		<button
+			type="button"
+			class="ib ib--{variant} ib--{size}"
+			class:ib--soon={soon}
+			aria-label={label}
+			aria-disabled={soon ? 'true' : undefined}
+			aria-describedby={soon ? hintId : undefined}
+			title={soon ? undefined : label}
+			onclick={(event) => (soon ? event.preventDefault() : onclick?.(event))}
+		>
+			<Icon name={icon} size={iconSize} />
+		</button>
+	{/if}
 	{#if soon}
 		<span id={hintId} role="tooltip" class="hint">Disponível em breve</span>
 	{/if}
