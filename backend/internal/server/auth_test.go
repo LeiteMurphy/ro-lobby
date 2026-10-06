@@ -60,7 +60,7 @@ func call(t *testing.T, h http.Handler, method, path, token, body string) (*http
 }
 
 func newAuthServer(f *fakeAuth) http.Handler {
-	return New(fakePinger(func(context.Context) error { return nil }), f)
+	return New(fakePinger(func(context.Context) error { return nil }), f, nil)
 }
 
 // CA-01.1 / RN-16: código aceito → 201 com o token e o usuário.

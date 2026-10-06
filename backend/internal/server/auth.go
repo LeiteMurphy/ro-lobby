@@ -45,14 +45,14 @@ func sessionToken(ctx context.Context) string {
 // CreateSessionFromDiscord troca o código por uma Sessão (RN-04, RN-05, RN-07, RN-13).
 func (h authHandler) CreateSessionFromDiscord(ctx context.Context, req api.CreateSessionFromDiscordRequestObject) (api.CreateSessionFromDiscordResponseObject, error) {
 	if req.Body == nil || req.Body.Code == "" || req.Body.RedirectUri == "" {
-		return api.CreateSessionFromDiscord400JSONResponse{Error: api.InvalidCode}, nil
+		return api.CreateSessionFromDiscord400JSONResponse{Error: api.ErrorErrorInvalidCode}, nil
 	}
 	token, user, err := h.auth.Login(ctx, req.Body.Code, req.Body.RedirectUri)
 	switch {
 	case errors.Is(err, auth.ErrInvalidCode):
-		return api.CreateSessionFromDiscord400JSONResponse{Error: api.InvalidCode}, nil
+		return api.CreateSessionFromDiscord400JSONResponse{Error: api.ErrorErrorInvalidCode}, nil
 	case errors.Is(err, auth.ErrUnavailable):
-		return api.CreateSessionFromDiscord502JSONResponse{Error: api.DiscordUnavailable}, nil
+		return api.CreateSessionFromDiscord502JSONResponse{Error: api.ErrorErrorDiscordUnavailable}, nil
 	case err != nil:
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (h authHandler) CreateSessionFromDiscord(ctx context.Context, req api.Creat
 func (h authHandler) GetMe(ctx context.Context, _ api.GetMeRequestObject) (api.GetMeResponseObject, error) {
 	user, err := h.auth.Authenticate(ctx, sessionToken(ctx))
 	if errors.Is(err, auth.ErrNoSession) {
-		return api.GetMe401JSONResponse{Error: api.NoSession}, nil
+		return api.GetMe401JSONResponse{Error: api.ErrorErrorNoSession}, nil
 	}
 	if err != nil {
 		return nil, err

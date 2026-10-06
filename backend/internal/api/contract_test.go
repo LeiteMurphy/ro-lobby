@@ -103,6 +103,41 @@ func TestContract_RN16_AuthRoutesAreDescribed(t *testing.T) {
 	}
 }
 
+// CA-07.1 / CA-07.2 / D-01 (personagens): o catálogo e as rotas de personagem estão no
+// contrato; o catálogo é público e as rotas de personagem exigem sessão.
+func TestContract_CA07_CharacterRoutesAreDescribed(t *testing.T) {
+	doc := loadContract(t)
+	routes := []struct {
+		path, method string
+		statuses     []int
+		needsSession bool
+	}{
+		{"/classes", "GET", []int{200}, false},
+		{"/characters", "GET", []int{200, 401}, true},
+		{"/characters", "POST", []int{201, 401, 409, 422}, true},
+		{"/characters/{id}", "PUT", []int{200, 401, 404, 422}, true},
+		{"/characters/{id}", "DELETE", []int{204, 401, 404}, true},
+		{"/characters/{id}/main", "PUT", []int{204, 401, 404}, true},
+	}
+	for _, r := range routes {
+		item := doc.Paths.Find(r.path)
+		if item == nil || item.GetOperation(r.method) == nil {
+			t.Errorf("%s %s não está no contrato", r.method, r.path)
+			continue
+		}
+		op := item.GetOperation(r.method)
+		for _, status := range r.statuses {
+			if op.Responses.Status(status) == nil {
+				t.Errorf("%s %s: resposta %d não descrita", r.method, r.path, status)
+			}
+		}
+		hasSession := op.Security != nil && len(*op.Security) > 0
+		if hasSession != r.needsSession {
+			t.Errorf("%s %s: exige sessão = %v, esperado %v", r.method, r.path, hasSession, r.needsSession)
+		}
+	}
+}
+
 func toAny(m map[string]string) map[string]any {
 	out := make(map[string]any, len(m))
 	for k, v := range m {
