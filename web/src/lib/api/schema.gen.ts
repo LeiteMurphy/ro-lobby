@@ -551,7 +551,8 @@ export interface components {
         LobbyOwner: {
             /** Format: uuid */
             userId: string;
-            discordName: string;
+            /** @description Só para o próprio dono e para os membros aceitos; nulo para os outros e na lista pública (RN-32 da candidatura-lobby). */
+            discordName: string | null;
             /**
              * Format: uuid
              * @description Nulo se o personagem foi excluído depois do início (D-01).

@@ -36,7 +36,10 @@
 			<HostLine host={lobby.host} hostClass={lobby.hostClass} minLevel={lobby.minLevel} size="lg" />
 			<RoleComposition composition={lobby.composition} showTotal showBar />
 			<div class="actions">
-				<Button size="lg" iconLeft="user-plus" soon>Candidatar</Button>
+				<!-- RN-35 da candidatura-lobby: a candidatura acontece no detalhe do lobby. -->
+				<Button size="lg" iconLeft="user-plus" href={resolve('/lobbies/[id]', { id: lobby.id })}
+					>Candidatar</Button
+				>
 				<!-- spec lobbies, RN-23: "Ver grupo" abre o detalhe. -->
 				<Button size="lg" variant="secondary" href={resolve('/lobbies/[id]', { id: lobby.id })}
 					>Ver grupo</Button

@@ -194,6 +194,18 @@ describe('painel do jogador', () => {
 		expect(html).not.toContain('Aceitar');
 	});
 
+	it('RN-32: o anfitrião sem Discord (visitante) mostra o aviso; com Discord (grupo), o nome', () => {
+		const visitor: ApiLobby = {
+			...WITH_MEMBER,
+			owner: { ...WITH_MEMBER.owner, discordName: null }
+		};
+		const hidden = panel(visitor, HOST_KEY, false);
+		expect(hidden).toContain('Anfitrião');
+		expect(hidden).toContain('O Discord aparece para quem está no grupo.');
+		const shown = panel(WITH_MEMBER, HOST_KEY, false);
+		expect(shown).toMatch(/Discord<\/span>\s*<b[^>]*>Grimbold<\/b>/);
+	});
+
 	it('CA-10.3: candidato para o dono, com Discord, mensagem, Aceitar e Recusar', () => {
 		const html = panel(AS_OWNER, 'a2', true);
 		expect(html).toContain('Candidato');

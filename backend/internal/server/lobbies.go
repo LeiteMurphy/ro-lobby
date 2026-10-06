@@ -220,7 +220,7 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 		CreatedAt:    l.CreatedAt,
 		Owner: api.LobbyOwner{
 			UserId:      ownerID,
-			DiscordName: l.Owner.DiscordName,
+			DiscordName: optional(l.Owner.DiscordName),
 			Role:        api.Role(l.Owner.Role),
 			Nick:        optional(l.Owner.Nick),
 			ClassId:     optional(l.Owner.ClassID),

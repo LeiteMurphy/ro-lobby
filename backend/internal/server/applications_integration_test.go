@@ -23,8 +23,8 @@ import (
 )
 
 // Fluxo da candidatura pelas rotas, com o PostgreSQL real e quatro sessões: dono,
-// candidato, outro candidato e visitante (spec candidatura-lobby, T-04: CA-03.1, CA-03.7,
-// CA-03.8, CA-10.2, CA-10.3, RN-28, RN-29, RN-32, D-06, D-07).
+// candidato, outro candidato e visitante (spec candidatura-lobby, T-04 e T-08: CA-03.1,
+// CA-03.7, CA-03.8, CA-10.2, CA-10.3, RN-28, RN-29, RN-32, D-06, D-07).
 func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
 	url := testdb.New(t)
 	sqlDB, err := migrate.OpenDB(url)
@@ -157,6 +157,24 @@ func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
 		if got := discordOf(c.token); got != c.want {
 			t.Errorf("%s vê Discord %v, quer %v", name, got, c.want)
 		}
+	}
+
+	// RN-32: o Discord do anfitrião segue a mesma regra, na lista e no detalhe.
+	for name, c := range map[string]struct {
+		token string
+		want  any
+	}{"sem sessão": {"", nil}, "Duda": {duda, nil}, "Caio (recusado)": {caio, nil}, "Bia (membro)": {bia, "Ana"}, "Ana (dono)": {ana, "Ana"}} {
+		_, got := call(t, h, http.MethodGet, path, c.token, "")
+		if d := got["owner"].(map[string]any)["discordName"]; d != c.want {
+			t.Errorf("%s vê o Discord do anfitrião %v, quer %v", name, d, c.want)
+		}
+	}
+	day := tomorrow.Format(time.DateOnly)
+	rec, _ = call(t, h, http.MethodGet, "/lobbies?from="+day+"&to="+day, ana, "")
+	var public []map[string]any
+	decode(t, rec.Body.Bytes(), &public)
+	if len(public) != 1 || public[0]["owner"].(map[string]any)["discordName"] != nil {
+		t.Errorf("lista pública com Discord: %v", public)
 	}
 
 	// CA-03.8 / RN-29: a justificativa só para o candidato afetado.

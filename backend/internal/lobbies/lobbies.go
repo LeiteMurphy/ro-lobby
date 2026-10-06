@@ -212,6 +212,8 @@ func (s *Service) List(ctx context.Context, from, to string) ([]Lobby, error) {
 	for i, r := range rows {
 		out[i] = s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerLink, r.OwnerUsername, r.OwnerGlobalName},
 			counts{r.AcceptedTank, r.AcceptedSupport, r.AcceptedDps, r.PendingCount})
+		// RN-32 da candidatura: a lista é pública, então o Discord do anfitrião não vai.
+		out[i].Owner.DiscordName = ""
 	}
 	return out, nil
 }

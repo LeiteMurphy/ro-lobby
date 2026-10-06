@@ -137,6 +137,14 @@ func (s *Service) Apply(ctx context.Context, userID, lobbyID string, in ApplyInp
 		if err := lockUser(ctx, q, uid); err != nil { // D-05: RN-02 sob concorrência
 			return err
 		}
+		// D-05: trava o lobby depois do Usuário, para a candidatura não passar junto com o
+		// cancelamento (RN-16).
+		if _, err := q.LockLobby(ctx, lid); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return err
+		}
 		lobby, err := q.GetLobby(ctx, lid)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotFound

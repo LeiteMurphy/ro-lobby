@@ -264,11 +264,11 @@ func TestApply_CA01_9_RejectedBefore(t *testing.T) {
 // CA-01.10: pendência em lobby de horário próximo é permitida.
 func TestApply_CA01_10_PendingNearbyAllowed(t *testing.T) {
 	e, owner, player, lid := basic(t) // 20:00
-	other := e.user(t, "Outro:200:dps")
-	e.apply(t, player, "Cura", lid)
-	if _, err := e.svc.Accept(t.Context(), owner.id, e.apply(t, player, "Cura", e.lobby(t, owner, "Dono", at(3, 20, 0), std, 160)).ID); err != nil {
+	// Given: o personagem ocupa vaga (aceito) no lobby das 20:00.
+	if _, err := e.svc.Accept(t.Context(), owner.id, e.apply(t, player, "Cura", lid).ID); err != nil {
 		t.Fatal(err)
 	}
+	other := e.user(t, "Outro:200:dps")
 	near := e.lobby(t, other, "Outro", at(1, 21, 0), std, 160)
 	if a, err := e.svc.Apply(t.Context(), player.id, near, ApplyInput{CharacterID: player.chars["Cura"]}); err != nil || a.Status != StatusPending {
 		t.Errorf("perto: %+v, %v", a, err)

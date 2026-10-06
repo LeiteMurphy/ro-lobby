@@ -70,7 +70,13 @@
 				{:else if full}
 					<Badge icon="lock">Lotado</Badge>
 				{:else}
-					<Button size="sm" variant="outline" iconLeft="user-plus" soon>Candidatar</Button>
+					<!-- RN-35 da candidatura-lobby: a candidatura acontece no detalhe do lobby. -->
+					<Button
+						size="sm"
+						variant="outline"
+						iconLeft="user-plus"
+						href={resolve('/lobbies/[id]', { id: lobby.id })}>Candidatar</Button
+					>
 				{/if}
 			</div>
 		</div>

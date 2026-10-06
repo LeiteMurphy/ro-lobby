@@ -87,6 +87,10 @@ func (s *Service) Detail(ctx context.Context, id, viewerID string) (Detail, erro
 	}
 
 	out := Detail{Lobby: l, Members: []Participant{}}
+	// RN-32: o Discord do anfitrião, como o dos membros, só para o dono e os membros.
+	if !isOwner && !isMember {
+		out.Owner.DiscordName = ""
+	}
 	if isOwner {
 		out.Pending = []Participant{}
 	}

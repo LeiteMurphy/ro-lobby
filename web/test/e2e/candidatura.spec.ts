@@ -89,6 +89,10 @@ test.describe('candidatura', () => {
 		await expect(visitor.getByTestId('pending-count')).toContainText('1 candidatura pendente');
 		await expect(visitor.getByTestId('pending-list')).toHaveCount(0);
 		await expect(visitor.getByText(`Bra${s}`)).toHaveCount(0);
+		// RN-32: o painel abre no anfitrião, sem o Discord dele para o visitante.
+		await expect(panel(visitor)).toContainText('Anfitrião');
+		await expect(panel(visitor)).toContainText('O Discord aparece para quem está no grupo.');
+		await expect(panel(visitor)).not.toContainText(`dono${s}`);
 
 		// CA-10.5: o dono vê o selo na Home (dia 6) e no detalhe.
 		const owner = await newPage(browser);
@@ -116,7 +120,7 @@ test.describe('candidatura', () => {
 
 		// CA-10.1 / CA-10.2: o visitante vê o membro sem Discord; o membro vê o Discord.
 		await visitor.reload();
-		// RNF-01: o card do membro escolhe o painel pelo teclado.
+		// RN-31: o card do membro escolhe o painel também pelo teclado.
 		const memberCard = visitor.getByTestId('member-slot').filter({ hasText: `Bra${s}` });
 		await memberCard.focus();
 		await visitor.keyboard.press('Enter');

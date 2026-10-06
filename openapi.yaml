@@ -899,6 +899,10 @@ components:
           format: uuid
         discordName:
           type: string
+          nullable: true
+          description: >
+            Só para o próprio dono e para os membros aceitos; nulo para os outros e na
+            lista pública (RN-32 da candidatura-lobby).
         characterId:
           type: string
           format: uuid

@@ -750,8 +750,10 @@ type LobbyOwner struct {
 	// CharacterId Nulo se o personagem foi excluído depois do início (D-01).
 	CharacterId *openapi_types.UUID `json:"characterId"`
 	ClassId     *string             `json:"classId"`
-	DiscordName string              `json:"discordName"`
-	Level       *int                `json:"level"`
+
+	// DiscordName Só para o próprio dono e para os membros aceitos; nulo para os outros e na lista pública (RN-32 da candidatura-lobby).
+	DiscordName *string `json:"discordName"`
+	Level       *int    `json:"level"`
 
 	// Link Link externo do personagem do dono, para o painel do jogador (RN-31).
 	Link *string `json:"link"`
