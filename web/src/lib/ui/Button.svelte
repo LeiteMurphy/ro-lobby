@@ -10,6 +10,10 @@
 		size?: ButtonSize;
 		iconLeft?: IconName;
 		block?: boolean;
+		/** `submit` para enviar o formulário em volta. */
+		type?: 'button' | 'submit';
+		/** Id de um texto que explica o botão (ex.: por que está desabilitado). */
+		describedby?: string;
 		disabled?: boolean;
 		/**
 		 * Ação que ainda não existe (RN-18 da home-local): o botão continua focável, fica
@@ -28,6 +32,8 @@
 		size = 'md',
 		iconLeft,
 		block = false,
+		type = 'button',
+		describedby,
 		disabled = false,
 		soon = false,
 		href,
@@ -57,13 +63,13 @@
 		</a>
 	{:else}
 		<button
-			type="button"
+			{type}
 			class="btn btn--{variant} btn--{size} {className ?? ''}"
 			class:btn--block={block}
 			class:btn--soon={soon}
 			{disabled}
 			aria-disabled={soon ? 'true' : undefined}
-			aria-describedby={soon ? hintId : undefined}
+			aria-describedby={soon ? hintId : describedby}
 			onclick={handleClick}
 		>
 			{#if iconLeft}<Icon name={iconLeft} size={iconSize} />{/if}
