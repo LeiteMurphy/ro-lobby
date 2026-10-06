@@ -1,9 +1,10 @@
 # Spec — Perfil e personagens
 
 - Feature: `personagens` · Nível: G · Status: Aprovada
-- Design: Claude Design, `Perfil.dc.html` no projeto "RO Lobby Home v2", variação 1a
-- Última revisão: 2026-10-06 — rodada 1 da entrevista: cards em formato de carteirinha com
-  retrato escolhido de uma lista (4 retratos de exemplo) e nick único em todo o RO Lobby
+- Design: Claude Design, `Perfil.dc.html` no projeto "RO Lobby Home v2", carta vertical
+  (variação 1b, página em 2a)
+- Última revisão: 2026-10-06 — carta vertical escolhida no Claude Design, com as ações no
+  menu "…" da carta (RN-16)
 
 ## 1. Contexto
 Com o login pronto, o Usuário precisa cadastrar os personagens com que vai criar lobbies e
@@ -68,9 +69,10 @@ função ou excluir um personagem (RN-25 e RN-26 de lá) entram junto com elas.
   definitivo e pede confirmação na tela.
 
 ### Tela
-- **RN-16** — Cada personagem aparece numa carteirinha com retrato, nick, classe, nível,
-  função (na cor da função), o selo "Principal" quando for o caso e o link externo quando
-  houver, além das ações de editar, excluir e marcar como principal.
+- **RN-16** — Cada personagem aparece numa carta vertical com retrato grande, nick, classe,
+  nível em destaque, função (na cor da função), o selo "Principal" quando for o caso e o
+  botão do link externo quando houver. As ações (tornar principal, editar e excluir) ficam
+  no menu "…" da carta; "Tornar principal" não aparece no principal.
 - **RN-17** — As carteirinhas aparecem com o principal primeiro e os outros por ordem de
   cadastro.
 - **RN-18** — O menu do usuário na barra superior ganha "Meu perfil", acima de "Sair".
@@ -274,7 +276,7 @@ Then só um personagem é criado
 - Escopo → só personagem; horários e instâncias de interesse numa feature seguinte.
 - Design → tela de perfil desenhada no Claude Design antes de implementar.
 - Onde fica → `/perfil`, pelo item "Meu perfil" no menu do usuário.
-- Listagem → cards em formato de carteirinha, com retrato escolhido de uma lista (4 de
+- Listagem → cartas verticais (variação 1b do Claude Design), com as ações no menu "…", com retrato escolhido de uma lista (4 de
   exemplo agora; a lista definitiva vem depois).
 - Campos → nick 1–24, classe do catálogo, nível 1–275, função, link `https://` opcional,
   sem servidor.
