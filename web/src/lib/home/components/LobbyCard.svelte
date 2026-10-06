@@ -12,9 +12,11 @@
 	interface Props {
 		lobby: Lobby;
 		relative: string;
+		/** Prévia na criação de lobby (spec lobbies, 1b): sem link nem ações. */
+		preview?: boolean;
 	}
 
-	let { lobby, relative }: Props = $props();
+	let { lobby, relative, preview = false }: Props = $props();
 
 	const art = $derived(instanceArt(lobby.instance));
 	const full = $derived(isFull(lobby.composition));
@@ -41,11 +43,15 @@
 		<div class="title-row">
 			<!-- spec lobbies, RN-23: o nome da instância leva ao detalhe ("Ver grupo"). -->
 			<h3>
-				<a
-					class="detail"
-					href={resolve('/lobbies/[id]', { id: lobby.id })}
-					aria-label="Ver grupo: {lobby.instance} às {lobby.time}">{lobby.instance}</a
-				>
+				{#if preview}
+					{lobby.instance}
+				{:else}
+					<a
+						class="detail"
+						href={resolve('/lobbies/[id]', { id: lobby.id })}
+						aria-label="Ver grupo: {lobby.instance} às {lobby.time}">{lobby.instance}</a
+					>
+				{/if}
 			</h3>
 			<span class="headcount" title="Vagas ocupadas">
 				<Icon name="users" size={14} color="var(--fg-3)" />{count.filled}/{count.total}
@@ -55,7 +61,9 @@
 		<div class="footer">
 			<RoleComposition composition={lobby.composition} />
 			<div class="action">
-				{#if full}
+				{#if preview}
+					<!-- Prévia: sem ações. -->
+				{:else if full}
 					<Badge icon="lock">Lotado</Badge>
 				{:else}
 					<Button size="sm" variant="outline" iconLeft="user-plus" soon>Candidatar</Button>
