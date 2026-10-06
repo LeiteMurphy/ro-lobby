@@ -85,7 +85,7 @@ describe('load de /perfil', () => {
 		expect(await redirectOf(() => load(loadEvent(null, fakeCookies())))).toBe(LOGIN);
 	});
 
-	it('borda: sessão recusada pela API apaga o cookie e manda ao login', async () => {
+	it('borda de RN-01 / RN-03: sessão recusada pela API apaga o cookie e manda ao login', async () => {
 		const cookies = fakeCookies('tok');
 		const { fn } = fakeFetch({ 'GET /characters': json(401), 'GET /classes': json(200, []) });
 		expect(await redirectOf(() => load(loadEvent(USER, cookies, fn)))).toBe(LOGIN);
@@ -105,7 +105,7 @@ describe('load de /perfil', () => {
 		expect(calls.find((c) => c.key === 'GET /classes')?.auth).toBeNull();
 	});
 
-	it('API fora do ar mostra o aviso, sem quebrar a página', async () => {
+	it('RN-21: API fora do ar mostra o aviso, sem quebrar a página', async () => {
 		const { fn } = fakeFetch({ 'GET /characters': json(500), 'GET /classes': json(500) });
 		const data = (await load(loadEvent(USER, fakeCookies('tok'), fn))) as Record<string, unknown>;
 		expect(data.characters).toEqual([]);
@@ -192,7 +192,7 @@ describe('actions de /perfil', () => {
 		expect(calls.map((c) => c.key)).toEqual(['DELETE /characters/c1', 'PUT /characters/c1/main']);
 	});
 
-	it('borda: sessão vencida no meio da edição leva ao login e apaga o cookie', async () => {
+	it('borda de RN-01 / RN-03: sessão vencida no meio da edição leva ao login e apaga o cookie', async () => {
 		const cookies = fakeCookies('t');
 		const { fn } = fakeFetch({ 'PUT /characters/c1': json(401) });
 		const to = await redirectOf(() =>

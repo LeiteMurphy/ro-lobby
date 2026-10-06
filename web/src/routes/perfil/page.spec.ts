@@ -126,7 +126,7 @@ describe('/perfil renderizada no servidor', () => {
 		expect(renderPage([character({ classId: 'classe-removida' })])).toContain('classe-removida');
 	});
 
-	it('API fora do ar mostra o aviso', () => {
+	it('RN-21: API fora do ar mostra o aviso', () => {
 		const html = renderPage([], 'Não foi possível falar com o servidor. Tente de novo.');
 		expect(html).toContain('role="alert"');
 		expect(html).not.toContain('Você ainda não tem personagens');

@@ -269,7 +269,7 @@ describe('hook de sessão', () => {
 		expect(cookies.jar.get(SESSION_COOKIE)).toBe('token-valido');
 	});
 
-	it('sem cookie, não chama a API', async () => {
+	it('RN-10: sem cookie, é visitante e não chama a API', async () => {
 		const api = fakeFetch({});
 		const ev = {
 			url: new URL('http://localhost:3000/'),

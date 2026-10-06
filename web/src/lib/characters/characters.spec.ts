@@ -45,7 +45,7 @@ describe('cliente da API de personagens', () => {
 		expect(new Headers(f.mock.calls[0][1]?.headers).has('authorization')).toBe(false);
 	});
 
-	it('monta as rotas de editar, excluir e principal com o id escapado', async () => {
+	it('D-01 / RN-02: monta as rotas de editar, excluir e principal com o id escapado', async () => {
 		const f = fakeFetch(204);
 		const call = { fetchFn: f, apiBaseUrl: base, token: 'tok' };
 		await deleteCharacter(call, 'abc');
@@ -82,7 +82,7 @@ describe('cliente da API de personagens', () => {
 		expect(result).toEqual({ ok: false, kind: 'invalid', fields });
 	});
 
-	it('API fora do ar vira unavailable, sem lançar', async () => {
+	it('RN-21: API fora do ar vira unavailable, sem lançar', async () => {
 		const f = vi.fn<typeof fetch>(async () => {
 			throw new TypeError('fetch failed');
 		});

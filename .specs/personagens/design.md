@@ -152,7 +152,8 @@ usuário é o serviço.
 - Opções: (a) enum no `openapi.yaml`; (b) rota `GET /portraits`.
 - Decisão: (a). O enum gera o tipo no Go e no TypeScript, e um teste do web confere que
   todo retrato do enum tem arquivo em `static/portraits/`. Os 4 retratos são SVGs
-  abstratos feitos para o projeto: fundo em gradiente com um emblema geométrico.
+  em pixel art feitos para o projeto, no estilo dos ícones do design system: fundo em
+  faixas de cor e um emblema (espada, lua, estrela e escudo). (Texto corrigido pelo AJ-05.)
 - Consequências: + uma fonte só, com o tipo checado nos dois lados; − trocar a lista mexe
   no contrato, o que é aceitável quando a lista definitiva chegar.
 
