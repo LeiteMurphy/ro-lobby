@@ -83,11 +83,13 @@ test.describe('login com Discord', () => {
 		expect((await context.cookies()).some((c) => c.name === 'rol_session')).toBe(false);
 	});
 
-	test('CA-05.1: depois de entrar, volta para a página de origem', async ({ page }) => {
-		await page.goto('/auth/discord/login?next=%2Fstatus');
+	test('CA-05.1: depois de entrar, volta logado para a página de origem', async ({ page }) => {
+		// AJ-01: /perfil só abre com sessão, então chegar nela prova que a pessoa voltou logada.
+		await page.goto('/auth/discord/login?next=%2Fperfil');
 		await page.getByRole('button', { name: 'Autorizar' }).click();
-		await expect(page).toHaveURL('/status');
-		await expect(page.getByTestId('api-status')).toHaveText('API online');
+		await expect(page).toHaveURL('/perfil');
+		await expect(page.getByRole('heading', { name: 'Meus personagens' })).toBeVisible();
+		await expect(userMenu(page)).toContainText('Grimbold');
 	});
 
 	test('RNF-02: o menu do usuário funciona pelo teclado', async ({ page }) => {

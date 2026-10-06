@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -41,12 +42,16 @@ type Client struct {
 	clientSecret string
 	timeout      time.Duration
 	http         *http.Client
+	log          *slog.Logger
 }
 
 type Option func(*Client)
 
 // WithTimeout troca o prazo padrão de 5 segundos (usado nos testes).
 func WithTimeout(d time.Duration) Option { return func(c *Client) { c.timeout = d } }
+
+// WithLogger troca o logger padrão (usado nos testes).
+func WithLogger(l *slog.Logger) Option { return func(c *Client) { c.log = l } }
 
 func New(baseURL, clientID, clientSecret string, opts ...Option) *Client {
 	c := &Client{
@@ -55,6 +60,7 @@ func New(baseURL, clientID, clientSecret string, opts ...Option) *Client {
 		clientSecret: clientSecret,
 		timeout:      DefaultTimeout,
 		http:         &http.Client{},
+		log:          slog.Default(),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -96,7 +102,14 @@ func (c *Client) exchange(ctx context.Context, code, redirectURI string) (string
 	defer func() { _ = resp.Body.Close() }()
 
 	switch {
-	case resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized:
+	case resp.StatusCode == http.StatusUnauthorized:
+		// AJ-03 (RN-03): 401 é o Discord recusando o próprio aplicativo, quase sempre
+		// Client ID ou Client Secret errado. Para quem entra, é só um login que falhou;
+		// para quem opera a API, fica o aviso no log (sem o segredo).
+		c.log.Error("o Discord recusou o Client ID ou o Client Secret; confira DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET",
+			"status", resp.StatusCode, "client_id", c.clientID)
+		return "", ErrInvalidCode
+	case resp.StatusCode == http.StatusBadRequest:
 		return "", ErrInvalidCode
 	case resp.StatusCode != http.StatusOK:
 		return "", fmt.Errorf("%w: token respondeu %d", ErrUnavailable, resp.StatusCode)

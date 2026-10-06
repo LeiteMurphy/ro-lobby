@@ -22,15 +22,19 @@
 		| { kind: 'create' }
 		| { kind: 'update'; character: Character }
 		| { kind: 'delete'; character: Character };
-	type Open = OpenInput & { key: number };
-	let open = $state<Open | null>(null);
+	// `staleForm` guarda o resultado de action que já existia quando o diálogo abriu: ele é
+	// de uma tentativa anterior e não volta para o diálogo novo (AJ-04, RN-19).
+	type Open = OpenInput & { key: number; staleForm: typeof form };
+	// $state.raw: sem proxy, para a comparação com `form` ser por identidade.
+	let open = $state.raw<Open | null>(null);
 	let nextKey = 0;
-	const show = (o: OpenInput) => (open = { ...o, key: ++nextKey });
+	const show = (o: OpenInput) => (open = { ...o, key: ++nextKey, staleForm: form });
 
-	// Erros da action só valem para o diálogo que os pediu.
+	// Erros da action só valem para o diálogo que os pediu, na mesma abertura.
 	const dialogForm = $derived(
 		form &&
 			open &&
+			form !== open.staleForm &&
 			form.mode === open.kind &&
 			(open.kind === 'create' || form.id === open.character.id)
 			? form

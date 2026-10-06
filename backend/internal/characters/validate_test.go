@@ -20,13 +20,14 @@ func fieldErrors(t *testing.T, err error) []FieldError {
 	return ve.Fields
 }
 
-func TestValidate_AcceptsValidInput(t *testing.T) {
+// CA-02.2 / RN-10: entrada válida é aceita, e sem retrato fica o primeiro da lista.
+func TestValidate_CA02_2_AcceptsValidInputWithDefaultPortrait(t *testing.T) {
 	got, err := Validate(valid())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got.Portrait != "retrato-1" {
-		t.Errorf("retrato padrão = %q", got.Portrait) // CA-02.2
+		t.Errorf("retrato padrão = %q", got.Portrait)
 	}
 }
 
@@ -41,7 +42,7 @@ func TestValidate_RN04_TrimsNick(t *testing.T) {
 }
 
 // CA-02.4, CA-02.5, CA-02.6, CA-02.7: cada campo errado volta com o código certo.
-func TestValidate_FieldErrors(t *testing.T) {
+func TestValidate_CA02_4_to_CA02_7_FieldErrors(t *testing.T) {
 	cases := []struct {
 		name   string
 		mutate func(*Input)
@@ -91,7 +92,7 @@ func TestValidate_RN19_ReportsAllFields(t *testing.T) {
 }
 
 // RN-04, RN-07, RN-09: os limites são aceitos.
-func TestValidate_AcceptsLimits(t *testing.T) {
+func TestValidate_RN04_RN07_RN09_AcceptsLimits(t *testing.T) {
 	for _, in := range []Input{
 		{Nick: strings.Repeat("ã", 24), ClassID: "aprendiz", Level: 1, Role: "dps", Portrait: "retrato-4"},
 		{Nick: "B", ClassID: "animista", Level: 275, Role: "support", Link: "https://exemplo.com/" + strings.Repeat("a", 280)},

@@ -148,8 +148,8 @@ func TestClassByID_RN06(t *testing.T) {
 	}
 }
 
-// Classes devolve uma cópia: mexer nela não muda o catálogo.
-func TestClasses_ReturnsACopy(t *testing.T) {
+// RN-20: Classes devolve uma cópia; mexer nela não muda o catálogo, que é a fonte única.
+func TestClasses_RN20_ReturnsACopy(t *testing.T) {
 	Classes()[0].Name = "mudou"
 	if Classes()[0].Name != "Aprendiz" {
 		t.Error("o catálogo mudou por fora")

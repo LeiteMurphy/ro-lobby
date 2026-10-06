@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
-	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordfake"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/migrate"
@@ -54,7 +53,7 @@ func setup(t *testing.T) *env {
 	t.Cleanup(srv.Close)
 
 	e := &env{fake: fake, pool: pool, clock: time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)}
-	e.svc = NewService(db.New(pool), discord.New(srv.URL+"/api", "123", "segredo", discord.WithTimeout(500*time.Millisecond)))
+	e.svc = NewService(pool, discord.New(srv.URL+"/api", "123", "segredo", discord.WithTimeout(500*time.Millisecond)))
 	e.svc.Now = func() time.Time { return e.clock }
 	return e
 }
@@ -90,6 +89,26 @@ func TestLogin_CA01_1_FirstLoginCreatesUserAndSession(t *testing.T) {
 	got, err := e.svc.Authenticate(t.Context(), token)
 	if err != nil || got != u {
 		t.Fatalf("Authenticate = %+v, %v", got, err)
+	}
+}
+
+// AJ-02 / RN-13: se a Sessão não puder ser gravada, o primeiro login não deixa o Usuário
+// no banco (os dois ficam numa transação só).
+func TestLogin_RN13_SessionFailureCreatesNoUser(t *testing.T) {
+	e := setup(t)
+	if _, err := e.pool.Exec(t.Context(), `
+		CREATE FUNCTION fail_session() RETURNS trigger LANGUAGE plpgsql AS $$
+		BEGIN RAISE EXCEPTION 'sessão recusada pelo teste'; END $$;
+		CREATE TRIGGER fail_session BEFORE INSERT ON sessions
+		FOR EACH ROW EXECUTE FUNCTION fail_session();`); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := e.svc.Login(t.Context(), e.fake.IssueCode(e.fake.User, redirect), redirect)
+	if err == nil {
+		t.Fatal("o login deveria falhar")
+	}
+	if n := e.count(t, "users"); n != 0 {
+		t.Errorf("ficaram %d usuários sem sessão", n)
 	}
 }
 

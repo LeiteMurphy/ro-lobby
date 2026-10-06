@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
@@ -47,14 +48,15 @@ type User struct {
 }
 
 type Service struct {
+	pool    *pgxpool.Pool
 	queries *db.Queries
 	discord ProfileFetcher
 	// Now é o relógio do serviço; os testes trocam por um relógio fixo (D-06).
 	Now func() time.Time
 }
 
-func NewService(queries *db.Queries, fetcher ProfileFetcher) *Service {
-	return &Service{queries: queries, discord: fetcher, Now: time.Now}
+func NewService(pool *pgxpool.Pool, fetcher ProfileFetcher) *Service {
+	return &Service{pool: pool, queries: db.New(pool), discord: fetcher, Now: time.Now}
 }
 
 // Login troca o código pelo perfil do Discord, cria ou atualiza o Usuário (RN-05) e abre
@@ -65,23 +67,34 @@ func (s *Service) Login(ctx context.Context, code, redirectURI string) (string, 
 		return "", User{}, err
 	}
 
-	now := s.Now().UTC()
-	row, err := s.queries.UpsertUserByDiscordID(ctx, db.UpsertUserByDiscordIDParams{
-		DiscordID:  profile.ID,
-		Username:   profile.Username,
-		GlobalName: pgtype.Text{String: profile.GlobalName, Valid: profile.GlobalName != ""},
-		Now:        now,
-	})
-	if err != nil {
-		return "", User{}, fmt.Errorf("auth: salvar usuário: %w", err)
-	}
-
 	token, err := newToken()
 	if err != nil {
 		return "", User{}, err
 	}
-	if err := s.queries.CreateSession(ctx, db.CreateSessionParams{TokenHash: HashToken(token), UserID: row.ID, Now: now}); err != nil {
-		return "", User{}, fmt.Errorf("auth: criar sessão: %w", err)
+
+	// AJ-02 (RN-13): o Usuário e a Sessão são gravados juntos; se a Sessão falhar, o
+	// primeiro login não deixa um Usuário sem sessão no banco.
+	now := s.Now().UTC()
+	var row db.User
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.queries.WithTx(tx)
+		var err error
+		row, err = q.UpsertUserByDiscordID(ctx, db.UpsertUserByDiscordIDParams{
+			DiscordID:  profile.ID,
+			Username:   profile.Username,
+			GlobalName: pgtype.Text{String: profile.GlobalName, Valid: profile.GlobalName != ""},
+			Now:        now,
+		})
+		if err != nil {
+			return fmt.Errorf("auth: salvar usuário: %w", err)
+		}
+		if err := q.CreateSession(ctx, db.CreateSessionParams{TokenHash: HashToken(token), UserID: row.ID, Now: now}); err != nil {
+			return fmt.Errorf("auth: criar sessão: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return "", User{}, err
 	}
 	return token, toUser(row), nil
 }

@@ -172,6 +172,25 @@ test.describe('perfil e personagens', () => {
 		await expect(cards(bia)).toHaveCount(0);
 	});
 
+	test('RN-19 / AJ-04: reabrir "Adicionar personagem" depois de um erro começa do zero', async ({
+		page
+	}) => {
+		const s = rand();
+		await loginAs(page, `r${s}`);
+		await addCharacter(page, { nick: `Brasa${s}` });
+		await page.getByRole('main').getByRole('button', { name: 'Adicionar personagem' }).click();
+		await fillDialog(page, { nick: `brasa${s}`, classId: 'paladino', level: 99 });
+		await dialog(page).getByRole('button', { name: 'Salvar personagem' }).click();
+		await expect(dialog(page).getByText('Esse nick já está em uso')).toBeVisible();
+
+		await dialog(page).getByRole('button', { name: 'Cancelar' }).click();
+		await expect(dialog(page)).toHaveCount(0);
+		await page.getByRole('main').getByRole('button', { name: 'Adicionar personagem' }).click();
+		await expect(dialog(page).getByLabel('Nick')).toHaveValue('');
+		await expect(dialog(page).getByLabel('Classe')).toHaveValue('');
+		await expect(dialog(page).getByText('Esse nick já está em uso')).toHaveCount(0);
+	});
+
 	test('CA-03.1 / CA-05.1 / CA-04.2 / CA-04.3 / CA-04.1: editar, trocar o principal e excluir', async ({
 		browser
 	}) => {
