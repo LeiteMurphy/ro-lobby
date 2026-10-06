@@ -98,6 +98,35 @@ func (q *Queries) DeleteCharacter(ctx context.Context, arg DeleteCharacterParams
 	return is_main, err
 }
 
+const getOwnCharacter = `-- name: GetOwnCharacter :one
+SELECT id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at FROM characters WHERE id = $1 AND user_id = $2
+`
+
+type GetOwnCharacterParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+// Personagem do próprio Usuário (RN-08 da spec lobbies); de outro Usuário não volta nada.
+func (q *Queries) GetOwnCharacter(ctx context.Context, arg GetOwnCharacterParams) (Character, error) {
+	row := q.db.QueryRow(ctx, getOwnCharacter, arg.ID, arg.UserID)
+	var i Character
+	err := row.Scan(
+		&i.ID,
+		&i.Seq,
+		&i.UserID,
+		&i.Nick,
+		&i.ClassID,
+		&i.Level,
+		&i.Role,
+		&i.Portrait,
+		&i.Link,
+		&i.IsMain,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const listCharacters = `-- name: ListCharacters :many
 SELECT id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at FROM characters
 WHERE user_id = $1

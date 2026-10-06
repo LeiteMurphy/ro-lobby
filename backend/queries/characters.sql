@@ -46,3 +46,7 @@ WHERE id = (
     ORDER BY c.created_at, c.seq
     LIMIT 1
 );
+
+-- name: GetOwnCharacter :one
+-- Personagem do próprio Usuário (RN-08 da spec lobbies); de outro Usuário não volta nada.
+SELECT * FROM characters WHERE id = @id AND user_id = @user_id;
