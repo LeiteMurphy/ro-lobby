@@ -102,7 +102,170 @@ paths:
       responses:
         "204":
           description: Sessão encerrada (ou já não existia).
+  /classes:
+    get:
+      operationId: listClasses
+      summary: Catálogo de classes
+      description: >
+        As classes do bRO, conforme o bROWiki, na ordem da página (spec personagens, RN-06,
+        RN-20). Não exige sessão.
+      responses:
+        "200":
+          description: Todas as classes do catálogo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Class"
+  /characters:
+    get:
+      operationId: listCharacters
+      summary: Personagens do Usuário da sessão
+      description: O principal primeiro, depois por ordem de cadastro (RN-01, RN-17).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Personagens do Usuário.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Character"
+        "401":
+          $ref: "#/components/responses/NoSession"
+    post:
+      operationId: createCharacter
+      summary: Cadastra um personagem
+      description: >
+        O primeiro personagem do Usuário vira o principal (RN-12). O nick é único em todo o
+        RO Lobby, sem diferenciar maiúsculas (RN-05), e cada Usuário tem até 10 personagens
+        (RN-11).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CharacterInput"
+      responses:
+        "201":
+          description: Personagem criado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "409":
+          description: O Usuário já tem 10 personagens (RN-11).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: character_limit
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /characters/{id}:
+    parameters:
+      - $ref: "#/components/parameters/CharacterId"
+    put:
+      operationId: updateCharacter
+      summary: Edita um personagem
+      description: Grava todos os campos, com as mesmas regras do cadastro (RN-15).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CharacterInput"
+      responses:
+        "200":
+          description: Personagem editado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Invalid"
+    delete:
+      operationId: deleteCharacter
+      summary: Exclui um personagem
+      description: Se era o principal, o mais antigo que sobrar vira o principal (RN-14).
+      security:
+        - sessionToken: []
+      responses:
+        "204":
+          description: Personagem excluído.
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /characters/{id}/main:
+    parameters:
+      - $ref: "#/components/parameters/CharacterId"
+    put:
+      operationId: setMainCharacter
+      summary: Torna o personagem o principal
+      description: O principal anterior deixa de ser (RN-13, D-01).
+      security:
+        - sessionToken: []
+      responses:
+        "204":
+          description: Personagem marcado como principal.
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
+  parameters:
+    CharacterId:
+      name: id
+      in: path
+      required: true
+      description: >
+        ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404
+        do mesmo jeito (RN-02, D-08).
+      schema:
+        type: string
+  responses:
+    NoSession:
+      description: Sem sessão, ou sessão desconhecida ou vencida.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: no_session
+    NotFound:
+      description: O personagem não existe ou é de outro Usuário (RN-02).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: not_found
+    Invalid:
+      description: Campos inválidos, com o código de cada erro (RN-19, D-07).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+          example:
+            error: validation
+            fields:
+              - field: nick
+                code: taken
   securitySchemes:
     sessionToken:
       type: http
@@ -163,4 +326,111 @@ components:
       properties:
         error:
           type: string
-          enum: [invalid_code, discord_unavailable, no_session]
+          enum: [invalid_code, discord_unavailable, no_session, not_found, character_limit]
+    Role:
+      type: string
+      enum: [tank, support, dps]
+      description: Função do personagem (RN-08).
+    Portrait:
+      type: string
+      enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+      description: >
+        Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em
+        web/static/portraits/.
+    ClassTier:
+      type: string
+      enum: [aprendiz, primeira, segunda, transcendental, terceira, quarta, expandida]
+    Class:
+      type: object
+      additionalProperties: false
+      required: [id, name, plural, tier, family]
+      properties:
+        id:
+          type: string
+          description: Nome sem acento em kebab-case; é o que o personagem guarda (D-03).
+          example: guardiao-real
+        name:
+          type: string
+          example: Guardião Real
+        plural:
+          type: string
+          description: Título da página da classe no bROWiki.
+          example: Guardiões Reais
+        tier:
+          $ref: "#/components/schemas/ClassTier"
+        family:
+          type: string
+          description: Classe de 1ª (ou a base, nas expandidas) de onde a linha sai.
+          example: Espadachim
+    CharacterInput:
+      type: object
+      required: [nick, classId, level, role]
+      description: >
+        Dados de um personagem. A API valida todos os campos (RNF-04), com as regras
+        RN-04 a RN-10; um valor fora delas volta 422.
+      properties:
+        nick:
+          type: string
+          description: 1 a 24 caracteres depois de tirar os espaços das pontas.
+        classId:
+          type: string
+          description: ID de uma classe de GET /classes.
+        level:
+          type: integer
+          description: De 1 a 275.
+        role:
+          $ref: "#/components/schemas/Role"
+        portrait:
+          $ref: "#/components/schemas/Portrait"
+        link:
+          type: string
+          description: Opcional; https:// e até 300 caracteres. Vazio fica sem link.
+    Character:
+      type: object
+      additionalProperties: false
+      required: [id, nick, classId, level, role, portrait, link, isMain, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        nick:
+          type: string
+        classId:
+          type: string
+        level:
+          type: integer
+        role:
+          $ref: "#/components/schemas/Role"
+        portrait:
+          $ref: "#/components/schemas/Portrait"
+        link:
+          type: string
+          nullable: true
+        isMain:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, code]
+      properties:
+        field:
+          type: string
+          enum: [nick, classId, level, role, portrait, link]
+        code:
+          type: string
+          enum: [required, too_long, invalid, taken]
+    ValidationError:
+      type: object
+      additionalProperties: false
+      required: [error, fields]
+      properties:
+        error:
+          type: string
+          enum: [validation]
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"

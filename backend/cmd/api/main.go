@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/auth"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/characters"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/config"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
@@ -51,10 +52,11 @@ func run() error {
 
 	discordClient := discord.New(cfg.Discord.APIBaseURL, cfg.Discord.ClientID, cfg.Discord.ClientSecret)
 	authService := auth.NewService(db.New(pool), discordClient)
+	characterService := characters.NewService(pool)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           server.New(pool, authService),
+		Handler:           server.New(pool, authService, characterService),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

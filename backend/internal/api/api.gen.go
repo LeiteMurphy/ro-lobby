@@ -11,25 +11,120 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ClassTier.
+const (
+	ClassTierAprendiz       ClassTier = "aprendiz"
+	ClassTierExpandida      ClassTier = "expandida"
+	ClassTierPrimeira       ClassTier = "primeira"
+	ClassTierQuarta         ClassTier = "quarta"
+	ClassTierSegunda        ClassTier = "segunda"
+	ClassTierTerceira       ClassTier = "terceira"
+	ClassTierTranscendental ClassTier = "transcendental"
+)
+
+// Valid indicates whether the value is a known member of the ClassTier enum.
+func (e ClassTier) Valid() bool {
+	switch e {
+	case ClassTierAprendiz:
+		return true
+	case ClassTierExpandida:
+		return true
+	case ClassTierPrimeira:
+		return true
+	case ClassTierQuarta:
+		return true
+	case ClassTierSegunda:
+		return true
+	case ClassTierTerceira:
+		return true
+	case ClassTierTranscendental:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ErrorError.
 const (
-	DiscordUnavailable ErrorError = "discord_unavailable"
-	InvalidCode        ErrorError = "invalid_code"
-	NoSession          ErrorError = "no_session"
+	ErrorErrorCharacterLimit     ErrorError = "character_limit"
+	ErrorErrorDiscordUnavailable ErrorError = "discord_unavailable"
+	ErrorErrorInvalidCode        ErrorError = "invalid_code"
+	ErrorErrorNoSession          ErrorError = "no_session"
+	ErrorErrorNotFound           ErrorError = "not_found"
 )
 
 // Valid indicates whether the value is a known member of the ErrorError enum.
 func (e ErrorError) Valid() bool {
 	switch e {
-	case DiscordUnavailable:
+	case ErrorErrorCharacterLimit:
 		return true
-	case InvalidCode:
+	case ErrorErrorDiscordUnavailable:
 		return true
-	case NoSession:
+	case ErrorErrorInvalidCode:
+		return true
+	case ErrorErrorNoSession:
+		return true
+	case ErrorErrorNotFound:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FieldErrorCode.
+const (
+	FieldErrorCodeInvalid  FieldErrorCode = "invalid"
+	FieldErrorCodeRequired FieldErrorCode = "required"
+	FieldErrorCodeTaken    FieldErrorCode = "taken"
+	FieldErrorCodeTooLong  FieldErrorCode = "too_long"
+)
+
+// Valid indicates whether the value is a known member of the FieldErrorCode enum.
+func (e FieldErrorCode) Valid() bool {
+	switch e {
+	case FieldErrorCodeInvalid:
+		return true
+	case FieldErrorCodeRequired:
+		return true
+	case FieldErrorCodeTaken:
+		return true
+	case FieldErrorCodeTooLong:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FieldErrorField.
+const (
+	FieldErrorFieldClassId  FieldErrorField = "classId"
+	FieldErrorFieldLevel    FieldErrorField = "level"
+	FieldErrorFieldLink     FieldErrorField = "link"
+	FieldErrorFieldNick     FieldErrorField = "nick"
+	FieldErrorFieldPortrait FieldErrorField = "portrait"
+	FieldErrorFieldRole     FieldErrorField = "role"
+)
+
+// Valid indicates whether the value is a known member of the FieldErrorField enum.
+func (e FieldErrorField) Valid() bool {
+	switch e {
+	case FieldErrorFieldClassId:
+		return true
+	case FieldErrorFieldLevel:
+		return true
+	case FieldErrorFieldLink:
+		return true
+	case FieldErrorFieldNick:
+		return true
+	case FieldErrorFieldPortrait:
+		return true
+	case FieldErrorFieldRole:
 		return true
 	default:
 		return false
@@ -72,6 +167,129 @@ func (e HealthStatus) Valid() bool {
 	}
 }
 
+// Defines values for Portrait.
+const (
+	PortraitRetrato1 Portrait = "retrato-1"
+	PortraitRetrato2 Portrait = "retrato-2"
+	PortraitRetrato3 Portrait = "retrato-3"
+	PortraitRetrato4 Portrait = "retrato-4"
+)
+
+// Valid indicates whether the value is a known member of the Portrait enum.
+func (e Portrait) Valid() bool {
+	switch e {
+	case PortraitRetrato1:
+		return true
+	case PortraitRetrato2:
+		return true
+	case PortraitRetrato3:
+		return true
+	case PortraitRetrato4:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for Role.
+const (
+	RoleDps     Role = "dps"
+	RoleSupport Role = "support"
+	RoleTank    Role = "tank"
+)
+
+// Valid indicates whether the value is a known member of the Role enum.
+func (e Role) Valid() bool {
+	switch e {
+	case RoleDps:
+		return true
+	case RoleSupport:
+		return true
+	case RoleTank:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ValidationErrorError.
+const (
+	ValidationErrorErrorValidation ValidationErrorError = "validation"
+)
+
+// Valid indicates whether the value is a known member of the ValidationErrorError enum.
+func (e ValidationErrorError) Valid() bool {
+	switch e {
+	case ValidationErrorErrorValidation:
+		return true
+	default:
+		return false
+	}
+}
+
+// Character defines model for Character.
+type Character struct {
+	ClassId   string             `json:"classId"`
+	CreatedAt time.Time          `json:"createdAt"`
+	Id        openapi_types.UUID `json:"id"`
+	IsMain    bool               `json:"isMain"`
+	Level     int                `json:"level"`
+	Link      *string            `json:"link"`
+	Nick      string             `json:"nick"`
+
+	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+	Portrait Portrait `json:"portrait"`
+
+	// Role Função do personagem (RN-08).
+	Role Role `json:"role"`
+}
+
+// CharacterInput Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422.
+type CharacterInput struct {
+	// ClassId ID de uma classe de GET /classes.
+	ClassId string `json:"classId"`
+
+	// Level De 1 a 275.
+	Level int `json:"level"`
+
+	// Link Opcional; https:// e até 300 caracteres. Vazio fica sem link.
+	Link *string `json:"link,omitempty"`
+
+	// Nick 1 a 24 caracteres depois de tirar os espaços das pontas.
+	Nick string `json:"nick"`
+
+	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+	Portrait *Portrait `json:"portrait,omitempty"`
+
+	// Role Função do personagem (RN-08).
+	Role Role `json:"role"`
+}
+
+// Class defines model for Class.
+type Class struct {
+	// Family Classe de 1ª (ou a base, nas expandidas) de onde a linha sai.
+	//
+	// Example: Espadachim
+	Family string `json:"family"`
+
+	// Id Nome sem acento em kebab-case; é o que o personagem guarda (D-03).
+	//
+	// Example: guardiao-real
+	Id string `json:"id"`
+
+	// Name Example: Guardião Real
+	Name string `json:"name"`
+
+	// Plural Título da página da classe no bROWiki.
+	//
+	// Example: Guardiões Reais
+	Plural string    `json:"plural"`
+	Tier   ClassTier `json:"tier"`
+}
+
+// ClassTier defines model for ClassTier.
+type ClassTier string
+
 // DiscordLogin defines model for DiscordLogin.
 type DiscordLogin struct {
 	Code string `json:"code"`
@@ -88,6 +306,18 @@ type Error struct {
 // ErrorError defines model for Error.Error.
 type ErrorError string
 
+// FieldError defines model for FieldError.
+type FieldError struct {
+	Code  FieldErrorCode  `json:"code"`
+	Field FieldErrorField `json:"field"`
+}
+
+// FieldErrorCode defines model for FieldError.Code.
+type FieldErrorCode string
+
+// FieldErrorField defines model for FieldError.Field.
+type FieldErrorField string
+
 // Health defines model for Health.
 type Health struct {
 	Database HealthDatabase `json:"database"`
@@ -99,6 +329,12 @@ type HealthDatabase string
 
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
+
+// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+type Portrait string
+
+// Role Função do personagem (RN-08).
+type Role string
 
 // SessionCreated defines model for SessionCreated.
 type SessionCreated struct {
@@ -115,14 +351,59 @@ type User struct {
 	Username   string             `json:"username"`
 }
 
+// ValidationError defines model for ValidationError.
+type ValidationError struct {
+	Error  ValidationErrorError `json:"error"`
+	Fields []FieldError         `json:"fields"`
+}
+
+// ValidationErrorError defines model for ValidationError.Error.
+type ValidationErrorError string
+
+// CharacterId defines model for CharacterId.
+type CharacterId = string
+
+// Invalid defines model for Invalid.
+type Invalid = ValidationError
+
+// NoSession defines model for NoSession.
+type NoSession = Error
+
+// NotFound defines model for NotFound.
+type NotFound = Error
+
 // CreateSessionFromDiscordJSONRequestBody defines body for CreateSessionFromDiscord for application/json ContentType.
 type CreateSessionFromDiscordJSONRequestBody = DiscordLogin
+
+// CreateCharacterJSONRequestBody defines body for CreateCharacter for application/json ContentType.
+type CreateCharacterJSONRequestBody = CharacterInput
+
+// UpdateCharacterJSONRequestBody defines body for UpdateCharacter for application/json ContentType.
+type UpdateCharacterJSONRequestBody = CharacterInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// CreateSessionFromDiscord Troca o código do Discord por uma sessão
 	// (POST /auth/discord)
 	CreateSessionFromDiscord(w http.ResponseWriter, r *http.Request)
+	// ListCharacters Personagens do Usuário da sessão
+	// (GET /characters)
+	ListCharacters(w http.ResponseWriter, r *http.Request)
+	// CreateCharacter Cadastra um personagem
+	// (POST /characters)
+	CreateCharacter(w http.ResponseWriter, r *http.Request)
+	// DeleteCharacter Exclui um personagem
+	// (DELETE /characters/{id})
+	DeleteCharacter(w http.ResponseWriter, r *http.Request, id CharacterId)
+	// UpdateCharacter Edita um personagem
+	// (PUT /characters/{id})
+	UpdateCharacter(w http.ResponseWriter, r *http.Request, id CharacterId)
+	// SetMainCharacter Torna o personagem o principal
+	// (PUT /characters/{id}/main)
+	SetMainCharacter(w http.ResponseWriter, r *http.Request, id CharacterId)
+	// ListClasses Catálogo de classes
+	// (GET /classes)
+	ListClasses(w http.ResponseWriter, r *http.Request)
 	// GetHealthz Estado da API e do banco
 	// (GET /healthz)
 	GetHealthz(w http.ResponseWriter, r *http.Request)
@@ -148,6 +429,126 @@ func (siw *ServerInterfaceWrapper) CreateSessionFromDiscord(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateSessionFromDiscord(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCharacters operation middleware
+func (siw *ServerInterfaceWrapper) ListCharacters(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCharacters(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCharacter operation middleware
+func (siw *ServerInterfaceWrapper) CreateCharacter(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCharacter(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteCharacter operation middleware
+func (siw *ServerInterfaceWrapper) DeleteCharacter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CharacterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteCharacter(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCharacter operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCharacter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CharacterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCharacter(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetMainCharacter operation middleware
+func (siw *ServerInterfaceWrapper) SetMainCharacter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CharacterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetMainCharacter(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListClasses operation middleware
+func (siw *ServerInterfaceWrapper) ListClasses(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListClasses(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -323,9 +724,21 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/auth/discord", wrapper.CreateSessionFromDiscord)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetMe)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/session", wrapper.DeleteSession)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/classes", wrapper.ListClasses)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/characters", wrapper.ListCharacters)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/characters", wrapper.CreateCharacter)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/characters/{id}", wrapper.DeleteCharacter)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}", wrapper.UpdateCharacter)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/main", wrapper.SetMainCharacter)
 
 	return m
 }
+
+type InvalidJSONResponse ValidationError
+
+type NoSessionJSONResponse Error
+
+type NotFoundJSONResponse Error
 
 type CreateSessionFromDiscordRequestObject struct {
 	Body *CreateSessionFromDiscordJSONRequestBody
@@ -373,6 +786,279 @@ func (response CreateSessionFromDiscord502JSONResponse) VisitCreateSessionFromDi
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCharactersRequestObject struct {
+}
+
+type ListCharactersResponseObject interface {
+	VisitListCharactersResponse(w http.ResponseWriter) error
+}
+
+type ListCharacters200JSONResponse []Character
+
+func (response ListCharacters200JSONResponse) VisitListCharactersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCharacters401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response ListCharacters401JSONResponse) VisitListCharactersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCharacterRequestObject struct {
+	Body *CreateCharacterJSONRequestBody
+}
+
+type CreateCharacterResponseObject interface {
+	VisitCreateCharacterResponse(w http.ResponseWriter) error
+}
+
+type CreateCharacter201JSONResponse Character
+
+func (response CreateCharacter201JSONResponse) VisitCreateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCharacter401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response CreateCharacter401JSONResponse) VisitCreateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCharacter409JSONResponse Error
+
+func (response CreateCharacter409JSONResponse) VisitCreateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCharacter422JSONResponse struct{ InvalidJSONResponse }
+
+func (response CreateCharacter422JSONResponse) VisitCreateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCharacterRequestObject struct {
+	Id CharacterId `json:"id"`
+}
+
+type DeleteCharacterResponseObject interface {
+	VisitDeleteCharacterResponse(w http.ResponseWriter) error
+}
+
+type DeleteCharacter204Response struct {
+}
+
+func (response DeleteCharacter204Response) VisitDeleteCharacterResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteCharacter401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response DeleteCharacter401JSONResponse) VisitDeleteCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteCharacter404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response DeleteCharacter404JSONResponse) VisitDeleteCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCharacterRequestObject struct {
+	Id   CharacterId `json:"id"`
+	Body *UpdateCharacterJSONRequestBody
+}
+
+type UpdateCharacterResponseObject interface {
+	VisitUpdateCharacterResponse(w http.ResponseWriter) error
+}
+
+type UpdateCharacter200JSONResponse Character
+
+func (response UpdateCharacter200JSONResponse) VisitUpdateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCharacter401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response UpdateCharacter401JSONResponse) VisitUpdateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCharacter404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateCharacter404JSONResponse) VisitUpdateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCharacter422JSONResponse struct{ InvalidJSONResponse }
+
+func (response UpdateCharacter422JSONResponse) VisitUpdateCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMainCharacterRequestObject struct {
+	Id CharacterId `json:"id"`
+}
+
+type SetMainCharacterResponseObject interface {
+	VisitSetMainCharacterResponse(w http.ResponseWriter) error
+}
+
+type SetMainCharacter204Response struct {
+}
+
+func (response SetMainCharacter204Response) VisitSetMainCharacterResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SetMainCharacter401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response SetMainCharacter401JSONResponse) VisitSetMainCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMainCharacter404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SetMainCharacter404JSONResponse) VisitSetMainCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListClassesRequestObject struct {
+}
+
+type ListClassesResponseObject interface {
+	VisitListClassesResponse(w http.ResponseWriter) error
+}
+
+type ListClasses200JSONResponse []Class
+
+func (response ListClasses200JSONResponse) VisitListClassesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -467,6 +1153,24 @@ type StrictServerInterface interface {
 	// CreateSessionFromDiscord Troca o código do Discord por uma sessão
 	// (POST /auth/discord)
 	CreateSessionFromDiscord(ctx context.Context, request CreateSessionFromDiscordRequestObject) (CreateSessionFromDiscordResponseObject, error)
+	// ListCharacters Personagens do Usuário da sessão
+	// (GET /characters)
+	ListCharacters(ctx context.Context, request ListCharactersRequestObject) (ListCharactersResponseObject, error)
+	// CreateCharacter Cadastra um personagem
+	// (POST /characters)
+	CreateCharacter(ctx context.Context, request CreateCharacterRequestObject) (CreateCharacterResponseObject, error)
+	// DeleteCharacter Exclui um personagem
+	// (DELETE /characters/{id})
+	DeleteCharacter(ctx context.Context, request DeleteCharacterRequestObject) (DeleteCharacterResponseObject, error)
+	// UpdateCharacter Edita um personagem
+	// (PUT /characters/{id})
+	UpdateCharacter(ctx context.Context, request UpdateCharacterRequestObject) (UpdateCharacterResponseObject, error)
+	// SetMainCharacter Torna o personagem o principal
+	// (PUT /characters/{id}/main)
+	SetMainCharacter(ctx context.Context, request SetMainCharacterRequestObject) (SetMainCharacterResponseObject, error)
+	// ListClasses Catálogo de classes
+	// (GET /classes)
+	ListClasses(ctx context.Context, request ListClassesRequestObject) (ListClassesResponseObject, error)
 	// GetHealthz Estado da API e do banco
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
@@ -541,6 +1245,170 @@ func (sh *strictHandler) CreateSessionFromDiscord(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateSessionFromDiscordResponseObject); ok {
 		if err := validResponse.VisitCreateSessionFromDiscordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCharacters operation middleware
+func (sh *strictHandler) ListCharacters(w http.ResponseWriter, r *http.Request) {
+	var request ListCharactersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCharacters(ctx, request.(ListCharactersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCharacters")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCharactersResponseObject); ok {
+		if err := validResponse.VisitListCharactersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCharacter operation middleware
+func (sh *strictHandler) CreateCharacter(w http.ResponseWriter, r *http.Request) {
+	var request CreateCharacterRequestObject
+
+	var body CreateCharacterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCharacter(ctx, request.(CreateCharacterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCharacter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCharacterResponseObject); ok {
+		if err := validResponse.VisitCreateCharacterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteCharacter operation middleware
+func (sh *strictHandler) DeleteCharacter(w http.ResponseWriter, r *http.Request, id CharacterId) {
+	var request DeleteCharacterRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteCharacter(ctx, request.(DeleteCharacterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteCharacter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteCharacterResponseObject); ok {
+		if err := validResponse.VisitDeleteCharacterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCharacter operation middleware
+func (sh *strictHandler) UpdateCharacter(w http.ResponseWriter, r *http.Request, id CharacterId) {
+	var request UpdateCharacterRequestObject
+
+	request.Id = id
+
+	var body UpdateCharacterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCharacter(ctx, request.(UpdateCharacterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCharacter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateCharacterResponseObject); ok {
+		if err := validResponse.VisitUpdateCharacterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetMainCharacter operation middleware
+func (sh *strictHandler) SetMainCharacter(w http.ResponseWriter, r *http.Request, id CharacterId) {
+	var request SetMainCharacterRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetMainCharacter(ctx, request.(SetMainCharacterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetMainCharacter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetMainCharacterResponseObject); ok {
+		if err := validResponse.VisitSetMainCharacterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListClasses operation middleware
+func (sh *strictHandler) ListClasses(w http.ResponseWriter, r *http.Request) {
+	var request ListClassesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListClasses(ctx, request.(ListClassesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListClasses")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListClassesResponseObject); ok {
+		if err := validResponse.VisitListClassesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
