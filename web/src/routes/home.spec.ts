@@ -70,9 +70,10 @@ describe('Home renderizada no servidor', () => {
 		expect(html).toContain('Disponível em breve');
 	});
 
-	it('CA-02.3 / CA-02.4 / RN-23 (lobbies): "Criar lobby" e "Ver grupo" levam às páginas de lobby', () => {
-		expect(html.match(/<a href="\/lobbies\/novo"[^>]*>[\s\S]*?Criar lobby/g)).toHaveLength(1);
-		expect(html).toMatch(/<a href="\/lobbies\/novo"[^>]*aria-label="Criar lobby"/);
+	it('CA-02.3 / CA-02.4 / CA-02.5 / RN-23 / RN-24 (lobbies): "Criar lobby" leva à criação no dia escolhido, e "Ver grupo" ao detalhe', () => {
+		const create = `/lobbies/novo?dia=${TODAY}`;
+		expect(html.split(`<a href="${create}"`).length - 1).toBe(2); // cabeçalho: desktop e celular
+		expect(html).toMatch(/<a href="\/lobbies\/novo\?dia=2026-09-30"[^>]*aria-label="Criar lobby"/);
 		for (const l of today) {
 			expect(html).toContain(`href="/lobbies/${l.id}"`);
 			expect(html).toContain(`aria-label="Ver grupo: ${l.instance} às ${l.time}"`);
@@ -161,5 +162,12 @@ describe('aviso de lista vazia', () => {
 			expect(html).toMatch(/<a href="\/lobbies\/novo"[^>]*>(?:\s|<[^>]+>)*Criar lobby/);
 			expect(html).not.toContain('Disponível em breve');
 		}
+	});
+
+	it('CA-02.5 / RN-24 (lobbies): com o dia escolhido, "Criar lobby" abre a criação nele', () => {
+		const html = render(EmptyState, {
+			props: { kind: 'day', onreset: () => {}, createDate: '2026-10-09' }
+		}).body;
+		expect(html).toContain('href="/lobbies/novo?dia=2026-10-09"');
 	});
 });

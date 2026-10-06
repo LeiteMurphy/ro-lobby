@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiLogin, createCharacter, createLobby, rand } from './seed';
+import { apiLogin, createCharacter, createLobby, rand, spDay } from './seed';
 
 // Ponta a ponta da Home (spec home-local). As datas dependem do relógio real, então os
 // testes leem dias e contagens da própria tela.
@@ -176,7 +176,7 @@ test.describe('Home no desktop', () => {
 		).toHaveAttribute('href', '/auth/discord/login?next=%2F');
 		await expect(
 			page.getByRole('banner').getByRole('link', { name: 'Criar lobby' })
-		).toHaveAttribute('href', '/lobbies/novo');
+		).toHaveAttribute('href', `/lobbies/novo?dia=${spDay(1)}`);
 		const apply = ownCards(page).getByRole('button', { name: 'Candidatar' }).first();
 		await expect(apply).toBeDisabled();
 		await apply.hover();
@@ -207,7 +207,7 @@ test.describe('Home no desktop', () => {
 		// CA-02.3 / RN-23 (lobbies): o "Criar lobby" do aviso leva à criação (o visitante passa
 		// pelo login antes, RN-04).
 		const create = page.getByTestId('empty-state').getByRole('link', { name: 'Criar lobby' });
-		await expect(create).toHaveAttribute('href', '/lobbies/novo');
+		await expect(create).toHaveAttribute('href', `/lobbies/novo?dia=${spDay(index)}`);
 		await create.click();
 		await expect(page).toHaveURL(/\/oauth2\/authorize/);
 	});
@@ -237,7 +237,7 @@ test.describe('Home no desktop', () => {
 		await expect(page.getByTestId('empty-state')).toContainText('Nenhum grupo com esses filtros');
 		await expect(
 			page.getByTestId('empty-state').getByRole('link', { name: 'Criar lobby' })
-		).toHaveAttribute('href', '/lobbies/novo');
+		).toHaveAttribute('href', `/lobbies/novo?dia=${spDay(1)}`);
 		await page.getByRole('button', { name: 'Limpar filtros' }).click();
 		await expect(cards(page)).toHaveCount(total);
 	});

@@ -1,5 +1,6 @@
 // Horário de Brasília na borda, UTC no resto (spec lobbies, RN-05, design D-04). O
 // Usuário informa e vê dia e hora em America/Sao_Paulo; a API recebe e devolve UTC.
+import { resolve } from '$app/paths';
 import { TIME_ZONE, zonedNow } from '$lib/home/time';
 
 export interface ZonedDateTime {
@@ -47,4 +48,34 @@ export function fromUtcIso(iso: string): ZonedDateTime {
 /** Valida "HH:MM" de 00:00 a 23:59. */
 export function isTime(value: string): boolean {
 	return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+/** Hora padrão de um lobby novo (RN-24). */
+export const DEFAULT_TIME = '20:00';
+
+/**
+ * RN-24: início padrão da criação. `requested` é o dia escolhido na Home (YYYY-MM-DD) e só
+ * vale se estiver em `days`, os dias que aceitam lobby (o primeiro é hoje). Sem dia, é
+ * amanhã. Hoje, a hora nunca fica no passado: 20:00 ou a próxima hora cheia; sem hora
+ * cheia sobrando, amanhã às 20:00.
+ */
+export function defaultStart(
+	requested: string | null,
+	now: { date: string; minutes: number },
+	days: readonly string[]
+): ZonedDateTime {
+	const tomorrow = days[1] ?? now.date;
+	const date = requested && days.includes(requested) ? requested : tomorrow;
+	if (date !== now.date) return { date, time: DEFAULT_TIME };
+	const [h, m] = DEFAULT_TIME.split(':').map(Number);
+	if (now.minutes < h * 60 + m) return { date, time: DEFAULT_TIME };
+	const next = Math.floor(now.minutes / 60) + 1;
+	if (next > 23) return { date: tomorrow, time: DEFAULT_TIME };
+	return { date, time: `${String(next).padStart(2, '0')}:00` };
+}
+
+/** RN-23 / RN-24: link de "Criar lobby", com o dia escolhido na Home quando há. */
+export function createLobbyHref(date: string | null | undefined): string {
+	const path = resolve('/lobbies/novo');
+	return date ? `${path}?${new URLSearchParams({ dia: date })}` : path;
 }

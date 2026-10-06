@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createLobby, cancelLobby, getLobby, listInstances, listLobbies, updateLobby } from './api';
-import { fromUtcIso, isTime, toUtcIso } from './time';
+import { createLobbyHref, defaultStart, fromUtcIso, isTime, toUtcIso } from './time';
 import { TEMPLE } from './fixtures';
 import { DELETED_CHARACTER, toHomeLobby } from './toHome';
 
@@ -129,5 +129,54 @@ describe('cliente da API de lobbies (D-06)', () => {
 		[404, { error: 'not_found' }, { ok: false, kind: 'not_found' }]
 	])('RN-11 / D-08: status %i vira %o', async (status, body, want) => {
 		expect(await listLobbies(fakeFetch(status, body), base, 'a', 'b')).toEqual(want);
+	});
+});
+
+describe('início padrão da criação', () => {
+	const DAYS = ['2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09'];
+	const at = (h: number, m: number) => ({ date: '2026-10-06', minutes: h * 60 + m });
+
+	it('CA-02.5 / RN-24: o dia escolhido vem com 20:00; sem dia ou fora dos 14, amanhã', () => {
+		expect(defaultStart('2026-10-09', at(16, 40), DAYS)).toEqual({
+			date: '2026-10-09',
+			time: '20:00'
+		});
+		expect(defaultStart(null, at(16, 40), DAYS)).toEqual({ date: '2026-10-07', time: '20:00' });
+		expect(defaultStart('2026-12-25', at(16, 40), DAYS)).toEqual({
+			date: '2026-10-07',
+			time: '20:00'
+		});
+	});
+
+	it('CA-02.6 / RN-24: hoje, a hora nunca fica no passado', () => {
+		expect(defaultStart('2026-10-06', at(16, 40), DAYS)).toEqual({
+			date: '2026-10-06',
+			time: '20:00'
+		});
+		expect(defaultStart('2026-10-06', at(19, 59), DAYS)).toEqual({
+			date: '2026-10-06',
+			time: '20:00'
+		});
+		expect(defaultStart('2026-10-06', at(20, 0), DAYS)).toEqual({
+			date: '2026-10-06',
+			time: '21:00'
+		});
+		expect(defaultStart('2026-10-06', at(20, 40), DAYS)).toEqual({
+			date: '2026-10-06',
+			time: '21:00'
+		});
+		expect(defaultStart('2026-10-06', at(22, 59), DAYS)).toEqual({
+			date: '2026-10-06',
+			time: '23:00'
+		});
+		expect(defaultStart('2026-10-06', at(23, 10), DAYS)).toEqual({
+			date: '2026-10-07',
+			time: '20:00'
+		});
+	});
+
+	it('RN-23 / RN-24: o link de "Criar lobby" leva o dia quando há', () => {
+		expect(createLobbyHref('2026-10-09')).toBe('/lobbies/novo?dia=2026-10-09');
+		expect(createLobbyHref(null)).toBe('/lobbies/novo');
 	});
 });

@@ -81,10 +81,22 @@ test.describe('lobbies', () => {
 		await expect(page).toHaveURL(/\/oauth2\/authorize/);
 		await page.getByLabel('Entrar como (opcional)').fill(`semchar${rand()}`);
 		await page.getByRole('button', { name: 'Autorizar' }).click();
-		await expect(page).toHaveURL('/lobbies/novo');
+		await expect(page).toHaveURL(`/lobbies/novo?dia=${spDay(0)}`);
 		await expect(page.getByText('Cadastre um personagem para criar lobbies')).toBeVisible();
 		await page.getByRole('link', { name: 'Ir para o perfil' }).click();
 		await expect(page).toHaveURL('/perfil');
+	});
+
+	test('CA-02.5 / RN-24: "Criar lobby" depois de escolher um dia na Home abre a criação nele', async ({
+		browser,
+		request
+	}) => {
+		const { page } = await ownerWithCharacter(browser, request, rand());
+		await page.getByRole('tablist', { name: 'Dias' }).getByRole('tab').nth(9).click();
+		await page.getByRole('banner').getByRole('link', { name: 'Criar lobby' }).click();
+		await expect(page).toHaveURL(`/lobbies/novo?dia=${spDay(9)}`);
+		await expect(page.getByLabel('Dia')).toHaveValue(spDay(9));
+		await expect(page.getByLabel('Hora (Brasília)')).toHaveValue('20:00');
 	});
 
 	test('CA-01.1 / CA-02.1 / CA-02.4 / CA-03.1: criar, ver na Home e abrir pelo "Ver grupo"', async ({
@@ -94,7 +106,7 @@ test.describe('lobbies', () => {
 		const s = rand();
 		const { page, character } = await ownerWithCharacter(browser, request, s);
 		await page.getByRole('banner').getByRole('link', { name: 'Criar lobby' }).click();
-		await expect(page).toHaveURL('/lobbies/novo');
+		await expect(page).toHaveURL(`/lobbies/novo?dia=${spDay(0)}`);
 		// CA-01.1: padrões 1/2/3 e o personagem principal marcado.
 		await expect(page.getByLabel('Tank', { exact: true })).toHaveValue('1');
 		await expect(page.getByLabel('Suporte', { exact: true })).toHaveValue('2');

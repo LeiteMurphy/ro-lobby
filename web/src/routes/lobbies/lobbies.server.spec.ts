@@ -87,8 +87,18 @@ type NovoAction = Parameters<(typeof novo.actions)['create']>[0];
 type EditLoad = Parameters<typeof editar.load>[0];
 type EditAction = Parameters<(typeof editar.actions)['update']>[0];
 
-const novoLoad = (user: unknown, cookies: ReturnType<typeof fakeCookies>, f: typeof fetch) =>
-	({ locals: { user }, cookies, fetch: f }) as unknown as NovoLoad;
+const novoLoad = (
+	user: unknown,
+	cookies: ReturnType<typeof fakeCookies>,
+	f: typeof fetch,
+	search = ''
+) =>
+	({
+		locals: { user },
+		cookies,
+		fetch: f,
+		url: new URL(`http://web/lobbies/novo${search}`)
+	}) as unknown as NovoLoad;
 const editLoad = (user: unknown, cookies: ReturnType<typeof fakeCookies>, f: typeof fetch) =>
 	({ params: { id: TEMPLE.id }, locals: { user }, cookies, fetch: f }) as unknown as EditLoad;
 
@@ -114,6 +124,37 @@ describe('/lobbies/novo', () => {
 			characterId: LIRIEN.id
 		});
 		expect((data.days as unknown[]).length).toBe(14);
+	});
+
+	it('CA-02.5 / RN-24: o dia escolhido na Home chega preenchido; dia fora dos 14 cai no padrão', async () => {
+		const responses = () =>
+			fakeFetch({
+				'GET /characters': json(200, [LIRIEN]),
+				'GET /instances': json(200, INSTANCES),
+				'GET /classes': json(200, [])
+			}).fn;
+		const first = (await novo.load(novoLoad(ANA, fakeCookies('t'), responses()))) as {
+			days: { date: string }[];
+			values: { date: string; time: string };
+		};
+		const chosen = first.days[5].date;
+		const data = (await novo.load(
+			novoLoad(ANA, fakeCookies('t'), responses(), `?dia=${chosen}`)
+		)) as typeof first;
+		expect(data.values).toMatchObject({ date: chosen, time: '20:00' });
+		const outside = (await novo.load(
+			novoLoad(ANA, fakeCookies('t'), responses(), '?dia=2000-01-01')
+		)) as typeof first;
+		expect(outside.values.date).toBe(first.values.date);
+	});
+
+	it('CA-02.3 / RN-24: o visitante volta do login com o dia', async () => {
+		const e = await thrown(() =>
+			novo.load(novoLoad(null, fakeCookies(), fakeFetch({}).fn, '?dia=2026-10-09'))
+		);
+		expect(isRedirect(e) && e.location).toBe(
+			`/auth/discord/login?next=${encodeURIComponent('/lobbies/novo?dia=2026-10-09')}`
+		);
 	});
 
 	it('CA-01.1: criar manda o horário de Brasília em UTC e vai para o detalhe', async () => {
