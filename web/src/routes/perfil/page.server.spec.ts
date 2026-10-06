@@ -169,6 +169,23 @@ describe('actions de /perfil', () => {
 		expect(result).toMatchObject({ status: 409, data: { message: 'Você já tem 10 personagens' } });
 	});
 
+	it('CA-06.4 / RN-21 (lobbies): personagem dono de lobby aberto mostra o aviso ao excluir ou mudar a função', async () => {
+		const blocked = json(409, { error: 'character_in_open_lobby' });
+		const { fn } = fakeFetch({ 'DELETE /characters/c1': blocked, 'PUT /characters/c1': blocked });
+		const message = 'Esse personagem está num lobby aberto. Cancele o lobby antes.';
+		expect(
+			await actions.delete(actionEvent(form({ id: 'c1' }), fakeCookies('t'), fn))
+		).toMatchObject({
+			status: 409,
+			data: { mode: 'delete', message }
+		});
+		expect(
+			await actions.update(
+				actionEvent(form({ ...BRASA_FORM, id: 'c1', role: 'dps' }), fakeCookies('t'), fn)
+			)
+		).toMatchObject({ status: 409, data: { mode: 'update', message } });
+	});
+
 	it('CA-03.1 / CA-03.3: editar usa o id do formulário; personagem de outro é 404', async () => {
 		const { fn, calls } = fakeFetch({ 'PUT /characters/c9': json(404, { error: 'not_found' }) });
 		const result = await actions.update(

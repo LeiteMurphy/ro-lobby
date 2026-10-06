@@ -16,6 +16,7 @@ import {
 } from '$lib/characters/api';
 import {
 	fieldMessages,
+	IN_OPEN_LOBBY_MESSAGE,
 	LIMIT_MESSAGE,
 	NOT_FOUND_MESSAGE,
 	UNAVAILABLE_MESSAGE
@@ -104,6 +105,9 @@ function outcome(
 		case 'conflict':
 			if (result.code === 'character_limit') {
 				return fail(409, { ...form, errors: {}, message: LIMIT_MESSAGE });
+			}
+			if (result.code === 'character_in_open_lobby') {
+				return fail(409, { ...form, errors: {}, message: IN_OPEN_LOBBY_MESSAGE });
 			}
 			return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
 		case 'not_found':
