@@ -16,7 +16,6 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/characters"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/config"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
-	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/server"
 )
@@ -51,7 +50,7 @@ func run() error {
 	defer pool.Close()
 
 	discordClient := discord.New(cfg.Discord.APIBaseURL, cfg.Discord.ClientID, cfg.Discord.ClientSecret)
-	authService := auth.NewService(db.New(pool), discordClient)
+	authService := auth.NewService(pool, discordClient)
 	characterService := characters.NewService(pool)
 
 	srv := &http.Server{

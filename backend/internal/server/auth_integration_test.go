@@ -10,7 +10,6 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/auth"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
-	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordfake"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/migrate"
@@ -42,7 +41,7 @@ func TestAuthFlowIntegration_CA06_1_LoginMeLogout(t *testing.T) {
 	fake := discordfake.New("123", "segredo", discordfake.User{ID: "111", Username: "grimbold", GlobalName: "Grimbold"})
 	discordSrv := httptest.NewServer(fake.Handler())
 	defer discordSrv.Close()
-	svc := auth.NewService(db.New(pool), discord.New(discordSrv.URL+"/api", "123", "segredo"))
+	svc := auth.NewService(pool, discord.New(discordSrv.URL+"/api", "123", "segredo"))
 	h := New(pool, svc, nil)
 
 	const redirect = "http://localhost:3000/auth/discord/callback"
