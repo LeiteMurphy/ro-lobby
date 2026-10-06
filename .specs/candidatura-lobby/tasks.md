@@ -54,7 +54,7 @@
 
 ### T-05 — Detalhe do lobby com candidatura, painel do jogador e decisão do dono  [x]
 - Cobre: RN-28, RN-31, RN-32, CA-01.1, CA-02.1, CA-02.2, CA-10.1, CA-10.2, CA-10.3,
-  RNF-01 (teclado)
+  RN-31 (teclado)
 - Depende de: T-04
 - Arquivos: `web/src/lib/applications/`, `web/src/routes/lobbies/[id]/`
 - Pronto quando: testes Vitest passam para o painel (seleção e conteúdo por papel), o
@@ -80,7 +80,7 @@
 
 ### T-07 — Ponta a ponta da candidatura com três contas  [x]
 - Cobre: CA-01.1, CA-01.7, CA-01.11, CA-02.1, CA-02.2, CA-02.10, CA-03.1, CA-03.2,
-  CA-03.7, CA-04.2, CA-09.1, CA-10.1 a CA-10.5, RNF-01
+  CA-03.7, CA-04.2, CA-09.1, CA-10.1 a CA-10.5, RN-31 (teclado)
 - Depende de: T-05, T-06
 - Arquivos: `web/test/e2e/candidatura.spec.ts`, `web/test/e2e/seed.ts`
 - Pronto quando: o Playwright prova, com dono, candidato e visitante: candidatar, ver o
@@ -89,6 +89,19 @@
   expiração pelo cancelamento.
 - Commit: 42095c9
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81c19f88f4b7d49eaaad
+
+## Validação, ciclo 1 — ajustes
+
+### T-08 — Discord do anfitrião só para o grupo e "Candidatar" da Home como atalho  [x]
+- Cobre: RN-32, RN-35, CA-10.2, CA-10.6, D-05 (trava do lobby na candidatura), CA-01.10
+- Depende de: T-07
+- Arquivos: `openapi.yaml`, `backend/internal/lobbies/`, `backend/internal/applications/`,
+  `backend/internal/server/`, `web/src/lib/home/components/`, `web/test/e2e/`
+- Pronto quando: o Discord do anfitrião não sai na lista pública nem no detalhe para quem
+  não é dono nem membro; o "Candidatar" do card e do destaque leva ao detalhe; a
+  candidatura trava o lobby; o teste da CA-01.10 monta o Given da spec.
+- Commit: 6bd4604
+- Notion: https://app.notion.com/p/3f1d4a3a5eff81f1983fdf75805acb48
 
 ## Matriz de cobertura (Parte 1)
 | Critério | Tasks |
@@ -102,13 +115,14 @@
 | CA-09.1 a CA-09.4 | T-03, T-07 (09.1) |
 | CA-10.1 a CA-10.3 | T-04 (10.2, 10.3), T-05, T-07 |
 | CA-10.4, CA-10.5 | T-06, T-07 |
+| CA-10.6 | T-08 |
 
-Os 43 critérios da Parte 1 estão cobertos.
+Os 44 critérios da Parte 1 estão cobertos.
 
 ## Descobertas
-- T-02: a spec não diz se o dono pode subir o nível mínimo acima do nível de um membro
-  já aceito. Hoje pode (o membro continua no grupo; o mínimo novo vale para os próximos
-  aceites, RN-30). Fica para decidir com o usuário.
-- T-05: o botão "Candidatar" do card na Home continua "Disponível em breve" (RN-18 da
-  home-local); a candidatura acontece no detalhe do lobby, que o card já abre. Fica para
-  decidir com o usuário se o botão do card vira um atalho para o detalhe.
+- T-02: o dono pode subir o nível mínimo acima do nível de um membro já aceito. Decidido
+  com o usuário em 2026-10-06: fica assim; o membro continua no grupo (spec, seção 10).
+- T-05: o "Candidatar" do card na Home seguia "Disponível em breve". Decidido com o usuário
+  em 2026-10-06: vira atalho para o detalhe (RN-35, CA-10.6, T-08).
+- Validação, ciclo 1: o Discord do anfitrião aparecia para todos, contra a RN-32. Corrigido
+  na T-08.
