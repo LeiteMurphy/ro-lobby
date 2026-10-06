@@ -24,6 +24,25 @@ type Character struct {
 	CreatedAt time.Time
 }
 
+type Lobby struct {
+	ID               pgtype.UUID
+	OwnerID          pgtype.UUID
+	InstanceID       string
+	InstanceName     string
+	InstanceLevel    int16
+	StartsAt         time.Time
+	SlotsTank        int16
+	SlotsSupport     int16
+	SlotsDps         int16
+	MinLevel         int16
+	OwnerCharacterID pgtype.UUID
+	OwnerRole        string
+	Note             pgtype.Text
+	CancelledAt      pgtype.Timestamptz
+	CancelReason     pgtype.Text
+	CreatedAt        time.Time
+}
+
 type Session struct {
 	TokenHash  []byte
 	UserID     pgtype.UUID
