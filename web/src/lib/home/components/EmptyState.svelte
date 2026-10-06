@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Button from '$lib/ui/Button.svelte';
 
 	interface Props {
@@ -26,7 +27,8 @@
 		{#if kind === 'filters'}
 			<Button variant="secondary" onclick={onreset}>Limpar filtros</Button>
 		{/if}
-		<Button iconLeft="plus" soon>Criar lobby</Button>
+		<!-- RN-23 (lobbies): "Criar lobby" leva à criação, como o do cabeçalho. -->
+		<Button iconLeft="plus" href={resolve('/lobbies/novo')}>Criar lobby</Button>
 	</div>
 </div>
 

@@ -204,6 +204,12 @@ test.describe('Home no desktop', () => {
 		await dayTabs(page).nth(index).click();
 		await expect(page.getByTestId('empty-state')).toContainText('Nenhum grupo neste dia');
 		await expect(page.getByRole('button', { name: 'Limpar filtros' })).toHaveCount(0);
+		// CA-02.3 / RN-23 (lobbies): o "Criar lobby" do aviso leva à criação (o visitante passa
+		// pelo login antes, RN-04).
+		const create = page.getByTestId('empty-state').getByRole('link', { name: 'Criar lobby' });
+		await expect(create).toHaveAttribute('href', '/lobbies/novo');
+		await create.click();
+		await expect(page).toHaveURL(/\/oauth2\/authorize/);
 	});
 
 	test('CA-04.1: filtro de instância', async ({ page }) => {
@@ -229,6 +235,9 @@ test.describe('Home no desktop', () => {
 		await sidebar.getByRole('combobox', { name: 'Instância' }).selectOption('Vila dos Porings');
 		await sidebar.getByText('22h–00h').click();
 		await expect(page.getByTestId('empty-state')).toContainText('Nenhum grupo com esses filtros');
+		await expect(
+			page.getByTestId('empty-state').getByRole('link', { name: 'Criar lobby' })
+		).toHaveAttribute('href', '/lobbies/novo');
 		await page.getByRole('button', { name: 'Limpar filtros' }).click();
 		await expect(cards(page)).toHaveCount(total);
 	});

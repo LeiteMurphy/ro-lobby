@@ -2,6 +2,7 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import { DAY_COUNTS, getHomeLobbies } from '$lib/home/fixtures';
 import { lobbiesForDay } from '$lib/home/lobbies';
+import EmptyState from '$lib/home/components/EmptyState.svelte';
 import Page from './+page.svelte';
 
 // 2026-09-30 19:40 UTC = 16:40 em São Paulo, como no design.
@@ -150,5 +151,15 @@ describe('Home com login (spec login-discord)', () => {
 			/role="alert"[^>]*>Não foi possível entrar com o Discord\. Tente de novo\.</
 		);
 		expect(renderHome()).not.toContain('role="alert"');
+	});
+});
+
+describe('aviso de lista vazia', () => {
+	it('CA-02.3 / RN-23 (lobbies): "Criar lobby" funciona no dia vazio e nos filtros sem resultado', () => {
+		for (const kind of ['day', 'filters'] as const) {
+			const html = render(EmptyState, { props: { kind, onreset: () => {} } }).body;
+			expect(html).toMatch(/<a href="\/lobbies\/novo"[^>]*>(?:\s|<[^>]+>)*Criar lobby/);
+			expect(html).not.toContain('Disponível em breve');
+		}
 	});
 });
