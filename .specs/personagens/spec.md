@@ -3,8 +3,7 @@
 - Feature: `personagens` · Nível: G · Status: Aprovada
 - Design: Claude Design, `Perfil.dc.html` no projeto "RO Lobby Home v2", carta vertical
   (variação 1b, página em 2a)
-- Última revisão: 2026-10-06 — carta vertical escolhida no Claude Design, com as ações no
-  menu "…" da carta (RN-16)
+- Última revisão: 2026-10-06 — RN-21 (falhas da API), pela spec `ajustes-validacao`
 
 ## 1. Contexto
 Com o login pronto, o Usuário precisa cadastrar os personagens com que vai criar lobbies e
@@ -82,6 +81,12 @@ função ou excluir um personagem (RN-25 e RN-26 de lá) entram junto com elas.
 ### Catálogo
 - **RN-20** — O catálogo de classes passa a viver na API, como fonte única. `GET /classes`
   devolve as classes, não exige sessão, e o formulário do web usa essa lista.
+
+### Falhas
+- **RN-21** — Se a API não responder ou falhar, a página de perfil mostra "Não foi
+  possível falar com o servidor. Tente de novo." e não quebra. Um erro inesperado na API
+  responde 500, sem detalhes no corpo. (Incluída depois da validação, pela spec
+  `ajustes-validacao`.)
 
 ## 5. Critérios de aceite
 
