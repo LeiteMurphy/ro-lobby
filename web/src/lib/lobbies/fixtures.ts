@@ -22,6 +22,7 @@ export const TEMPLE: ApiLobby = {
 		nick: 'Lirien',
 		classId: 'arcebispo',
 		level: 178,
+		portrait: 'retrato-2',
 		role: 'support'
 	},
 	cancelReason: null,

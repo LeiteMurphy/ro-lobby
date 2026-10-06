@@ -121,7 +121,8 @@ test.describe('lobbies', () => {
 		await expect(page.getByRole('main')).toContainText(`${dayLabel(3)} · 20:00`);
 		await expect(page.getByRole('main')).toContainText('Nível mínimo 160');
 		await expect(page.getByTestId('owner-slot')).toContainText(character.nick);
-		await expect(page.getByTestId('owner-slot')).toContainText('Arcebispo · Nv 178 · anfitrião');
+		await expect(page.getByTestId('owner-slot')).toContainText('Arcebispo · Nv 178');
+		await expect(page.getByTestId('owner-slot')).toContainText('Anfitrião');
 		await expect(page.getByText('Vaga aberta')).toHaveCount(5);
 		await expect(page.getByText('Chamar no Discord antes')).toBeVisible();
 
@@ -132,7 +133,11 @@ test.describe('lobbies', () => {
 		await expect(card).toContainText('Templo do Demônio Rei');
 		await expect(card).toContainText('Arcebispo');
 		await expect(card).toContainText('Nv 160+');
-		await card.getByRole('link', { name: /^Ver grupo: Templo do Demônio Rei às 20:00/ }).click();
+		await expect(
+			card.getByRole('link', { name: /^Ver grupo: Templo do Demônio Rei às 20:00/ })
+		).toBeVisible();
+		// RN-23: clicar em qualquer ponto do card (aqui, perto do canto da capa) abre o lobby.
+		await card.click({ position: { x: 24, y: 24 } });
 		await expect(page).toHaveURL(detailUrl);
 	});
 

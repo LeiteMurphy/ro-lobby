@@ -131,7 +131,7 @@ func TestCreate_CA01_1_Defaults(t *testing.T) {
 		t.Errorf("instância = %s/%d/%s", l.InstanceName, l.InstanceLevel, l.InstanceReset)
 	}
 	wantOwner := Owner{UserID: ana.userID, DiscordName: "Jogador 1", CharacterID: ana.chars["Lirien"],
-		Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "support"}
+		Nick: "Lirien", ClassID: "arcebispo", Level: 178, Portrait: "retrato-1", Role: "support"}
 	if l.Owner != wantOwner {
 		t.Errorf("dono = %+v", l.Owner)
 	}

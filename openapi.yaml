@@ -735,7 +735,7 @@ components:
     LobbyOwner:
       type: object
       additionalProperties: false
-      required: [userId, discordName, characterId, nick, classId, level, role]
+      required: [userId, discordName, characterId, nick, classId, level, portrait, role]
       properties:
         userId:
           type: string
@@ -756,6 +756,11 @@ components:
         level:
           type: integer
           nullable: true
+        portrait:
+          type: string
+          enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+          nullable: true
+          description: Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
         role:
           $ref: "#/components/schemas/Role"
     Lobby:

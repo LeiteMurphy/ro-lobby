@@ -153,7 +153,9 @@ type Owner struct {
 	Nick        string
 	ClassID     string
 	Level       int
-	Role        string
+	// Portrait é o retrato do personagem (RN-15), vazio se ele foi excluído.
+	Portrait string
+	Role     string
 }
 
 type Lobby struct {
@@ -203,7 +205,7 @@ func (s *Service) List(ctx context.Context, from, to string) ([]Lobby, error) {
 	}
 	out := make([]Lobby, len(rows))
 	for i, r := range rows {
-		out[i] = s.toLobby(r.Lobby, r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerUsername, r.OwnerGlobalName)
+		out[i] = s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName})
 	}
 	return out, nil
 }
@@ -225,7 +227,7 @@ func (s *Service) get(ctx context.Context, q *db.Queries, id pgtype.UUID) (Lobby
 	if err != nil {
 		return Lobby{}, fmt.Errorf("lobbies: buscar: %w", err)
 	}
-	return s.toLobby(r.Lobby, r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerUsername, r.OwnerGlobalName), nil
+	return s.toLobby(r.Lobby, owner{r.OwnerNick, r.OwnerClassID, r.OwnerLevel, r.OwnerPortrait, r.OwnerUsername, r.OwnerGlobalName}), nil
 }
 
 // Create valida e cria o lobby com o personagem do dono na vaga dele (RN-04 a RN-11).
@@ -515,7 +517,16 @@ func wrap(err error, action string) error {
 	}
 }
 
-func (s *Service) toLobby(l db.Lobby, nick, classID pgtype.Text, level pgtype.Int2, username string, globalName pgtype.Text) Lobby {
+// owner são as colunas do dono que GetLobby e ListOpenLobbies trazem junto do lobby.
+type owner struct {
+	nick, classID pgtype.Text
+	level         pgtype.Int2
+	portrait      pgtype.Text
+	username      string
+	globalName    pgtype.Text
+}
+
+func (s *Service) toLobby(l db.Lobby, o owner) Lobby {
 	now := s.Now()
 	status := StatusOpen
 	switch {
@@ -538,12 +549,12 @@ func (s *Service) toLobby(l db.Lobby, nick, classID pgtype.Text, level pgtype.In
 		CreatedAt:     l.CreatedAt.UTC(),
 		Owner: Owner{
 			UserID:      l.OwnerID.String(),
-			DiscordName: username,
+			DiscordName: o.username,
 			Role:        l.OwnerRole,
 		},
 	}
-	if globalName.Valid && globalName.String != "" {
-		out.Owner.DiscordName = globalName.String
+	if o.globalName.Valid && o.globalName.String != "" {
+		out.Owner.DiscordName = o.globalName.String
 	}
 	if i, ok := catalog.InstanceByID(l.InstanceID); ok {
 		out.InstanceReset = string(i.Reset)
@@ -559,9 +570,10 @@ func (s *Service) toLobby(l db.Lobby, nick, classID pgtype.Text, level pgtype.In
 	}
 	if l.OwnerCharacterID.Valid {
 		out.Owner.CharacterID = l.OwnerCharacterID.String()
-		out.Owner.Nick = nick.String
-		out.Owner.ClassID = classID.String
-		out.Owner.Level = int(level.Int16)
+		out.Owner.Nick = o.nick.String
+		out.Owner.ClassID = o.classID.String
+		out.Owner.Level = int(o.level.Int16)
+		out.Owner.Portrait = o.portrait.String
 	}
 	return out
 }

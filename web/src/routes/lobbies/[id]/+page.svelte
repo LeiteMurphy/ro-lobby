@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { buildDays } from '$lib/home/days';
-	import { ROLE_ICONS } from '$lib/home/catalog';
+	import { instanceArt, ROLE_ICONS } from '$lib/home/catalog';
 	import TopBar from '$lib/home/components/TopBar.svelte';
 	import { relativeLabel, zonedNow } from '$lib/home/time';
 	import { ROLE_LABELS, ROLES, type Role } from '$lib/home/types';
@@ -42,6 +42,10 @@
 		}))
 	);
 	const ownerName = $derived(lobby.owner.nick ?? DELETED_CHARACTER);
+	const art = $derived(instanceArt(lobby.instance.name));
+	const ownerPortrait = $derived(
+		lobby.owner.portrait ? `/portraits/${lobby.owner.portrait}.svg` : null
+	);
 	const ownerClassLevel = $derived(
 		[data.ownerClass, lobby.owner.level ? `Nv ${lobby.owner.level}` : null]
 			.filter(Boolean)
@@ -72,16 +76,21 @@
 		>
 
 		<section class="hero" aria-labelledby="lobby-title">
-			<span class="status status--{lobby.status}" data-testid="lobby-status">
-				{STATUS_LABELS[lobby.status]}{#if lobby.status === 'open' && relative}
-					· começa {relative}{/if}
-			</span>
-			<h1 id="lobby-title">{lobby.instance.name}</h1>
-			<div class="meta">
-				<span><b>{dayLabel} · {when.time}</b> (Brasília)</span>
-				<span>Nível mínimo <b>{lobby.minLevel}</b></span>
-				{#if lobby.instance.reset}<span>{RESET_LABELS[lobby.instance.reset]}</span>{/if}
-				<span><b>{occupied} de {total}</b> vagas ocupadas</span>
+			<div class="cover" style="background:{art.cover}">
+				<img src={art.icon} alt="" width="88" height="88" />
+			</div>
+			<div class="info">
+				<span class="status status--{lobby.status}" data-testid="lobby-status">
+					{STATUS_LABELS[lobby.status]}{#if lobby.status === 'open' && relative}
+						· começa {relative}{/if}
+				</span>
+				<h1 id="lobby-title">{lobby.instance.name}</h1>
+				<div class="meta">
+					<span><b>{dayLabel} · {when.time}</b> (Brasília)</span>
+					<span>Nível mínimo <b>{lobby.minLevel}</b></span>
+					{#if lobby.instance.reset}<span>{RESET_LABELS[lobby.instance.reset]}</span>{/if}
+					<span><b>{occupied} de {total}</b> vagas ocupadas</span>
+				</div>
 			</div>
 			{#if lobby.status === 'open'}
 				<div class="acts">
@@ -122,16 +131,30 @@
 							<ul class="slots">
 								{#each r.slots as s, i (i)}
 									{#if s.owner}
-										<li class="slot filled" data-testid="owner-slot">
+										<li class="slot filled slot--{r.role}" data-testid="owner-slot">
+											{#if ownerPortrait}<img
+													class="portrait"
+													src={ownerPortrait}
+													alt=""
+													width="52"
+													height="52"
+												/>{/if}
 											<span class="who">
 												<span class="nm">{ownerName}</span>
-												<span class="sub"
-													>{[ownerClassLevel, 'anfitrião'].filter(Boolean).join(' · ')}</span
+												{#if ownerClassLevel}<span class="sub">{ownerClassLevel}</span>{/if}
+												<span class="tag tag--{r.role}"
+													><Icon name="star" size={11} />Anfitrião</span
 												>
 											</span>
 										</li>
 									{:else}
-										<li class="slot">Vaga aberta</li>
+										<li class="slot slot--{r.role}">
+											<span class="empty-icon"><Icon name={ROLE_ICONS[r.role]} size={18} /></span>
+											<span class="who">
+												<span class="open">Vaga aberta</span>
+												<span class="sub">{ROLE_LABELS[r.role]}</span>
+											</span>
+										</li>
 									{/if}
 								{/each}
 							</ul>
@@ -143,6 +166,20 @@
 			<div class="side">
 				<section class="panel" aria-labelledby="host-title">
 					<h2 id="host-title">Anfitrião</h2>
+					<div class="host">
+						{#if ownerPortrait}<img
+								class="portrait"
+								src={ownerPortrait}
+								alt=""
+								width="56"
+								height="56"
+							/>{/if}
+						<span class="who"
+							><span class="nm big">{ownerName}</span><span class="sub"
+								>{ROLE_LABELS[lobby.owner.role]}</span
+							></span
+						>
+					</div>
 					<div class="kv"><span>Personagem</span><b>{ownerName}</b></div>
 					{#if ownerClassLevel}
 						<div class="kv"><span>Classe</span><b>{ownerClassLevel}</b></div>
@@ -173,9 +210,9 @@
 {/if}
 
 <style>
+	/* O fundo é o céu do design system, como na Home (vem do body). */
 	.page {
 		min-height: 100dvh;
-		background: var(--ink-0);
 	}
 	.content {
 		display: flex;
@@ -204,13 +241,42 @@
 	}
 	.hero {
 		position: relative;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 22px;
+		align-items: center;
+		padding: 22px;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--panel-border);
+		background: var(--gradient-hero);
+		box-shadow: var(--shadow-hover);
+	}
+	.cover {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 140px;
+		height: 140px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--line-2);
+	}
+	.cover img {
+		image-rendering: pixelated;
+	}
+	.info {
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		padding: 24px 26px;
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border-default);
-		background: var(--gradient-hero);
+		min-width: 0;
+	}
+	@media (max-width: 640px) {
+		.hero {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.cover {
+			width: 100%;
+			height: 110px;
+		}
 	}
 	h1 {
 		margin: 0;
@@ -298,11 +364,12 @@
 	.panel {
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
-		padding: 18px 20px;
+		gap: 16px;
+		padding: 20px 22px;
 		border-radius: var(--radius-lg);
-		background: var(--surface-card);
-		border: 1px solid var(--border-default);
+		background: var(--panel-bg);
+		backdrop-filter: blur(var(--panel-blur));
+		border: 1px solid var(--panel-border);
 	}
 	h2 {
 		margin: 0;
@@ -339,8 +406,8 @@
 	}
 	.slots {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-		gap: 8px;
+		grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+		gap: 10px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -348,30 +415,95 @@
 	.slot {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		min-height: 48px;
-		padding: 0 10px;
+		gap: 12px;
+		min-height: 76px;
+		padding: 10px 14px;
 		border-radius: var(--radius-md);
 		border: 1px dashed var(--line-2);
-		color: var(--fg-4);
-		font: 500 12px/1 var(--font-ui);
+		background: rgba(11, 16, 23, 0.35);
 	}
 	.slot.filled {
 		border-style: solid;
-		color: var(--fg-1);
-		background: var(--ink-2);
+		background: var(--surface-raised);
+	}
+	.slot--tank.filled {
+		border-color: var(--tank-line);
+		background: var(--gradient-tank);
+	}
+	.slot--support.filled {
+		border-color: var(--support-line);
+		background: var(--gradient-support);
+	}
+	.slot--dps.filled {
+		border-color: var(--dps-line);
+		background: var(--gradient-dps);
+	}
+	.portrait {
+		flex: none;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--line-2);
+		image-rendering: pixelated;
+	}
+	.empty-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 52px;
+		height: 52px;
+		flex: none;
+		border-radius: var(--radius-sm);
+		border: 1px dashed var(--line-2);
+		color: var(--fg-4);
+	}
+	.slot--tank .empty-icon {
+		color: var(--tank-400);
+	}
+	.slot--support .empty-icon {
+		color: var(--support-400);
+	}
+	.slot--dps .empty-icon {
+		color: var(--dps-400);
 	}
 	.who {
 		display: flex;
 		flex-direction: column;
-		gap: 3px;
+		gap: 4px;
+		min-width: 0;
 	}
 	.nm {
-		font: 700 13px/1.1 var(--font-display);
+		font: 700 15px/1.15 var(--font-display);
+		color: var(--fg-1);
+		overflow-wrap: anywhere;
+	}
+	.nm.big {
+		font-size: 18px;
+	}
+	.open {
+		font: 600 13px/1.2 var(--font-ui);
+		color: var(--fg-2);
 	}
 	.sub {
-		font: 500 11px/1.2 var(--font-ui);
+		font: 500 12px/1.3 var(--font-ui);
 		color: var(--fg-3);
+	}
+	.tag {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		height: 20px;
+		padding: 0 7px;
+		border-radius: var(--radius-xs);
+		background: var(--gold-soft);
+		color: var(--gold-300);
+		font: 600 11px/1 var(--font-ui);
+	}
+	.host {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding-bottom: 4px;
+		border-bottom: 1px solid var(--border-subtle);
 	}
 	.kv {
 		display: flex;

@@ -27,7 +27,6 @@
 <style>
 	.page {
 		min-height: 100dvh;
-		background: var(--ink-0);
 	}
 	.content {
 		display: flex;

@@ -36,9 +36,9 @@
 </div>
 
 <style>
+	/* O fundo é o céu do design system, como na Home (vem do body). */
 	.page {
 		min-height: 100dvh;
-		background: var(--ink-0);
 	}
 	.content {
 		display: flex;

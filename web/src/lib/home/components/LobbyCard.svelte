@@ -74,13 +74,27 @@
 </article>
 
 <style>
+	/* O link do título cobre o card inteiro: clicar em qualquer ponto abre o lobby. */
 	.detail {
 		color: inherit;
 		text-decoration: none;
 	}
-	.detail:hover {
+	.detail::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+	}
+	.card:has(.detail) {
+		cursor: pointer;
+	}
+	.card:has(.detail:hover) h3 {
 		color: var(--gold-200);
-		text-decoration: underline;
+	}
+	/* As ações continuam clicáveis por cima do link. */
+	.action {
+		position: relative;
+		z-index: 2;
 	}
 	.card {
 		position: relative;

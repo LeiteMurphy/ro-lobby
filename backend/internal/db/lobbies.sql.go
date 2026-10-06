@@ -112,7 +112,7 @@ func (q *Queries) CreateLobby(ctx context.Context, arg CreateLobbyParams) (pgtyp
 
 const getLobby = `-- name: GetLobby :one
 SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at,
-       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level,
+       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
        u.username AS owner_username, u.global_name AS owner_global_name
 FROM lobbies
 JOIN users u ON u.id = lobbies.owner_id
@@ -125,6 +125,7 @@ type GetLobbyRow struct {
 	OwnerNick       pgtype.Text
 	OwnerClassID    pgtype.Text
 	OwnerLevel      pgtype.Int2
+	OwnerPortrait   pgtype.Text
 	OwnerUsername   string
 	OwnerGlobalName pgtype.Text
 }
@@ -153,6 +154,7 @@ func (q *Queries) GetLobby(ctx context.Context, id pgtype.UUID) (GetLobbyRow, er
 		&i.OwnerNick,
 		&i.OwnerClassID,
 		&i.OwnerLevel,
+		&i.OwnerPortrait,
 		&i.OwnerUsername,
 		&i.OwnerGlobalName,
 	)
@@ -227,7 +229,7 @@ func (q *Queries) HasScheduleConflict(ctx context.Context, arg HasScheduleConfli
 
 const listOpenLobbies = `-- name: ListOpenLobbies :many
 SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at,
-       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level,
+       c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait,
        u.username AS owner_username, u.global_name AS owner_global_name
 FROM lobbies
 JOIN users u ON u.id = lobbies.owner_id
@@ -250,6 +252,7 @@ type ListOpenLobbiesRow struct {
 	OwnerNick       pgtype.Text
 	OwnerClassID    pgtype.Text
 	OwnerLevel      pgtype.Int2
+	OwnerPortrait   pgtype.Text
 	OwnerUsername   string
 	OwnerGlobalName pgtype.Text
 }
@@ -284,6 +287,7 @@ func (q *Queries) ListOpenLobbies(ctx context.Context, arg ListOpenLobbiesParams
 			&i.OwnerNick,
 			&i.OwnerClassID,
 			&i.OwnerLevel,
+			&i.OwnerPortrait,
 			&i.OwnerUsername,
 			&i.OwnerGlobalName,
 		); err != nil {

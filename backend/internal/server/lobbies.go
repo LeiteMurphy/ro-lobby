@@ -225,6 +225,10 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 		reset := api.LobbyInstanceReset(l.InstanceReset)
 		body.Instance.Reset = &reset
 	}
+	if l.Owner.Portrait != "" {
+		portrait := api.LobbyOwnerPortrait(l.Owner.Portrait)
+		body.Owner.Portrait = &portrait
+	}
 	if l.Owner.CharacterID != "" {
 		cid, err := uuid.Parse(l.Owner.CharacterID)
 		if err != nil {

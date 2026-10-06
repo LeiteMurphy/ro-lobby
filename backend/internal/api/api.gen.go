@@ -264,6 +264,30 @@ func (e LobbyInstanceReset) Valid() bool {
 	}
 }
 
+// Defines values for LobbyOwnerPortrait.
+const (
+	LobbyOwnerPortraitRetrato1 LobbyOwnerPortrait = "retrato-1"
+	LobbyOwnerPortraitRetrato2 LobbyOwnerPortrait = "retrato-2"
+	LobbyOwnerPortraitRetrato3 LobbyOwnerPortrait = "retrato-3"
+	LobbyOwnerPortraitRetrato4 LobbyOwnerPortrait = "retrato-4"
+)
+
+// Valid indicates whether the value is a known member of the LobbyOwnerPortrait enum.
+func (e LobbyOwnerPortrait) Valid() bool {
+	switch e {
+	case LobbyOwnerPortraitRetrato1:
+		return true
+	case LobbyOwnerPortraitRetrato2:
+		return true
+	case LobbyOwnerPortraitRetrato3:
+		return true
+	case LobbyOwnerPortraitRetrato4:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LobbyStatus.
 const (
 	LobbyStatusCancelled LobbyStatus = "cancelled"
@@ -530,10 +554,16 @@ type LobbyOwner struct {
 	Level       *int                `json:"level"`
 	Nick        *string             `json:"nick"`
 
+	// Portrait Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
+	Portrait *LobbyOwnerPortrait `json:"portrait"`
+
 	// Role Função do personagem (RN-08).
 	Role   Role               `json:"role"`
 	UserId openapi_types.UUID `json:"userId"`
 }
+
+// LobbyOwnerPortrait Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
+type LobbyOwnerPortrait string
 
 // LobbyStatus defines model for LobbyStatus.
 type LobbyStatus string

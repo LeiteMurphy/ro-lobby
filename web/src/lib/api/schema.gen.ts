@@ -448,6 +448,11 @@ export interface components {
             nick: string | null;
             classId: string | null;
             level: number | null;
+            /**
+             * @description Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
+             * @enum {string|null}
+             */
+            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | null;
             role: components["schemas"]["Role"];
         };
         Lobby: {

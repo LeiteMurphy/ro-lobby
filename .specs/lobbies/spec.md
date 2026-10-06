@@ -3,9 +3,8 @@
 - Feature: `lobbies` · Nível: G · Status: Aprovada
 - Design: Claude Design, `Lobby.dc.html`: criação como página `/lobbies/novo` com prévia do
   card (1b), detalhe (1c) e cancelamento (1d)
-- Última revisão: 2026-10-06 — rodada 1 da entrevista: sem campo de duração (o grupo sai
-  da listagem no início), catálogo com todas as instâncias de grupo do bROWiki e separador
-  entre as de nível 130+ e as de nível menor, ícones de instância depois
+- Última revisão: 2026-10-06 — teste do usuário no localhost: card inteiro clicável
+  (RN-23), retrato do dono nas vagas (RN-15) e detalhe com o fundo da Home
 
 ## 1. Contexto
 Com login e personagens prontos, o Usuário já pode montar grupos. Esta feature cria o
@@ -78,7 +77,8 @@ por função, até 12), P-02 (o personagem do dono ocupa uma vaga desde a criaç
 ### Detalhe
 - **RN-15** — `/lobbies/{id}` é público. Mostra instância, data e hora, estado, nível
   mínimo, observação e as vagas por função com os ocupantes (por enquanto, só o personagem
-  do dono: nick, classe e nível). Lobby inexistente responde 404.
+  do dono: retrato, nick, classe, nível e o selo "Anfitrião"). Lobby inexistente responde
+  404.
 - **RN-16** — No detalhe, o dono vê "Editar" e "Cancelar lobby" enquanto o lobby está
   aberto. "Candidatar" continua "Disponível em breve" para os outros.
 
@@ -106,7 +106,7 @@ por função, até 12), P-02 (o personagem do dono ocupa uma vaga desde a criaç
   destaque e estados vazios seguem a `home-local`.
 - **RN-23** — "Criar lobby" passa a funcionar e leva à página `/lobbies/novo`, que mostra
   ao lado uma prévia do card como vai aparecer na Home. Visitante vai ao login e volta para
-  `/lobbies/novo`. "Ver grupo" abre o detalhe.
+  `/lobbies/novo`. "Ver grupo" abre o detalhe, e clicar em qualquer ponto do card também.
 
 ## 5. Critérios de aceite
 

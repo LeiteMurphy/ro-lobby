@@ -230,3 +230,9 @@ Todos os 31 critérios da spec estão cobertos.
 - 2026-10-06 — Na T-10, o ponta a ponta passou a usar um banco só dele (`ro_lobby_e2e`),
   recriado a cada execução por `go run ./cmd/migrate fresh`, que só aceita bancos `*_e2e`.
   Isso também resolve a observação antiga de dados acumulados no banco de dev.
+- 2026-10-06 — Teste do usuário no localhost, depois da validação: o detalhe estava escuro
+  e vazio, e o card da Home só abria o lobby pelo título. — O detalhe passou a usar o
+  fundo da Home, com o ícone no topo e vagas maiores (retrato, nick, classe, nível e selo
+  "Anfitrião"); a API devolve o retrato do dono (`owner.portrait`); o card inteiro abre o
+  lobby. Spec atualizada (RN-15 e RN-23). As páginas de perfil, criar e editar também
+  ganharam o fundo da Home.

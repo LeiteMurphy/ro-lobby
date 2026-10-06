@@ -142,7 +142,7 @@ describe('/lobbies/[id] renderizada no servidor', () => {
 		expect(html).toContain('Retorno diário');
 		expect(html).toContain('1 de 6');
 		expect(html).toMatch(
-			/data-testid="owner-slot"[\s\S]*?Lirien[\s\S]*?Arcebispo · Nv 178 · anfitrião/
+			/data-testid="owner-slot"[\s\S]*?\/portraits\/retrato-2\.svg[\s\S]*?Lirien[\s\S]*?Arcebispo · Nv 178[\s\S]*?Anfitrião/
 		);
 		expect(html.match(/Vaga aberta/g)).toHaveLength(5);
 		expect(html).toContain('Chamar no Discord 15 min antes');

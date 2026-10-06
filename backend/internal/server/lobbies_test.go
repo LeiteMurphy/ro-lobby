@@ -24,7 +24,7 @@ var temple = lobbies.Lobby{
 	Status: lobbies.StatusOpen, Slots: lobbies.Slots{Tank: 1, Support: 2, Dps: 3},
 	Occupied: lobbies.Slots{Support: 1}, MinLevel: 160,
 	Owner: lobbies.Owner{UserID: userID, DiscordName: "Grimbold", CharacterID: charID, Nick: "Lirien",
-		ClassID: "arcebispo", Level: 178, Role: "support"},
+		ClassID: "arcebispo", Level: 178, Portrait: "retrato-2", Role: "support"},
 	CreatedAt: time.Date(2026, 10, 6, 19, 40, 0, 0, time.UTC),
 }
 
@@ -124,7 +124,7 @@ func TestLobbies_RN22_PublicList(t *testing.T) {
 		"occupied": map[string]any{"tank": float64(0), "support": float64(1), "dps": float64(0)},
 		"minLevel": float64(160), "note": nil, "cancelReason": nil, "createdAt": "2026-10-06T19:40:00Z",
 		"owner": map[string]any{"userId": userID, "discordName": "Grimbold", "characterId": charID, "nick": "Lirien",
-			"classId": "arcebispo", "level": float64(178), "role": "support"},
+			"classId": "arcebispo", "level": float64(178), "portrait": "retrato-2", "role": "support"},
 	}
 	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got)
