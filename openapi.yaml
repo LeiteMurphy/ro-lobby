@@ -196,6 +196,14 @@ paths:
           $ref: "#/components/responses/NoSession"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          description: O personagem é dono de um lobby aberto (RN-21 da spec lobbies).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: character_in_open_lobby
         "422":
           $ref: "#/components/responses/Invalid"
     delete:
@@ -211,6 +219,14 @@ paths:
           $ref: "#/components/responses/NoSession"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          description: O personagem é dono de um lobby aberto (RN-21 da spec lobbies).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: character_in_open_lobby
   /characters/{id}/main:
     parameters:
       - $ref: "#/components/parameters/CharacterId"
@@ -227,8 +243,181 @@ paths:
           $ref: "#/components/responses/NoSession"
         "404":
           $ref: "#/components/responses/NotFound"
+  /instances:
+    get:
+      operationId: listInstances
+      summary: Catálogo de instâncias
+      description: >
+        As instâncias de grupo do bROWiki, na ordem da escolha: nível 130 ou mais primeiro,
+        depois as de nível menor; em cada parte, nível decrescente (spec lobbies, RN-01,
+        RN-02). Não exige sessão.
+      responses:
+        "200":
+          description: Todas as instâncias do catálogo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Instance"
+  /lobbies:
+    get:
+      operationId: listLobbies
+      summary: Lobbies abertos num intervalo de dias
+      description: >
+        Lobbies abertos (não cancelados e ainda não iniciados) com início entre os dias
+        from e to, no fuso de São Paulo, por horário (RN-13, RN-14, RN-22). Não exige
+        sessão.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Lobbies abertos do intervalo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lobby"
+        "400":
+          description: Intervalo de datas inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: invalid_range
+    post:
+      operationId: createLobby
+      summary: Cria um lobby
+      description: >
+        O dono escolhe um dos próprios personagens, que ocupa a vaga da função dele
+        (RN-08). Cada Usuário tem até 5 lobbies abertos (RN-11), e o personagem não pode
+        estar em outro lobby a menos de 2 h (RN-10).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LobbyInput"
+      responses:
+        "201":
+          description: Lobby criado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lobby"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "409":
+          description: O Usuário já tem 5 lobbies abertos (RN-11).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: lobby_limit
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /lobbies/{id}:
+    parameters:
+      - $ref: "#/components/parameters/LobbyId"
+    get:
+      operationId: getLobby
+      summary: Detalhe do lobby
+      description: O lobby em qualquer estado (RN-15). Não exige sessão.
+      responses:
+        "200":
+          description: O lobby.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lobby"
+        "404":
+          $ref: "#/components/responses/LobbyNotFound"
+    put:
+      operationId: updateLobby
+      summary: Edita o lobby
+      description: >
+        Só o dono e só com o lobby aberto. Muda início, vagas, nível mínimo e observação;
+        instância e personagem ficam (RN-17, RN-18).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LobbyUpdate"
+      responses:
+        "200":
+          description: Lobby editado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lobby"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/LobbyNotFound"
+        "409":
+          $ref: "#/components/responses/LobbyNotOpen"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /lobbies/{id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/LobbyId"
+    post:
+      operationId: cancelLobby
+      summary: Cancela o lobby
+      description: Só o dono e só com o lobby aberto, com motivo de 10 a 250 caracteres (RN-19).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelLobby"
+      responses:
+        "200":
+          description: Lobby cancelado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lobby"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/LobbyNotFound"
+        "409":
+          $ref: "#/components/responses/LobbyNotOpen"
+        "422":
+          $ref: "#/components/responses/Invalid"
 components:
   parameters:
+    LobbyId:
+      name: id
+      in: path
+      required: true
+      description: >
+        ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde
+        404 do mesmo jeito (RN-20, D-08).
+      schema:
+        type: string
     CharacterId:
       name: id
       in: path
@@ -239,6 +428,22 @@ components:
       schema:
         type: string
   responses:
+    LobbyNotFound:
+      description: O lobby não existe ou, nas escritas, é de outro Usuário (RN-20).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: not_found
+    LobbyNotOpen:
+      description: O lobby já começou ou foi cancelado (D-08).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: lobby_not_open
     NoSession:
       description: Sem sessão, ou sessão desconhecida ou vencida.
       content:
@@ -326,7 +531,7 @@ components:
       properties:
         error:
           type: string
-          enum: [invalid_code, discord_unavailable, no_session, not_found, character_limit]
+          enum: [invalid_code, discord_unavailable, no_session, not_found, character_limit, character_in_open_lobby, lobby_limit, lobby_not_open, invalid_range]
     Role:
       type: string
       enum: [tank, support, dps]
@@ -418,10 +623,10 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason]
         code:
           type: string
-          enum: [required, too_long, invalid, taken]
+          enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low]
     ValidationError:
       type: object
       additionalProperties: false
@@ -434,3 +639,154 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FieldError"
+    InstanceReset:
+      type: string
+      enum: [daily, three_days, hours, weekly]
+      description: Tempo de retorno da instância, como o bROWiki agrupa.
+    Instance:
+      type: object
+      additionalProperties: false
+      required: [id, name, level, reset]
+      properties:
+        id:
+          type: string
+          example: templo-do-demonio-rei
+        name:
+          type: string
+          example: Templo do Demônio Rei
+        level:
+          type: integer
+          description: Nível de entrada.
+          example: 160
+        reset:
+          $ref: "#/components/schemas/InstanceReset"
+    Slots:
+      type: object
+      additionalProperties: false
+      required: [tank, support, dps]
+      properties:
+        tank:
+          type: integer
+        support:
+          type: integer
+        dps:
+          type: integer
+    LobbyInput:
+      type: object
+      required: [instanceId, startsAt, slots, minLevel, characterId]
+      properties:
+        instanceId:
+          type: string
+          description: ID de uma instância de GET /instances.
+        startsAt:
+          type: string
+          format: date-time
+          description: Início em UTC; o web converte o dia e a hora de Brasília (D-04).
+        slots:
+          $ref: "#/components/schemas/Slots"
+        minLevel:
+          type: integer
+        characterId:
+          type: string
+          description: Um dos personagens do Usuário da sessão.
+        note:
+          type: string
+          description: Opcional, até 250 caracteres.
+    LobbyUpdate:
+      type: object
+      required: [startsAt, slots, minLevel]
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+        slots:
+          $ref: "#/components/schemas/Slots"
+        minLevel:
+          type: integer
+        note:
+          type: string
+    CancelLobby:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: De 10 a 250 caracteres.
+    LobbyStatus:
+      type: string
+      enum: [open, started, cancelled]
+    LobbyInstance:
+      type: object
+      additionalProperties: false
+      required: [id, name, level, reset]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Nome guardado na criação (D-02).
+        level:
+          type: integer
+        reset:
+          type: string
+          enum: [daily, three_days, hours, weekly]
+          nullable: true
+          description: Nulo se a instância saiu do catálogo.
+    LobbyOwner:
+      type: object
+      additionalProperties: false
+      required: [userId, discordName, characterId, nick, classId, level, role]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        discordName:
+          type: string
+        characterId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Nulo se o personagem foi excluído depois do início (D-01).
+        nick:
+          type: string
+          nullable: true
+        classId:
+          type: string
+          nullable: true
+        level:
+          type: integer
+          nullable: true
+        role:
+          $ref: "#/components/schemas/Role"
+    Lobby:
+      type: object
+      additionalProperties: false
+      required: [id, instance, startsAt, status, slots, occupied, minLevel, note, owner, cancelReason, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        instance:
+          $ref: "#/components/schemas/LobbyInstance"
+        startsAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/LobbyStatus"
+        slots:
+          $ref: "#/components/schemas/Slots"
+        occupied:
+          $ref: "#/components/schemas/Slots"
+        minLevel:
+          type: integer
+        note:
+          type: string
+          nullable: true
+        owner:
+          $ref: "#/components/schemas/LobbyOwner"
+        cancelReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time

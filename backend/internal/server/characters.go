@@ -115,6 +115,8 @@ func (h charactersHandler) UpdateCharacter(ctx context.Context, req api.UpdateCh
 		return api.UpdateCharacter422JSONResponse{InvalidJSONResponse: toAPIValidation(invalid)}, nil
 	case errors.Is(err, characters.ErrNotFound):
 		return api.UpdateCharacter404JSONResponse{NotFoundJSONResponse: api.NotFoundJSONResponse(notFound)}, nil
+	case errors.Is(err, characters.ErrInOpenLobby):
+		return api.UpdateCharacter409JSONResponse{Error: api.ErrorErrorCharacterInOpenLobby}, nil
 	case err != nil:
 		return nil, err
 	}
@@ -135,6 +137,8 @@ func (h charactersHandler) DeleteCharacter(ctx context.Context, req api.DeleteCh
 	switch {
 	case errors.Is(err, characters.ErrNotFound):
 		return api.DeleteCharacter404JSONResponse{NotFoundJSONResponse: api.NotFoundJSONResponse(notFound)}, nil
+	case errors.Is(err, characters.ErrInOpenLobby):
+		return api.DeleteCharacter409JSONResponse{Error: api.ErrorErrorCharacterInOpenLobby}, nil
 	case err != nil:
 		return nil, err
 	}
