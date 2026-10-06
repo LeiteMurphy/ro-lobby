@@ -1,25 +1,25 @@
-# Relatório de validação — lobbies (ciclo 1)
+# Relatório de validação — lobbies (ciclo 2)
 
-**Veredito geral:** REPROVADO
-**Execução:** testes passou: backend unitários 14/14 pacotes · backend integração 14/14 pacotes (204 testes e subtestes, 0 falhas) · Vitest 193/193 (19 arquivos) · Playwright 39/39 (inclui os ponta a ponta de `login-discord`, `personagens`, `home-local` e `status`) · lint ok (golangci-lint 0 issues; Prettier e ESLint ok; svelte-check com 0 erros e 0 avisos) · build ok
+**Veredito geral:** APROVADO
+**Execução:** testes passou: backend unitários 14/14 pacotes · backend integração 14/14 pacotes ok, 0 falhas · Vitest 193/193 (19 arquivos) · Playwright 39/39 (rodado de novo neste ciclo, com o banco `ro_lobby_e2e` recriado) (inclui os ponta a ponta de `login-discord`, `personagens`, `home-local` e `status`) · lint ok (golangci-lint 0 issues; Prettier e ESLint ok; svelte-check com 0 erros e 0 avisos) · build ok
 
-Intervalo validado: `origin/main..HEAD` (13 commits, de `516685b` a `e5168ff`), na branch `feature/lobbies`.
+Intervalo validado: `origin/main..HEAD` (15 commits, de `516685b` a `698a382`), na branch `feature/lobbies`. Desde o ciclo 1 entraram `cd51c5d` (relatório do ciclo 1) e `698a382` (correção do nome e e2e da Home depois da edição). Todos os comandos foram executados de novo neste ciclo (integração com `-count=1`, sem cache).
 
 ## Resumo
 | Tipo | ✅ | ⚠️ | ❌ | 🚫 |
 |---|---|---|---|---|
-| Regras (RN) | 22 | 1 | 0 | 0 |
-| Critérios (CA) | 29 | 2 | 0 | 0 |
+| Regras (RN) | 23 | 0 | 0 | 0 |
+| Critérios (CA) | 31 | 0 | 0 | 0 |
 | Não funcionais | 5 | 0 | 0 | 0 |
 
-O motivo da reprovação é um só: o nome de uma instância do catálogo não bate com o bROWiki (RN-01 e CA-06.1, ambos de US-06, que é P1). O resto da feature está implementado, testado e passando.
+A pendência do ciclo 1 (nome "Sarah vs Fenril") foi corrigida em `698a382`, e a observação de CA-04.1 (conferir a Home depois da edição) também foi atendida. Não há ❌, 🚫 nem ⚠️.
 
 ## Detalhe por item
 
 ### Regras
 | ID | Veredito | Evidência (código) | Evidência (teste) | Observação |
 |---|---|---|---|---|
-| RN-01 | ⚠️ | backend/internal/catalog/instances.go:34-93; server/lobbies.go `ListInstances` (sem sessão) | TestInstances_CA06_1_GroupInstancesFromBROWiki, TestInstances_RN01_IDsAreUniqueKebabCase, TestInstances_CA06_1_PublicCatalog, TestGet_RN01_InstanceLeftCatalog | Conferi os 51 nomes com o HTML de https://browiki.org/wiki/Inst%C3%A2ncias (baixado em 2026-10-06): 50 batem exatamente e nenhuma "Solo" entrou (Edda do Quarto Crescente, Torneio de Magia, Salão de Ymir, Palácio das Mágoas e Invasão ao Aeroplano ficaram de fora). Exceção: `instances.go:92` traz "Sarah vs **Fenril**" (id `sarah-vs-fenril`), mas o bROWiki escreve "Sarah vs **Fenrir**" (`/wiki/Sarah_vs_Fenrir`). O teste `instances_test.go:45` grava o mesmo erro. |
+| RN-01 | ✅ | backend/internal/catalog/instances.go:34-93; server/lobbies.go `ListInstances` (sem sessão) | TestInstances_CA06_1_GroupInstancesFromBROWiki, TestInstances_RN01_IDsAreUniqueKebabCase, TestInstances_CA06_1_PublicCatalog, TestGet_RN01_InstanceLeftCatalog | Baixei de novo https://browiki.org/wiki/Inst%C3%A2ncias em 2026-10-06 e comparei por script: as 51 linhas não "Solo" da página batem uma a uma com os 51 nomes do catálogo, com o mesmo nível de entrada; as 5 "Solo" (Edda do Quarto Crescente, Torneio de Magia, Salão de Ymir, Palácio das Mágoas, Invasão ao Aeroplano) ficaram de fora. `instances.go:92` agora traz "Sarah vs Fenrir" (id `sarah-vs-fenrir`), como no bROWiki; não sobrou nenhuma ocorrência de "Fenril" no repositório. |
 | RN-02 | ✅ | catalog/instances.go:106-121; LobbyForm.svelte:66-69 (dois `optgroup`) | TestInstances_CA06_2_ChoiceOrder; lobbies.spec.ts "CA-06.2 / RN-02" | |
 | RN-03 | ✅ | web/src/lib/home/catalog.ts `instanceArt` → capa e ícone padrão | home.spec.ts "RN-03 (lobbies)" | Os SVG antigos `/brand/inst-*.svg` ficaram sem uso (ver observações). |
 | RN-04 | ✅ | server/lobbies.go `CreateLobby` (`currentUser`, 401); novo/+page.server.ts `toLogin` | TestLobbies_CA06_3_WritesRequireSession; lobbies.server.spec.ts "CA-02.3 / RN-04"; e2e CA-02.3 | |
@@ -65,14 +65,14 @@ O motivo da reprovação é um só: o nome de uma instância do catálogo não b
 | CA-03.1 | ✅ | [id]/+page.svelte | lobbies.spec.ts "CA-03.1"; e2e | |
 | CA-03.2 | ✅ | [id]/+page.server.ts `error(404)`; routes/+error.svelte | lobbies.server.spec.ts "CA-03.2"; TestGetLobby_CA03_2_NotFound; e2e (`error-page`) | |
 | CA-03.3 | ✅ | [id]/+page.svelte:86-99 | lobbies.spec.ts "CA-03.3"; e2e CA-03.3 (outra conta vê "Candidatar" desabilitado) | |
-| CA-04.1 | ⚠️ | `Update`; editar/+page.server.ts | TestUpdate_CA04_1; TestLobbyWrites_CA04_1_CA05_1_PassData; e2e CA-04.1 (detalhe mostra 21:00 e 0 de 5) | O Then pede que "o detalhe **e a Home**" mostrem 21:00 e 5 vagas de Dano; o e2e só confere o detalhe e segue para o cancelamento. A Home usa a mesma API (coberta por CA-02.1), então o risco é baixo. US-04 é P2: não bloqueia. |
+| CA-04.1 | ✅ | `Update`; editar/+page.server.ts | TestUpdate_CA04_1; TestLobbyWrites_CA04_1_CA05_1_PassData; e2e lobbies.spec.ts:209-226 | O e2e confere o detalhe (21:00 e "0 de 5" em Dano) e, desde `698a382`, também a Home: o card do lobby no dia 5 mostra "21:00" e "1/8" (1 Tank + 2 Suportes + 5 Danos, 1 ocupado). A conferência das 5 vagas de Dano na Home é pelo total, não pela linha da função (ver observações). |
 | CA-04.2 | ✅ | lobbies.go:353 | TestUpdate_CA04_2_CA04_3_Limits; lobbies.server.spec.ts "CA-04.2" | |
 | CA-04.3 | ✅ | lobbies.go:350 | TestUpdate_CA04_2_CA04_3_Limits | |
 | CA-04.4 | ✅ | `ownOpenLobby`; server 404/409 | TestUpdate_CA04_4_OtherOrNotOpen (confere que o lobby não mudou); TestLobbyWrites_CA04_4_CA05_3_NotFoundAndNotOpen | |
 | CA-05.1 | ✅ | `Cancel`; [id]/+page.svelte (selo e motivo) | TestCancel_CA05_1_CA05_2; lobbies.spec.ts "CA-05.1"; e2e | |
 | CA-05.2 | ✅ | lobbies.go:391-397 | TestCancel_CA05_1_CA05_2 ("não dá" → `reason/too_short`); lobbies.server.spec.ts; e2e | |
 | CA-05.3 | ✅ | `ownOpenLobby` → 404 | TestUpdate_CA04_4_OtherOrNotOpen; TestLobbyWrites_CA04_4_CA05_3_NotFoundAndNotOpen | |
-| CA-06.1 | ⚠️ | catalog/instances.go; `ListInstances` | TestInstances_CA06_1_PublicCatalog (51 itens, sem sessão), TestInstances_CA06_1_GroupInstancesFromBROWiki | Mesma divergência da RN-01: "Sarah vs Fenril" no lugar de "Sarah vs Fenrir". O resto do Then (sem "Solo"; nome, nível e retorno) está comprovado. |
+| CA-06.1 | ✅ | catalog/instances.go; `ListInstances` | TestInstances_CA06_1_PublicCatalog (51 itens, sem sessão), TestInstances_CA06_1_GroupInstancesFromBROWiki (inclui `sarah-vs-fenrir`, 145, semanal) | Nomes conferidos contra o bROWiki (ver RN-01). |
 | CA-06.2 | ✅ | LobbyForm.svelte `optgroup` | lobbies.spec.ts "CA-06.2"; TestInstances_CA06_2_ChoiceOrder | |
 | CA-06.3 | ✅ | server/lobbies.go (401 nas três escritas) | TestLobbies_CA06_3_WritesRequireSession (sem token e com token desconhecido) | |
 | CA-06.4 | ✅ | characters.go; server/characters.go; perfil/messages.ts | TestOwnerOfOpenLobby_CA06_4_Locked; TestCharacters_CA06_4_InOpenLobbyIs409; perfil/page.server.spec.ts; e2e (mensagem exata) | |
@@ -91,21 +91,22 @@ O motivo da reprovação é um só: o nome de uma instância do catálogo não b
 - Contratos: `openapi.yaml` com as 6 rotas, os schemas `Instance`, `Slots`, `LobbyInput`, `LobbyUpdate` e `Lobby` e os códigos de erro novos; TestContract_CA06_3_LobbyRoutesAreDescribed passa. O código gerado está em dia (o build e o lint passam).
 - Modelo de dados: a migração `00004_lobbies.sql` bate com o design §4, com um CHECK a mais, `min_level >= instance_level`, coerente com a RN-07.
 - D-01 a D-09 respeitadas. D-04: `time/tzdata` embutido (lobbies.go:18). D-05: criar, editar, cancelar, excluir personagem e mudar a função rodam com o Usuário travado.
-- Commits: os 13 seguem Conventional Commits e citam IDs. As tasks T-01 a T-10 estão marcadas `[x]` com commits que existem no intervalo.
+- Commits: os 15 seguem Conventional Commits e citam IDs. As tasks T-01 a T-10 estão marcadas `[x]` com commits que existem no intervalo.
 - Features anteriores: os testes de `login-discord`, `personagens`, `home-local` e `status` (Go, Vitest e Playwright) passam todos.
 
 ## Pendências para correção
-1. [RN-01, CA-06.1] O catálogo usa o nome "Sarah vs Fenril" (`backend/internal/catalog/instances.go:92`, id `sarah-vs-fenril`), mas a página de Instâncias do bROWiki escreve "Sarah vs Fenrir". A RN-01 manda seguir o bROWiki, e o Then da CA-06.1 pede "as instâncias de grupo do bROWiki". É preciso corrigir o nome e o id (`sarah-vs-fenrir`) no catálogo e no teste `backend/internal/catalog/instances_test.go:45`. Como o id fica gravado em `lobbies.instance_id`, convém decidir se lobbies de desenvolvimento com o id antigo precisam de ajuste (não há dados de produção).
+Nenhuma.
 
 ## Scope creep
-- Nenhum. As mudanças fora de `lobbies` têm ligação com a spec ou com as tasks:
+- Nenhum. A correção `698a382` toca só o catálogo, o teste dele e o e2e de CA-04.1. As mudanças fora de `lobbies` têm ligação com a spec ou com as tasks:
   - `backend/cmd/migrate` e `internal/migrate/fresh.go`: banco próprio do e2e (T-10, registrado em Descobertas);
   - `web/src/lib/api/request.ts`: extraído de `characters/api.ts` (Descobertas);
   - `web/src/lib/auth/session.ts`: login com volta, RN-04 e RN-23;
   - `+error.svelte`: CA-03.2.
 
 ## Observações (não bloqueantes)
-- [CA-04.1] Vale acrescentar ao e2e uma conferência na Home depois da edição (21:00 e 5 vagas de Dano), para cobrir o Then inteiro.
+- [CA-04.1] O e2e da Home confere "1/8", o que implica as 5 vagas de Dano só porque Tank e Suporte não mudaram. Uma asserção na linha de composição de Dano do card deixaria o teste mais direto.
+- [RN-01] O id da instância mudou de `sarah-vs-fenril` para `sarah-vs-fenrir`. Algum lobby de desenvolvimento gravado com o id antigo cai no caso de borda "instância que saiu do catálogo" (continua aparecendo com o nome guardado). Não há dados de produção.
 - [RNF-03] `TestLobbies_RN21_UnexpectedErrorIs500` (backend/internal/server/lobbies_test.go:224) cita "RN-21", que nesta spec é o personagem travado. O comentário explica que se refere à RN-21 da `personagens`, mas o nome do teste confunde. Sugestão: `TestLobbies_RN21Personagens_…` ou citar só o comentário.
 - [RN-18, borda "personagem cai abaixo do nível mínimo"] `Update` recusa com `minLevel/above_owner` qualquer edição enquanto o nível mínimo atual estiver acima do nível novo do dono, mesmo que o dono só mude o horário. É uma leitura possível de "só a edição do nível mínimo passa a respeitar o nível novo", mas na prática obriga a baixar o nível mínimo para editar qualquer coisa. Vale confirmar com o usuário.
 - [RN-03] Os arquivos `/brand/inst-*.svg` (arte das instâncias inventadas) ficaram sem uso no web. Podem ser removidos ou guardados para a futura arte por instância.
