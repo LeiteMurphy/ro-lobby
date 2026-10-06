@@ -126,9 +126,10 @@ usuário é o serviço.
 - Opções: (a) conferir antes de gravar; (b) índice único em `lower(nick)`; (c) `citext`.
 - Decisão: (b). O serviço traduz a violação (`23505` nesse índice) para o campo `nick`
   com o código `taken`.
-- Consequências: + o banco garante a regra mesmo com corrida; + sem extensão nova;
-  − `lower` depende da collation do banco para letras acentuadas. Um teste com "FAÍSCA" e
-  "faísca" cobre isso.
+- Consequências: + o banco garante a regra mesmo com corrida; + sem extensão nova. O
+  índice usa `lower(nick COLLATE pg_c_utf8)`: a collation do provedor builtin do
+  PostgreSQL faz o `lower` de letras acentuadas igual em qualquer sistema, sem depender do
+  locale do banco. Um teste com "FAÍSCA" e "faísca" cobre isso.
 
 ### D-03 — Catálogo de classes em Go, guardado no personagem pelo id
 - Status: Proposta
@@ -224,7 +225,7 @@ usuário é o serviço.
 ## 6. Riscos
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| `lower()` com acento depender da collation | Nick "FAÍSCA" passar ao lado de "faísca" | Teste de integração específico; o banco do Compose usa UTF-8 |
+| `lower()` com acento depender da collation | Nick "FAÍSCA" passar ao lado de "faísca" | Índice com a collation `pg_c_utf8` (D-02) e teste de integração específico |
 | O catálogo do Go divergir da lista do web | Ícone errado na carteirinha | Ícone por linha com padrão (D-03) e teste de cobertura |
 | Corrida no limite ou no principal | 11 personagens ou dois principais | Trava no Usuário (D-06) e índice parcial; teste com chamadas simultâneas |
 | E2E deixar personagens no banco de dev | Nick "em uso" em execuções seguintes | Nicks do e2e com sufixo aleatório e limpeza por usuário no início do teste |
