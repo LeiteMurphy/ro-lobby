@@ -12,12 +12,17 @@ import (
 type handlers struct {
 	*health.Handler
 	authHandler
+	charactersHandler
 }
 
 var _ api.StrictServerInterface = handlers{}
 
 // New devolve o handler HTTP com todas as rotas do openapi.yaml.
-func New(db health.Pinger, authenticator Authenticator) http.Handler {
-	strict := api.NewStrictHandler(handlers{Handler: health.New(db), authHandler: authHandler{auth: authenticator}}, nil)
+func New(db health.Pinger, authenticator Authenticator, chars CharacterService) http.Handler {
+	strict := api.NewStrictHandler(handlers{
+		Handler:           health.New(db),
+		authHandler:       authHandler{auth: authenticator},
+		charactersHandler: charactersHandler{auth: authenticator, chars: chars},
+	}, nil)
 	return withSessionToken(api.HandlerFromMux(strict, http.NewServeMux()))
 }

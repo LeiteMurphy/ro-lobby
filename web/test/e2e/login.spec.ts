@@ -94,6 +94,10 @@ test.describe('login com Discord', () => {
 		await loginAs(page);
 		await userMenu(page).focus();
 		await page.keyboard.press('Enter');
+		// O foco vai para o primeiro item, "Meu perfil" (RN-18 da spec personagens), e a
+		// seta para baixo chega em "Sair".
+		await expect(page.getByRole('menuitem', { name: 'Meu perfil' })).toBeFocused();
+		await page.keyboard.press('ArrowDown');
 		const sair = page.getByRole('menuitem', { name: 'Sair' });
 		await expect(sair).toBeFocused();
 		await page.keyboard.press('Escape');

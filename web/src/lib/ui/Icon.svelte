@@ -34,6 +34,11 @@
 	import VenetianMask from '@lucide/svelte/icons/venetian-mask';
 	import WandSparkles from '@lucide/svelte/icons/wand-sparkles';
 	import X from '@lucide/svelte/icons/x';
+	import CircleX from '@lucide/svelte/icons/circle-x';
+	import Ellipsis from '@lucide/svelte/icons/ellipsis';
+	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 
 	// Só os ícones Lucide que a interface usa, empacotados no build (RNF-02). O design
 	// system carregava cada ícone de uma CDN.
@@ -72,7 +77,12 @@
 		users: Users,
 		'venetian-mask': VenetianMask,
 		'wand-sparkles': WandSparkles,
-		x: X
+		x: X,
+		'circle-x': CircleX,
+		ellipsis: Ellipsis,
+		'external-link': ExternalLink,
+		pencil: Pencil,
+		'trash-2': Trash2
 	} as const;
 
 	export type IconName = keyof typeof ICONS;

@@ -106,6 +106,15 @@ describe('Home com login (spec login-discord)', () => {
 		expect(html).not.toContain('Entrar com Discord');
 	});
 
+	it('CA-06.2 / RN-18 (personagens): o menu do usuário tem "Meu perfil", para /perfil, acima de "Sair"', () => {
+		const html = renderHome(GRIMBOLD);
+		const menu = html.match(/<div[^>]*role="menu"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
+		expect(menu).toMatch(/<div[^>]*hidden/); // fechado até o Usuário abrir
+		expect(menu).toMatch(/<a href="\/perfil"[^>]*role="menuitem"[^>]*>[\s\S]*?Meu perfil/);
+		expect(menu.indexOf('Meu perfil')).toBeLessThan(menu.indexOf('Sair'));
+		expect(menu.match(/role="menuitem"/g)).toHaveLength(2);
+	});
+
 	it('CA-02.2: sem nome de exibição, mostra o nome de usuário e a inicial dele', () => {
 		const html = renderHome({ ...GRIMBOLD, username: 'mirai.exe', globalName: null });
 		expect(html).toMatch(/class="tile[^"]*"[^>]*>M</);

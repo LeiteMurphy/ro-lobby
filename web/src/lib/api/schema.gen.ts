@@ -84,6 +84,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catálogo de classes
+         * @description As classes do bRO, conforme o bROWiki, na ordem da página (spec personagens, RN-06, RN-20). Não exige sessão.
+         */
+        get: operations["listClasses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Personagens do Usuário da sessão
+         * @description O principal primeiro, depois por ordem de cadastro (RN-01, RN-17).
+         */
+        get: operations["listCharacters"];
+        put?: never;
+        /**
+         * Cadastra um personagem
+         * @description O primeiro personagem do Usuário vira o principal (RN-12). O nick é único em todo o RO Lobby, sem diferenciar maiúsculas (RN-05), e cada Usuário tem até 10 personagens (RN-11).
+         */
+        post: operations["createCharacter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Edita um personagem
+         * @description Grava todos os campos, com as mesmas regras do cadastro (RN-15).
+         */
+        put: operations["updateCharacter"];
+        post?: never;
+        /**
+         * Exclui um personagem
+         * @description Se era o principal, o mais antigo que sobrar vira o principal (RN-14).
+         */
+        delete: operations["deleteCharacter"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}/main": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Torna o personagem o principal
+         * @description O principal anterior deixa de ser (RN-13, D-01).
+         */
+        put: operations["setMainCharacter"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -116,11 +210,132 @@ export interface components {
         };
         Error: {
             /** @enum {string} */
-            error: "invalid_code" | "discord_unavailable" | "no_session";
+            error: "invalid_code" | "discord_unavailable" | "no_session" | "not_found" | "character_limit";
+        };
+        /**
+         * @description Função do personagem (RN-08).
+         * @enum {string}
+         */
+        Role: "tank" | "support" | "dps";
+        /**
+         * @description Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+         * @enum {string}
+         */
+        Portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4";
+        /** @enum {string} */
+        ClassTier: "aprendiz" | "primeira" | "segunda" | "transcendental" | "terceira" | "quarta" | "expandida";
+        Class: {
+            /**
+             * @description Nome sem acento em kebab-case; é o que o personagem guarda (D-03).
+             * @example guardiao-real
+             */
+            id: string;
+            /** @example Guardião Real */
+            name: string;
+            /**
+             * @description Título da página da classe no bROWiki.
+             * @example Guardiões Reais
+             */
+            plural: string;
+            tier: components["schemas"]["ClassTier"];
+            /**
+             * @description Classe de 1ª (ou a base, nas expandidas) de onde a linha sai.
+             * @example Espadachim
+             */
+            family: string;
+        };
+        /** @description Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422. */
+        CharacterInput: {
+            /** @description 1 a 24 caracteres depois de tirar os espaços das pontas. */
+            nick: string;
+            /** @description ID de uma classe de GET /classes. */
+            classId: string;
+            /** @description De 1 a 275. */
+            level: number;
+            role: components["schemas"]["Role"];
+            portrait?: components["schemas"]["Portrait"];
+            /** @description Opcional; https:// e até 300 caracteres. Vazio fica sem link. */
+            link?: string;
+        };
+        Character: {
+            /** Format: uuid */
+            id: string;
+            nick: string;
+            classId: string;
+            level: number;
+            role: components["schemas"]["Role"];
+            portrait: components["schemas"]["Portrait"];
+            link: string | null;
+            isMain: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        FieldError: {
+            /** @enum {string} */
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link";
+            /** @enum {string} */
+            code: "required" | "too_long" | "invalid" | "taken";
+        };
+        ValidationError: {
+            /** @enum {string} */
+            error: "validation";
+            fields: components["schemas"]["FieldError"][];
         };
     };
-    responses: never;
-    parameters: never;
+    responses: {
+        /** @description Sem sessão, ou sessão desconhecida ou vencida. */
+        NoSession: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "no_session"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description O personagem não existe ou é de outro Usuário (RN-02). */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "not_found"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Campos inválidos, com o código de cada erro (RN-19, D-07). */
+        Invalid: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "validation",
+                 *       "fields": [
+                 *         {
+                 *           "field": "nick",
+                 *           "code": "taken"
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["ValidationError"];
+            };
+        };
+    };
+    parameters: {
+        /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+        CharacterId: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -270,6 +485,163 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    listClasses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Todas as classes do catálogo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Class"][];
+                };
+            };
+        };
+    };
+    listCharacters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personagens do Usuário. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Character"][];
+                };
+            };
+            401: components["responses"]["NoSession"];
+        };
+    };
+    createCharacter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CharacterInput"];
+            };
+        };
+        responses: {
+            /** @description Personagem criado. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Character"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            /** @description O Usuário já tem 10 personagens (RN-11). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": "character_limit"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            422: components["responses"]["Invalid"];
+        };
+    };
+    updateCharacter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CharacterInput"];
+            };
+        };
+        responses: {
+            /** @description Personagem editado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Character"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    deleteCharacter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personagem excluído. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setMainCharacter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personagem marcado como principal. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["NotFound"];
         };
     };
 }

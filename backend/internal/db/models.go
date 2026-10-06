@@ -10,6 +10,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Character struct {
+	ID        pgtype.UUID
+	Seq       int64
+	UserID    pgtype.UUID
+	Nick      string
+	ClassID   string
+	Level     int16
+	Role      string
+	Portrait  string
+	Link      pgtype.Text
+	IsMain    bool
+	CreatedAt time.Time
+}
+
 type Session struct {
 	TokenHash  []byte
 	UserID     pgtype.UUID

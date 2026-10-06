@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/ui/Icon.svelte';
 	import { displayName, initial } from '$lib/auth/display';
 	import type { SessionUser } from '$lib/auth/api';
@@ -14,21 +15,31 @@
 	let open = $state(false);
 	let root: HTMLDivElement | undefined = $state();
 	let trigger: HTMLButtonElement | undefined = $state();
-	let logout: HTMLButtonElement | undefined = $state();
+	let menu: HTMLDivElement | undefined = $state();
 
-	// RNF-02: o menu abre pelo teclado, leva o foco para "Sair" e fecha com Escape.
+	const items = () => [...(menu?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+
+	// RNF-02: o menu abre pelo teclado com o foco no primeiro item ("Meu perfil"), as setas
+	// andam entre os itens e Escape fecha.
 	async function toggle() {
 		open = !open;
 		if (open) {
 			await Promise.resolve();
-			logout?.focus();
+			items()[0]?.focus();
 		}
 	}
 
 	function onkeydown(event: KeyboardEvent) {
-		if (open && event.key === 'Escape') {
+		if (!open) return;
+		if (event.key === 'Escape') {
 			open = false;
 			trigger?.focus();
+		} else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			event.preventDefault();
+			const list = items();
+			const at = list.indexOf(document.activeElement as HTMLElement);
+			const step = event.key === 'ArrowDown' ? 1 : -1;
+			list[(at + step + list.length) % list.length]?.focus();
 		}
 	}
 
@@ -54,15 +65,18 @@
 		<span class="name">{name}</span>
 		<Icon name="chevron-down" size={14} color="var(--fg-3)" />
 	</button>
-	{#if open}
-		<div class="menu" id={menuId} role="menu" aria-label="Conta">
-			<form method="POST" action="/auth/logout">
-				<button type="submit" role="menuitem" class="item" bind:this={logout}>
-					<Icon name="log-in" size={15} />Sair
-				</button>
-			</form>
-		</div>
-	{/if}
+	<!-- O menu fica no HTML e só aparece quando aberto (hidden some também para leitores de tela). -->
+	<div class="menu" id={menuId} role="menu" aria-label="Conta" hidden={!open} bind:this={menu}>
+		<!-- spec personagens, RN-18: "Meu perfil" acima de "Sair". -->
+		<a href={resolve('/perfil')} role="menuitem" class="item" onclick={() => (open = false)}>
+			<Icon name="user" size={15} />Meu perfil
+		</a>
+		<form method="POST" action="/auth/logout">
+			<button type="submit" role="menuitem" class="item item--logout">
+				<Icon name="log-in" size={15} />Sair
+			</button>
+		</form>
+	</div>
 </div>
 
 <style>
@@ -131,12 +145,17 @@
 		color: var(--fg-1);
 		font: 500 14px/1 var(--font-ui);
 		text-align: left;
+		text-decoration: none;
 		cursor: pointer;
+	}
+	.menu[hidden] {
+		display: none;
 	}
 	.item:hover {
 		background: var(--surface-hover);
+		text-decoration: none;
 	}
-	.item :global(svg) {
+	.item--logout :global(svg) {
 		transform: scaleX(-1);
 	}
 	@media (max-width: 899px) {

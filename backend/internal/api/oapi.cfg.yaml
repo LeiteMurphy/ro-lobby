@@ -6,3 +6,7 @@ generate:
   models: true
   std-http-server: true
   strict-server: true
+# Prefixa as constantes de enum com o nome do tipo (ex.: RoleTank, FieldErrorFieldRole),
+# para os valores de enums diferentes não colidirem com os nomes dos tipos.
+compatibility:
+  always-prefix-enum-values: true
