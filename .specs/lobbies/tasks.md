@@ -6,7 +6,7 @@
 
 ## US-06 — Base no backend
 
-### T-01 — Catálogo de instâncias em Go  [P] [ ]
+### T-01 — Catálogo de instâncias em Go  [P] [x]
 - Cobre: RN-01, RN-02, CA-06.1, CA-06.2, D-02
 - Depende de: —
 - Paralelizável: [P] com T-02
@@ -14,10 +14,10 @@
 - Pronto quando: testes unitários passam para as instâncias de grupo do bROWiki (nenhuma
   "Solo"), ids únicos em kebab-case, nível e retorno de cada uma, `InstanceByID` válido e
   inválido, e a ordem da RN-02 (130+ primeiro, nível decrescente, nome no empate).
-- Commit:
+- Commit: `064c48b`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff815c82d2fc2db4ee8fc0
 
-### T-02 — Tabela de lobbies  [P] [ ]
+### T-02 — Tabela de lobbies  [P] [x]
 - Cobre: RN-06, RN-07, RN-09, RN-13, RN-19, D-01, D-02
 - Depende de: —
 - Paralelizável: [P] com T-01
@@ -27,10 +27,10 @@
   recusa vagas fora de 0–12 ou soma fora de 1–12, nível fora de 1–275, função
   desconhecida, observação acima de 250 e cancelamento sem motivo (ou motivo fora de
   10–250); o personagem excluído vira nulo no lobby; o lobby sai junto com o Usuário.
-- Commit:
+- Commit: `8de1735`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff810291ddf2384b6e633d
 
-### T-03 — Serviço de lobbies  [ ]
+### T-03 — Serviço de lobbies  [x]
 - Cobre: RN-04 a RN-11, RN-13, RN-14, RN-17 a RN-20, CA-01.1 a CA-01.9, CA-01.11,
   CA-01.12, CA-02.2, CA-04.1 a CA-04.4, CA-05.1, CA-05.2, CA-06.5, D-03, D-04, D-05, D-08
 - Depende de: T-01, T-02
@@ -47,10 +47,10 @@
   - 404 para lobby de outro e 409 para iniciado ou cancelado;
   - cancelamento com motivo curto e válido;
   - criações simultâneas que não passam do limite nem criam conflito.
-- Commit:
+- Commit: `c147f71`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81b1b895cc1ffba31154
 
-### T-04 — Personagem do dono travado  [ ]
+### T-04 — Personagem do dono travado  [x]
 - Cobre: RN-21, CA-06.4, D-05
 - Depende de: T-02
 - Paralelizável: [P] com T-03 (pacote diferente)
@@ -58,10 +58,10 @@
 - Pronto quando: testes de integração passam para excluir e mudar a função do personagem
   dono de um lobby aberto (recusado com `ErrInOpenLobby`), mudar outro campo (aceito), e
   excluir depois do início ou do cancelamento (aceito).
-- Commit:
+- Commit: `7cbe28f`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff816dab61cbc3178a8dcb
 
-### T-05 — Contrato e rotas da API  [ ]
+### T-05 — Contrato e rotas da API  [x]
 - Cobre: RN-01, RN-04, RN-15, RN-20, RN-21, CA-01.7, CA-01.12, CA-03.2, CA-04.4,
   CA-05.3, CA-06.1, CA-06.3, D-06, D-07, D-08
 - Depende de: T-03, T-04
@@ -75,12 +75,12 @@
     200, 404, 409 `lobby_limit`, 409 `lobby_not_open` e 422 com os campos;
   - excluir ou mudar a função do personagem dono de lobby aberto responde 409
     `character_in_open_lobby`.
-- Commit:
+- Commit: `c82af3b`
 - Notion: https://app.notion.com/p/3f1d4a3a5eff81509526f6238d068a0d
 
 ## US-02 — Home com dados reais
 
-### T-06 — Cliente da API, horário de Brasília e Home com os lobbies reais  [ ]
+### T-06 — Cliente da API, horário de Brasília e Home com os lobbies reais  [x]
 - Cobre: RN-03, RN-13, RN-14, RN-22, RN-23, RNF-05, CA-02.1, CA-02.2, CA-02.3, CA-02.4,
   D-04, D-09
 - Depende de: T-05
@@ -209,4 +209,17 @@
 Todos os 31 critérios da spec estão cobertos.
 
 ## Descobertas
-- Nenhuma até agora.
+- 2026-10-06 — Na T-02, o teste da janela de conflito achou que `id <> @exclude_id` com
+  valor nulo descartava todas as linhas. — A consulta passou a usar `IS DISTINCT FROM`.
+- 2026-10-06 — A T-04 colocou a edição de personagem numa transação com trava no Usuário
+  (D-05), o que resolve também a observação do validador da `personagens` sobre o
+  `Update` fora da transação.
+- 2026-10-06 — Na T-06, os links da Home usam as rotas tipadas do SvelteKit, que ainda
+  não existiam. — Entraram páginas provisórias em `/lobbies/novo` e `/lobbies/[id]`,
+  trocadas pelas de verdade na T-07 e na T-08.
+- 2026-10-06 — Na T-06, o ponta a ponta da Home deixou de funcionar, porque dependia dos
+  dados fictícios. — Ele é refeito na T-10 (já previsto); até lá, a CI do PR fica
+  vermelha nesse job.
+- 2026-10-06 — A função de chamada à API saiu de `lib/characters/api.ts` para
+  `lib/api/request.ts`, usada por personagens e lobbies. O 409 passou a trazer o código do
+  erro (`conflict` + `code`), e o perfil lê o `character_limit` por ele.

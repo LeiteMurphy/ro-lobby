@@ -101,8 +101,11 @@ function outcome(
 			return toLogin(cookies);
 		case 'invalid':
 			return fail(422, { ...form, errors: fieldMessages(result.fields), message: null });
-		case 'limit':
-			return fail(409, { ...form, errors: {}, message: LIMIT_MESSAGE });
+		case 'conflict':
+			if (result.code === 'character_limit') {
+				return fail(409, { ...form, errors: {}, message: LIMIT_MESSAGE });
+			}
+			return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
 		case 'not_found':
 			return fail(404, { ...form, errors: {}, message: NOT_FOUND_MESSAGE });
 		default:

@@ -79,6 +79,9 @@
 	{#if data.loginError}
 		<div class="login-error" role="alert">{LOGIN_ERROR_MESSAGE}</div>
 	{/if}
+	{#if data.loadError}
+		<div class="login-error" role="alert">{data.loadError}</div>
+	{/if}
 
 	<div class="days-bar">
 		<div class="container">

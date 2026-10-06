@@ -1,6 +1,5 @@
-// RN-08 / D-06: dados fictícios da Home, iguais aos do design "Home v2". É o único
-// lugar que conhece esses dados; o resto do web usa getHomeLobbies(), que a feature de
-// lobby vai trocar pela API.
+// Dados fictícios da Home, iguais aos do design "Home v2". Desde a spec lobbies (D-09) a
+// Home busca os lobbies na API; estes dados ficam só para os testes de tela, filtros e dias.
 import { CLASSES } from '$lib/catalog/classes';
 import { addDays } from './time';
 import type { Composition, Lobby } from './types';

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Badge from '$lib/ui/Badge.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -38,7 +39,14 @@
 	</div>
 	<div class="body">
 		<div class="title-row">
-			<h3>{lobby.instance}</h3>
+			<!-- spec lobbies, RN-23: o nome da instância leva ao detalhe ("Ver grupo"). -->
+			<h3>
+				<a
+					class="detail"
+					href={resolve('/lobbies/[id]', { id: lobby.id })}
+					aria-label="Ver grupo: {lobby.instance} às {lobby.time}">{lobby.instance}</a
+				>
+			</h3>
 			<span class="headcount" title="Vagas ocupadas">
 				<Icon name="users" size={14} color="var(--fg-3)" />{count.filled}/{count.total}
 			</span>
@@ -58,6 +66,14 @@
 </article>
 
 <style>
+	.detail {
+		color: inherit;
+		text-decoration: none;
+	}
+	.detail:hover {
+		color: var(--gold-200);
+		text-decoration: underline;
+	}
 	.card {
 		position: relative;
 		display: flex;

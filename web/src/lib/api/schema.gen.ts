@@ -178,6 +178,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catálogo de instâncias
+         * @description As instâncias de grupo do bROWiki, na ordem da escolha: nível 130 ou mais primeiro, depois as de nível menor; em cada parte, nível decrescente (spec lobbies, RN-01, RN-02). Não exige sessão.
+         */
+        get: operations["listInstances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lobbies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lobbies abertos num intervalo de dias
+         * @description Lobbies abertos (não cancelados e ainda não iniciados) com início entre os dias from e to, no fuso de São Paulo, por horário (RN-13, RN-14, RN-22). Não exige sessão.
+         */
+        get: operations["listLobbies"];
+        put?: never;
+        /**
+         * Cria um lobby
+         * @description O dono escolhe um dos próprios personagens, que ocupa a vaga da função dele (RN-08). Cada Usuário tem até 5 lobbies abertos (RN-11), e o personagem não pode estar em outro lobby a menos de 2 h (RN-10).
+         */
+        post: operations["createLobby"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lobbies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalhe do lobby
+         * @description O lobby em qualquer estado (RN-15). Não exige sessão.
+         */
+        get: operations["getLobby"];
+        /**
+         * Edita o lobby
+         * @description Só o dono e só com o lobby aberto. Muda início, vagas, nível mínimo e observação; instância e personagem ficam (RN-17, RN-18).
+         */
+        put: operations["updateLobby"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lobbies/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancela o lobby
+         * @description Só o dono e só com o lobby aberto, com motivo de 10 a 250 caracteres (RN-19).
+         */
+        post: operations["cancelLobby"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -210,7 +304,7 @@ export interface components {
         };
         Error: {
             /** @enum {string} */
-            error: "invalid_code" | "discord_unavailable" | "no_session" | "not_found" | "character_limit";
+            error: "invalid_code" | "discord_unavailable" | "no_session" | "not_found" | "character_limit" | "character_in_open_lobby" | "lobby_limit" | "lobby_not_open" | "invalid_range";
         };
         /**
          * @description Função do personagem (RN-08).
@@ -272,17 +366,136 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason";
             /** @enum {string} */
-            code: "required" | "too_long" | "invalid" | "taken";
+            code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low";
         };
         ValidationError: {
             /** @enum {string} */
             error: "validation";
             fields: components["schemas"]["FieldError"][];
         };
+        /**
+         * @description Tempo de retorno da instância, como o bROWiki agrupa.
+         * @enum {string}
+         */
+        InstanceReset: "daily" | "three_days" | "hours" | "weekly";
+        Instance: {
+            /** @example templo-do-demonio-rei */
+            id: string;
+            /** @example Templo do Demônio Rei */
+            name: string;
+            /**
+             * @description Nível de entrada.
+             * @example 160
+             */
+            level: number;
+            reset: components["schemas"]["InstanceReset"];
+        };
+        Slots: {
+            tank: number;
+            support: number;
+            dps: number;
+        };
+        LobbyInput: {
+            /** @description ID de uma instância de GET /instances. */
+            instanceId: string;
+            /**
+             * Format: date-time
+             * @description Início em UTC; o web converte o dia e a hora de Brasília (D-04).
+             */
+            startsAt: string;
+            slots: components["schemas"]["Slots"];
+            minLevel: number;
+            /** @description Um dos personagens do Usuário da sessão. */
+            characterId: string;
+            /** @description Opcional, até 250 caracteres. */
+            note?: string;
+        };
+        LobbyUpdate: {
+            /** Format: date-time */
+            startsAt: string;
+            slots: components["schemas"]["Slots"];
+            minLevel: number;
+            note?: string;
+        };
+        CancelLobby: {
+            /** @description De 10 a 250 caracteres. */
+            reason: string;
+        };
+        /** @enum {string} */
+        LobbyStatus: "open" | "started" | "cancelled";
+        LobbyInstance: {
+            id: string;
+            /** @description Nome guardado na criação (D-02). */
+            name: string;
+            level: number;
+            /**
+             * @description Nulo se a instância saiu do catálogo.
+             * @enum {string|null}
+             */
+            reset: "daily" | "three_days" | "hours" | "weekly" | null;
+        };
+        LobbyOwner: {
+            /** Format: uuid */
+            userId: string;
+            discordName: string;
+            /**
+             * Format: uuid
+             * @description Nulo se o personagem foi excluído depois do início (D-01).
+             */
+            characterId: string | null;
+            nick: string | null;
+            classId: string | null;
+            level: number | null;
+            role: components["schemas"]["Role"];
+        };
+        Lobby: {
+            /** Format: uuid */
+            id: string;
+            instance: components["schemas"]["LobbyInstance"];
+            /** Format: date-time */
+            startsAt: string;
+            status: components["schemas"]["LobbyStatus"];
+            slots: components["schemas"]["Slots"];
+            occupied: components["schemas"]["Slots"];
+            minLevel: number;
+            note: string | null;
+            owner: components["schemas"]["LobbyOwner"];
+            cancelReason: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
     };
     responses: {
+        /** @description O lobby não existe ou, nas escritas, é de outro Usuário (RN-20). */
+        LobbyNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "not_found"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description O lobby já começou ou foi cancelado (D-08). */
+        LobbyNotOpen: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "lobby_not_open"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Sem sessão, ou sessão desconhecida ou vencida. */
         NoSession: {
             headers: {
@@ -333,6 +546,8 @@ export interface components {
         };
     };
     parameters: {
+        /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+        LobbyId: string;
         /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
         CharacterId: string;
     };
@@ -595,6 +810,20 @@ export interface operations {
             };
             401: components["responses"]["NoSession"];
             404: components["responses"]["NotFound"];
+            /** @description O personagem é dono de um lobby aberto (RN-21 da spec lobbies). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": "character_in_open_lobby"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             422: components["responses"]["Invalid"];
         };
     };
@@ -619,6 +848,20 @@ export interface operations {
             };
             401: components["responses"]["NoSession"];
             404: components["responses"]["NotFound"];
+            /** @description O personagem é dono de um lobby aberto (RN-21 da spec lobbies). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": "character_in_open_lobby"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     setMainCharacter: {
@@ -642,6 +885,189 @@ export interface operations {
             };
             401: components["responses"]["NoSession"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listInstances: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Todas as instâncias do catálogo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Instance"][];
+                };
+            };
+        };
+    };
+    listLobbies: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lobbies abertos do intervalo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"][];
+                };
+            };
+            /** @description Intervalo de datas inválido. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": "invalid_range"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createLobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LobbyInput"];
+            };
+        };
+        responses: {
+            /** @description Lobby criado. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            /** @description O Usuário já tem 5 lobbies abertos (RN-11). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": "lobby_limit"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            422: components["responses"]["Invalid"];
+        };
+    };
+    getLobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O lobby. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            404: components["responses"]["LobbyNotFound"];
+        };
+    };
+    updateLobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LobbyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Lobby editado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["LobbyNotFound"];
+            409: components["responses"]["LobbyNotOpen"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    cancelLobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelLobby"];
+            };
+        };
+        responses: {
+            /** @description Lobby cancelado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["LobbyNotFound"];
+            409: components["responses"]["LobbyNotOpen"];
+            422: components["responses"]["Invalid"];
         };
     };
 }

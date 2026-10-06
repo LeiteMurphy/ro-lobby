@@ -21,8 +21,17 @@
 		<span>RO Lobby</span>
 	</a>
 	<div class="actions">
-		<span class="desktop"><Button iconLeft="plus" soon>Criar lobby</Button></span>
-		<span class="mobile"><IconButton icon="plus" label="Criar lobby" variant="primary" soon /></span
+		<!-- spec lobbies, RN-23: "Criar lobby" leva à criação; visitante passa pelo login. -->
+		<span class="desktop"
+			><Button iconLeft="plus" href={resolve('/lobbies/novo')}>Criar lobby</Button></span
+		>
+		<span class="mobile"
+			><IconButton
+				icon="plus"
+				label="Criar lobby"
+				variant="primary"
+				href={resolve('/lobbies/novo')}
+			/></span
 		>
 		{#if user}
 			<UserMenu {user} />

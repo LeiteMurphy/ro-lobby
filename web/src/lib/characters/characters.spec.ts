@@ -62,7 +62,7 @@ describe('cliente da API de personagens', () => {
 	it.each([
 		[401, undefined, { ok: false, kind: 'no_session' }],
 		[404, { error: 'not_found' }, { ok: false, kind: 'not_found' }],
-		[409, { error: 'character_limit' }, { ok: false, kind: 'limit' }],
+		[409, { error: 'character_limit' }, { ok: false, kind: 'conflict', code: 'character_limit' }],
 		[500, undefined, { ok: false, kind: 'unavailable' }]
 	])('RN-01 / RN-02 / CA-02.8 / RN-21: status %i vira %o', async (status, body, want) => {
 		const result = await listCharacters({

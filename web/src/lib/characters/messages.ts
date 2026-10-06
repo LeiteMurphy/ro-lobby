@@ -5,7 +5,10 @@ import type { FieldError } from './api';
 type Field = FieldError['field'];
 type Code = FieldError['code'];
 
-const MESSAGES: Record<Field, Partial<Record<Code, string>> & { fallback: string }> = {
+// Só os campos do personagem; os do lobby têm as mensagens em `$lib/lobbies/messages`.
+type CharacterField = 'nick' | 'classId' | 'level' | 'role' | 'portrait' | 'link';
+
+const MESSAGES: Record<CharacterField, Partial<Record<Code, string>> & { fallback: string }> = {
 	nick: {
 		taken: 'Esse nick já está em uso',
 		required: 'Informe o nick',
@@ -28,8 +31,8 @@ export const NOT_FOUND_MESSAGE = 'Esse personagem não existe mais.';
 
 /** Mensagem do erro de um campo. */
 export function fieldMessage({ field, code }: FieldError): string {
-	const messages = MESSAGES[field];
-	return messages[code] ?? messages.fallback;
+	const messages = MESSAGES[field as CharacterField];
+	return messages?.[code] ?? messages?.fallback ?? 'Valor inválido';
 }
 
 /** Erros da API como `{campo: mensagem}`, com a primeira mensagem de cada campo. */

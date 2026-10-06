@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Button from '$lib/ui/Button.svelte';
 	import { instanceArt } from '../catalog';
 	import type { Lobby } from '../types';
@@ -31,7 +32,10 @@
 			<RoleComposition composition={lobby.composition} showTotal showBar />
 			<div class="actions">
 				<Button size="lg" iconLeft="user-plus" soon>Candidatar</Button>
-				<Button size="lg" variant="secondary" soon>Ver grupo</Button>
+				<!-- spec lobbies, RN-23: "Ver grupo" abre o detalhe. -->
+				<Button size="lg" variant="secondary" href={resolve('/lobbies/[id]', { id: lobby.id })}
+					>Ver grupo</Button
+				>
 			</div>
 		</div>
 	</div>

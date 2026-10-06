@@ -57,7 +57,8 @@ describe('Home renderizada no servidor', () => {
 				text: inner.replace(/<[^>]+>/g, '').trim()
 			})
 		);
-		for (const label of ['Criar lobby', 'Candidatar', 'Ver grupo']) {
+		// Desde a spec lobbies, "Criar lobby" e "Ver grupo" funcionam; "Candidatar" segue em breve.
+		for (const label of ['Candidatar']) {
 			const matching = buttons.filter((b) => b.text === label);
 			expect(matching.length, label).toBeGreaterThan(0);
 			expect(
@@ -66,6 +67,21 @@ describe('Home renderizada no servidor', () => {
 			).toBe(true);
 		}
 		expect(html).toContain('Disponível em breve');
+	});
+
+	it('CA-02.3 / CA-02.4 / RN-23 (lobbies): "Criar lobby" e "Ver grupo" levam às páginas de lobby', () => {
+		expect(html.match(/<a href="\/lobbies\/novo"[^>]*>[\s\S]*?Criar lobby/g)).toHaveLength(1);
+		expect(html).toMatch(/<a href="\/lobbies\/novo"[^>]*aria-label="Criar lobby"/);
+		for (const l of today) {
+			expect(html).toContain(`href="/lobbies/${l.id}"`);
+			expect(html).toContain(`aria-label="Ver grupo: ${l.instance} às ${l.time}"`);
+		}
+		expect(html).toMatch(/<a href="\/lobbies\/[^"]+"[^>]*>(?:\s|<!--[^>]*-->)*Ver grupo/);
+	});
+
+	it('RN-03 (lobbies): todas as instâncias usam a capa e o ícone padrão', () => {
+		expect(html).not.toContain('/brand/inst-');
+		expect(html).toContain('/brand/c1-symbol-dark.svg');
 	});
 
 	it('CA-05.1: o destaque aparece com o próximo grupo com vaga', () => {
