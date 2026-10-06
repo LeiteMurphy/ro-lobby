@@ -39,9 +39,10 @@ var (
 	ErrNotFound = errors.New("characters: personagem não encontrado")
 	// ErrLimitReached: o Usuário já tem MaxPerUser personagens (RN-11).
 	ErrLimitReached = errors.New("characters: limite de personagens atingido")
-	// ErrInOpenLobby: o personagem é dono de um lobby aberto e não pode ser excluído nem
-	// mudar de função (RN-21 da spec lobbies).
-	ErrInOpenLobby = errors.New("characters: personagem dono de lobby aberto")
+	// ErrInOpenLobby: o personagem é dono de um lobby aberto, ou tem candidatura pendente
+	// ou aceita num lobby aberto, e não pode ser excluído nem mudar de nível ou função
+	// (RN-21 da spec lobbies, RN-25 e RN-26 da candidatura-lobby).
+	ErrInOpenLobby = errors.New("characters: personagem em lobby aberto")
 )
 
 // Campos e códigos de erro de validação (D-07). O web traduz para pt-BR.
@@ -188,15 +189,16 @@ func (s *Service) Update(ctx context.Context, userID, id string, in Input) (Char
 	if err != nil {
 		return Character{}, err
 	}
-	// Em transação com o Usuário travado, para a checagem da RN-21 não correr contra a
-	// criação de um lobby (D-05 da spec lobbies).
+	// Em transação com o Usuário travado, para a checagem da RN-25 não correr contra a
+	// criação de um lobby nem contra uma candidatura (D-05 das specs lobbies e
+	// candidatura-lobby).
 	var updated db.Character
 	err = s.inTx(ctx, uid, func(q *db.Queries) error {
 		current, err := q.GetOwnCharacter(ctx, db.GetOwnCharacterParams{ID: cid, UserID: uid})
 		if err != nil {
 			return err // pgx.ErrNoRows vira ErrNotFound (RN-02)
 		}
-		if current.Role != in.Role {
+		if current.Role != in.Role || int(current.Level) != in.Level {
 			if err := s.checkNotInOpenLobby(ctx, q, cid); err != nil {
 				return err
 			}
@@ -219,10 +221,10 @@ func (s *Service) Update(ctx context.Context, userID, id string, in Input) (Char
 	return toCharacter(updated), nil
 }
 
-// checkNotInOpenLobby recusa mexer no personagem que é dono de um lobby aberto (RN-21 da
-// spec lobbies).
+// checkNotInOpenLobby recusa mexer no personagem que está num lobby aberto, como dono,
+// candidato pendente ou membro (RN-21 da lobbies, RN-25 e RN-26 da candidatura-lobby).
 func (s *Service) checkNotInOpenLobby(ctx context.Context, q *db.Queries, cid pgtype.UUID) error {
-	inLobby, err := q.CharacterOwnsOpenLobby(ctx, db.CharacterOwnsOpenLobbyParams{CharacterID: cid, Now: s.Now().UTC()})
+	inLobby, err := q.CharacterInOpenLobby(ctx, db.CharacterInOpenLobbyParams{CharacterID: cid, Now: s.Now().UTC()})
 	if err != nil {
 		return err
 	}

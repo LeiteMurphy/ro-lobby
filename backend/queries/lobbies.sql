@@ -73,9 +73,14 @@ WHERE id = @id;
 -- name: CancelLobby :exec
 UPDATE lobbies SET cancelled_at = @now::timestamptz, cancel_reason = @reason::text WHERE id = @id;
 
--- name: CharacterOwnsOpenLobby :one
--- RN-21: o personagem é dono de um lobby aberto.
+-- name: CharacterInOpenLobby :one
+-- RN-21 da lobbies e RN-25/RN-26 da candidatura: o personagem é dono de um lobby aberto
+-- ou tem candidatura pendente ou aceita num lobby aberto.
 SELECT EXISTS (
-    SELECT 1 FROM lobbies
-    WHERE owner_character_id = @character_id AND cancelled_at IS NULL AND starts_at > @now
+    SELECT 1 FROM lobbies l
+    WHERE l.cancelled_at IS NULL AND l.starts_at > @now
+      AND (l.owner_character_id = @character_id
+           OR EXISTS (SELECT 1 FROM applications a
+                      WHERE a.lobby_id = l.id AND a.character_id = @character_id
+                        AND a.status IN ('pending', 'accepted')))
 );

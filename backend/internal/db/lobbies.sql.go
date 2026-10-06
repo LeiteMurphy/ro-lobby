@@ -27,21 +27,26 @@ func (q *Queries) CancelLobby(ctx context.Context, arg CancelLobbyParams) error 
 	return err
 }
 
-const characterOwnsOpenLobby = `-- name: CharacterOwnsOpenLobby :one
+const characterInOpenLobby = `-- name: CharacterInOpenLobby :one
 SELECT EXISTS (
-    SELECT 1 FROM lobbies
-    WHERE owner_character_id = $1 AND cancelled_at IS NULL AND starts_at > $2
+    SELECT 1 FROM lobbies l
+    WHERE l.cancelled_at IS NULL AND l.starts_at > $1
+      AND (l.owner_character_id = $2
+           OR EXISTS (SELECT 1 FROM applications a
+                      WHERE a.lobby_id = l.id AND a.character_id = $2
+                        AND a.status IN ('pending', 'accepted')))
 )
 `
 
-type CharacterOwnsOpenLobbyParams struct {
-	CharacterID pgtype.UUID
+type CharacterInOpenLobbyParams struct {
 	Now         time.Time
+	CharacterID pgtype.UUID
 }
 
-// RN-21: o personagem é dono de um lobby aberto.
-func (q *Queries) CharacterOwnsOpenLobby(ctx context.Context, arg CharacterOwnsOpenLobbyParams) (bool, error) {
-	row := q.db.QueryRow(ctx, characterOwnsOpenLobby, arg.CharacterID, arg.Now)
+// RN-21 da lobbies e RN-25/RN-26 da candidatura: o personagem é dono de um lobby aberto
+// ou tem candidatura pendente ou aceita num lobby aberto.
+func (q *Queries) CharacterInOpenLobby(ctx context.Context, arg CharacterInOpenLobbyParams) (bool, error) {
+	row := q.db.QueryRow(ctx, characterInOpenLobby, arg.Now, arg.CharacterID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
