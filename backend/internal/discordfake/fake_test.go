@@ -73,6 +73,38 @@ func TestAuthorize_AllowRedirectsWithCode(t *testing.T) {
 	}
 }
 
+// D-11 (personagens): a página aceita entrar como outro usuário, com ID fixo pelo nome; sem
+// nome, entra o usuário padrão.
+func TestAuthorize_D11_ChooseAnotherUser(t *testing.T) {
+	f, _ := newServer(t)
+	if got := f.userFor(""); got != f.User {
+		t.Errorf("sem nome = %+v", got)
+	}
+	if got := f.userFor(" grimbold "); got != f.User {
+		t.Errorf("nome do padrão = %+v", got)
+	}
+	bia := f.userFor("bia")
+	if bia.Username != "bia" || bia.ID == f.User.ID || bia != f.userFor("bia") {
+		t.Errorf("bia = %+v", bia)
+	}
+	if strings.Trim(bia.ID, "0123456789") != "" {
+		t.Errorf("ID do Discord precisa ser só dígitos: %q", bia.ID)
+	}
+
+	// O código emitido pela página carrega o usuário escolhido.
+	f2, srv := newServer(t)
+	form := url.Values{"redirect_uri": {"http://localhost:3000/cb"}, "state": {"abc"}, "decision": {"allow"}, "username": {"bia"}}
+	_, header := do(t, noRedirect(), http.MethodPost, srv.URL+"/oauth2/authorize", "application/x-www-form-urlencoded", form.Encode())
+	loc, _ := url.Parse(header.Get("Location"))
+	code := loc.Query().Get("code")
+	f2.mu.Lock()
+	got := f2.codes[code].user
+	f2.mu.Unlock()
+	if got.Username != "bia" {
+		t.Fatalf("o código ficou com %+v", got)
+	}
+}
+
 // O endpoint de token recusa JSON, como o Discord de verdade.
 func TestToken_RejectsJSON(t *testing.T) {
 	_, srv := newServer(t)

@@ -8,9 +8,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"html/template"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -93,6 +96,7 @@ var page = template.Must(template.New("authorize").Parse(`<!doctype html>
 <form method="post">
 <input type="hidden" name="redirect_uri" value="{{.RedirectURI}}">
 <input type="hidden" name="state" value="{{.State}}">
+<p><label>Entrar como (opcional) <input name="username" autocomplete="off" placeholder="{{.User.Username}}"></label></p>
 <button name="decision" value="allow">Autorizar</button>
 <button name="decision" value="deny">Cancelar</button>
 </form></body></html>`))
@@ -128,13 +132,26 @@ func (f *Fake) authorizeDecision(w http.ResponseWriter, r *http.Request) {
 	}
 	q := target.Query()
 	if r.FormValue("decision") == "allow" {
-		q.Set("code", f.IssueCode(f.User, redirectURI))
+		q.Set("code", f.IssueCode(f.userFor(r.FormValue("username")), redirectURI))
 	} else {
 		q.Set("error", "access_denied")
 	}
 	q.Set("state", state)
 	target.RawQuery = q.Encode()
 	http.Redirect(w, r, target.String(), http.StatusFound)
+}
+
+// userFor devolve o usuário padrão, ou outro com o nome digitado na página. O ID desse
+// outro é sempre o mesmo para o mesmo nome, então entrar de novo cai no mesmo Usuário
+// (spec personagens, D-11: o ponta a ponta precisa de duas contas).
+func (f *Fake) userFor(username string) User {
+	username = strings.TrimSpace(username)
+	if username == "" || username == f.User.Username {
+		return f.User
+	}
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(username))
+	return User{ID: "9" + strconv.FormatUint(h.Sum64(), 10), Username: username, GlobalName: username}
 }
 
 func (f *Fake) token(w http.ResponseWriter, r *http.Request) {
