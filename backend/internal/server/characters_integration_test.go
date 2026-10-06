@@ -19,7 +19,7 @@ import (
 
 // Fluxo das rotas de personagem com o PostgreSQL real e duas sessões (spec personagens,
 // CA-01.3, CA-02.1, CA-02.3, CA-03.3, CA-04.3, CA-07.2).
-func TestCharactersFlowIntegration(t *testing.T) {
+func TestCharactersFlowIntegration_CA02_3_CA03_3_CA04_3(t *testing.T) {
 	url := testdb.New(t)
 	sqlDB, err := migrate.OpenDB(url)
 	if err != nil {

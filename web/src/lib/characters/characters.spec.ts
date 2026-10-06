@@ -64,7 +64,7 @@ describe('cliente da API de personagens', () => {
 		[404, { error: 'not_found' }, { ok: false, kind: 'not_found' }],
 		[409, { error: 'character_limit' }, { ok: false, kind: 'limit' }],
 		[500, undefined, { ok: false, kind: 'unavailable' }]
-	])('status %i vira %o', async (status, body, want) => {
+	])('RN-01 / RN-02 / CA-02.8 / RN-21: status %i vira %o', async (status, body, want) => {
 		const result = await listCharacters({
 			fetchFn: fakeFetch(status, body),
 			apiBaseUrl: base,

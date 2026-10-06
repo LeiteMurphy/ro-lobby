@@ -180,7 +180,7 @@ func TestCharacters_CA03_3_CA04_4_NotFoundIs404(t *testing.T) {
 }
 
 // RN-13 / RN-14: excluir e marcar principal respondem 204.
-func TestCharacters_DeleteAndSetMainAre204(t *testing.T) {
+func TestCharacters_RN13_RN14_DeleteAndSetMainAre204(t *testing.T) {
 	for _, r := range characterRoutes[3:] {
 		rec, _ := call(t, newCharsServer(&fakeChars{}), r.method, r.path, "token-valido", "")
 		if rec.Code != http.StatusNoContent {
