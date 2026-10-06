@@ -4,7 +4,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import { instanceArt } from '../catalog';
-	import { edgeRole, headcount, isFull } from '../lobbies';
+	import { edgeRole, headcount, isFull, pendingFor } from '../lobbies';
 	import type { Lobby } from '../types';
 	import HostLine from './HostLine.svelte';
 	import RoleComposition from './RoleComposition.svelte';
@@ -14,9 +14,12 @@
 		relative: string;
 		/** Prévia na criação de lobby (spec lobbies, 1b): sem link nem ações. */
 		preview?: boolean;
+		/** Usuário da sessão; o dono vê o selo de pendentes (RN-34 da candidatura-lobby). */
+		viewerId?: string | null;
 	}
 
-	let { lobby, relative, preview = false }: Props = $props();
+	let { lobby, relative, preview = false, viewerId = null }: Props = $props();
+	const pending = $derived(pendingFor(lobby, viewerId));
 
 	const art = $derived(instanceArt(lobby.instance));
 	const full = $derived(isFull(lobby.composition));
@@ -38,6 +41,7 @@
 			{#if relative}<span class="relative">{relative}</span>{/if}
 		</div>
 		<img src={art.icon} alt="" width="68" height="68" />
+		{#if pending}<span class="pending" data-testid="pending-badge">{pending}</span>{/if}
 	</div>
 	<div class="body">
 		<div class="title-row">
@@ -134,6 +138,20 @@
 		justify-content: space-between;
 		padding: 12px 14px 12px 17px;
 		overflow: hidden;
+	}
+	.pending {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		z-index: 1;
+		display: inline-flex;
+		align-items: center;
+		height: 22px;
+		padding: 0 8px;
+		border-radius: 999px;
+		background: var(--gold-400);
+		color: var(--on-accent);
+		font: 700 11px/1 var(--font-ui);
 	}
 	.full .cover {
 		filter: grayscale(0.85) brightness(0.8);

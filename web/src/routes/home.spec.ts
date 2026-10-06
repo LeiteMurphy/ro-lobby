@@ -128,7 +128,17 @@ describe('Home com login (spec login-discord)', () => {
 		expect(menu).toMatch(/<div[^>]*hidden/); // fechado até o Usuário abrir
 		expect(menu).toMatch(/<a href="\/perfil"[^>]*role="menuitem"[^>]*>[\s\S]*?Meu perfil/);
 		expect(menu.indexOf('Meu perfil')).toBeLessThan(menu.indexOf('Sair'));
-		expect(menu.match(/role="menuitem"/g)).toHaveLength(2);
+		expect(menu.match(/role="menuitem"/g)).toHaveLength(3);
+	});
+
+	it('CA-10.4 / RN-33 (candidatura-lobby): "Minhas candidaturas" fica entre "Meu perfil" e "Sair"', () => {
+		const html = renderHome(GRIMBOLD);
+		const menu = html.match(/<div[^>]*role="menu"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
+		expect(menu).toMatch(
+			/<a href="\/candidaturas"[^>]*role="menuitem"[^>]*>[\s\S]*?Minhas candidaturas/
+		);
+		expect(menu.indexOf('Meu perfil')).toBeLessThan(menu.indexOf('Minhas candidaturas'));
+		expect(menu.indexOf('Minhas candidaturas')).toBeLessThan(menu.indexOf('Sair'));
 	});
 
 	it('CA-02.2: sem nome de exibição, mostra o nome de usuário e a inicial dele', () => {
