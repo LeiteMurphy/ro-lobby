@@ -3,6 +3,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import type { SessionUser } from '$lib/auth/api';
+	import { createLobbyHref } from '$lib/lobbies/time';
 	import UserMenu from './UserMenu.svelte';
 
 	interface Props {
@@ -10,9 +11,12 @@
 		user: SessionUser | null;
 		/** Link de login que volta para a página atual (RN-12). */
 		loginHref: string;
+		/** Dia escolhido na Home; "Criar lobby" abre a criação nele (RN-24 da spec lobbies). */
+		createDate?: string | null;
 	}
 
-	let { user, loginHref }: Props = $props();
+	let { user, loginHref, createDate = null }: Props = $props();
+	const createHref = $derived(createLobbyHref(createDate));
 </script>
 
 <header class="topbar">
@@ -22,16 +26,9 @@
 	</a>
 	<div class="actions">
 		<!-- spec lobbies, RN-23: "Criar lobby" leva à criação; visitante passa pelo login. -->
-		<span class="desktop"
-			><Button iconLeft="plus" href={resolve('/lobbies/novo')}>Criar lobby</Button></span
-		>
+		<span class="desktop"><Button iconLeft="plus" href={createHref}>Criar lobby</Button></span>
 		<span class="mobile"
-			><IconButton
-				icon="plus"
-				label="Criar lobby"
-				variant="primary"
-				href={resolve('/lobbies/novo')}
-			/></span
+			><IconButton icon="plus" label="Criar lobby" variant="primary" href={createHref} /></span
 		>
 		{#if user}
 			<UserMenu {user} />

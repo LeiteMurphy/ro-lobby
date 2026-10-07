@@ -1,13 +1,16 @@
 <script lang="ts">
+	import { createLobbyHref } from '$lib/lobbies/time';
 	import Button from '$lib/ui/Button.svelte';
 
 	interface Props {
 		/** RN-17: 'day' = dia sem grupos; 'filters' = nenhum grupo passa nos filtros. */
 		kind: 'day' | 'filters';
 		onreset: () => void;
+		/** Dia escolhido na Home; a criação abre nele (RN-24 da spec lobbies). */
+		createDate?: string | null;
 	}
 
-	let { kind, onreset }: Props = $props();
+	let { kind, onreset, createDate = null }: Props = $props();
 </script>
 
 <div class="empty" data-testid="empty-state">
@@ -26,7 +29,8 @@
 		{#if kind === 'filters'}
 			<Button variant="secondary" onclick={onreset}>Limpar filtros</Button>
 		{/if}
-		<Button iconLeft="plus" soon>Criar lobby</Button>
+		<!-- RN-23 (lobbies): "Criar lobby" leva à criação, como o do cabeçalho. -->
+		<Button iconLeft="plus" href={createLobbyHref(createDate)}>Criar lobby</Button>
 	</div>
 </div>
 

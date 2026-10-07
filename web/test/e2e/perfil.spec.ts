@@ -297,6 +297,14 @@ test.describe('perfil e personagens', () => {
 		await expect(dialog(page)).toHaveCount(0);
 	});
 
+	test('RN-24 (lobbies): fora da Home, "Criar lobby" vai à criação sem dia', async ({ page }) => {
+		await loginAs(page, `o${rand()}`);
+		await page.goto('/perfil');
+		await expect(
+			page.getByRole('banner').getByRole('link', { name: 'Criar lobby' })
+		).toHaveAttribute('href', '/lobbies/novo');
+	});
+
 	test('RNF-02: /perfil não carrega nada de fora do servidor', async ({ page, baseURL }) => {
 		const s = rand();
 		await loginAs(page, `o${s}`);

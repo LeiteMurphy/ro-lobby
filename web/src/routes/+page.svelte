@@ -74,7 +74,7 @@
 </svelte:head>
 
 <div class="page">
-	<TopBar user={data.user} loginHref={data.loginHref} />
+	<TopBar user={data.user} loginHref={data.loginHref} createDate={day.date} />
 
 	{#if data.loginError}
 		<div class="login-error" role="alert">{LOGIN_ERROR_MESSAGE}</div>
@@ -141,7 +141,7 @@
 			</div>
 
 			{#if empty}
-				<EmptyState kind={empty} onreset={resetFilters} />
+				<EmptyState kind={empty} onreset={resetFilters} createDate={day.date} />
 			{:else}
 				<div class="grid">
 					{#each filtered as lobby (lobby.id)}

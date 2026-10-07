@@ -2,6 +2,7 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import { DAY_COUNTS, getHomeLobbies } from '$lib/home/fixtures';
 import { isFull, lobbiesForDay } from '$lib/home/lobbies';
+import EmptyState from '$lib/home/components/EmptyState.svelte';
 import Page from './+page.svelte';
 
 // 2026-09-30 19:40 UTC = 16:40 em São Paulo, como no design.
@@ -61,9 +62,10 @@ describe('Home renderizada no servidor', () => {
 		expect(html).not.toMatch(/aria-disabled="true"[^>]*>(?:\s|<[^>]+>)*Candidatar/);
 	});
 
-	it('CA-02.3 / CA-02.4 / RN-23 (lobbies): "Criar lobby" e "Ver grupo" levam às páginas de lobby', () => {
-		expect(html.match(/<a href="\/lobbies\/novo"[^>]*>[\s\S]*?Criar lobby/g)).toHaveLength(1);
-		expect(html).toMatch(/<a href="\/lobbies\/novo"[^>]*aria-label="Criar lobby"/);
+	it('CA-02.3 / CA-02.4 / CA-02.5 / RN-23 / RN-24 (lobbies): "Criar lobby" leva à criação no dia escolhido, e "Ver grupo" ao detalhe', () => {
+		const create = `/lobbies/novo?dia=${TODAY}`;
+		expect(html.split(`<a href="${create}"`).length - 1).toBe(2); // cabeçalho: desktop e celular
+		expect(html).toMatch(/<a href="\/lobbies\/novo\?dia=2026-09-30"[^>]*aria-label="Criar lobby"/);
 		for (const l of today) {
 			expect(html).toContain(`href="/lobbies/${l.id}"`);
 			expect(html).toContain(`aria-label="Ver grupo: ${l.instance} às ${l.time}"`);
@@ -152,5 +154,22 @@ describe('Home com login (spec login-discord)', () => {
 			/role="alert"[^>]*>Não foi possível entrar com o Discord\. Tente de novo\.</
 		);
 		expect(renderHome()).not.toContain('role="alert"');
+	});
+});
+
+describe('aviso de lista vazia', () => {
+	it('CA-02.3 / RN-23 (lobbies): "Criar lobby" funciona no dia vazio e nos filtros sem resultado', () => {
+		for (const kind of ['day', 'filters'] as const) {
+			const html = render(EmptyState, { props: { kind, onreset: () => {} } }).body;
+			expect(html).toMatch(/<a href="\/lobbies\/novo"[^>]*>(?:\s|<[^>]+>)*Criar lobby/);
+			expect(html).not.toContain('Disponível em breve');
+		}
+	});
+
+	it('CA-02.5 / RN-24 (lobbies): com o dia escolhido, "Criar lobby" abre a criação nele', () => {
+		const html = render(EmptyState, {
+			props: { kind: 'day', onreset: () => {}, createDate: '2026-10-09' }
+		}).body;
+		expect(html).toContain('href="/lobbies/novo?dia=2026-10-09"');
 	});
 });

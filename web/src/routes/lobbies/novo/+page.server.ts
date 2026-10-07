@@ -8,6 +8,7 @@ import { buildDays } from '$lib/home/days';
 import { zonedNow } from '$lib/home/time';
 import { createLobby, listInstances } from '$lib/lobbies/api';
 import { readLobbyForm, toLobbyInput, type LobbyFormValues } from '$lib/lobbies/form';
+import { defaultStart } from '$lib/lobbies/time';
 import { lobbyConflictMessage, lobbyFieldMessages } from '$lib/lobbies/messages';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -15,18 +16,22 @@ import type { Actions, PageServerLoad } from './$types';
 
 const PATH = '/lobbies/novo';
 
-export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
-	if (!locals.user) toLogin(cookies, PATH);
-	const call = sessionCall(cookies, fetch, PATH);
+export const load: PageServerLoad = async ({ locals, cookies, fetch, url }) => {
+	// RN-24: o dia escolhido na Home vem em ?dia= e sobrevive ao login.
+	const requested = url.searchParams.get('dia');
+	const back = requested ? `${PATH}?${new URLSearchParams({ dia: requested })}` : PATH;
+	if (!locals.user) toLogin(cookies, back);
+	const call = sessionCall(cookies, fetch, back);
 	const { apiBaseUrl } = authConfig();
 	const [characters, instances, classes] = await Promise.all([
 		listCharacters(call),
 		listInstances(fetch, apiBaseUrl),
 		listClasses(fetch, apiBaseUrl)
 	]);
-	if (!characters.ok && characters.kind === 'no_session') toLogin(cookies, PATH);
+	if (!characters.ok && characters.kind === 'no_session') toLogin(cookies, back);
 
-	const today = zonedNow(new Date()).date;
+	const now = zonedNow(new Date());
+	const today = now.date;
 	const days = buildDays(today, []).map((d) => ({
 		date: d.date,
 		label: d.today ? `Hoje, ${d.label}` : d.label
@@ -38,8 +43,11 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
 	const firstInstance = catalog.find((i) => main && i.level <= main.level) ?? catalog[0];
 	const values: LobbyFormValues = {
 		instanceId: firstInstance?.id ?? '',
-		date: days[1]?.date ?? today,
-		time: '20:00',
+		...defaultStart(
+			requested,
+			now,
+			days.map((d) => d.date)
+		),
 		tank: '1',
 		support: '2',
 		dps: '3',
@@ -54,7 +62,7 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
 		days,
 		values,
 		loadError: characters.ok && instances.ok ? null : UNAVAILABLE_MESSAGE,
-		loginHref: loginHref(new URL(PATH, 'http://web'))
+		loginHref: loginHref(new URL(back, 'http://web'))
 	};
 };
 
