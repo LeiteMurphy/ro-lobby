@@ -1,4 +1,5 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { loginAs, newPage, panel } from './pages';
 import {
 	acceptApplication,
 	apiLogin,
@@ -12,25 +13,6 @@ import {
 // Ponta a ponta da candidatura (spec candidatura-lobby, T-07), com o Discord falso, o banco
 // do ponta a ponta e três contas: dono, candidato e visitante. Os lobbies ficam nos dias 6
 // a 8, longe dos da Home (1 e 2) e dos lobbies (3 a 5).
-
-async function loginAs(page: Page, username: string, from: string) {
-	await page.goto(from);
-	if (!page.url().includes('/oauth2/authorize')) {
-		await page.getByRole('banner').getByRole('link', { name: 'Entrar com Discord' }).click();
-	}
-	await expect(page.getByRole('heading', { name: 'Discord falso' })).toBeVisible();
-	await page.getByLabel('Entrar como (opcional)').fill(username);
-	await page.getByRole('button', { name: 'Autorizar' }).click();
-	await page.waitForURL(
-		(url) => !url.href.includes('/oauth2/') && !url.pathname.startsWith('/auth/')
-	);
-}
-
-async function newPage(browser: Browser) {
-	return (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
-}
-
-const panel = (page: Page) => page.getByTestId('player-panel');
 
 test.describe('candidatura', () => {
 	test('CA-01.1 / CA-02.1 / CA-02.2 / CA-03.1 / CA-03.2 / CA-03.7 / CA-10.1 a CA-10.5: candidatar, decidir e acompanhar', async ({
@@ -130,7 +112,7 @@ test.describe('candidatura', () => {
 		await expect(panel(visitor)).toContainText('O Discord aparece para quem está no grupo.');
 		await expect(panel(visitor)).not.toContainText(`bia${s}`);
 		await bia.reload();
-		await expect(bia.getByTestId('my-application')).toContainText('Você está no grupo.');
+		await expect(bia.getByTestId('my-application')).toContainText('Você está no grupo');
 		await bia
 			.getByTestId('member-slot')
 			.filter({ hasText: `Bra${s}` })
