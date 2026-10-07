@@ -1,40 +1,50 @@
-# Relatório de validação — lobbies, correção do Criar lobby (ciclo 1)
+# Relatório de validação — lobbies, criar lobby a partir da Home (ciclo 2)
 
-**Veredito geral: APROVADO**
+- Feature: `lobbies` (ajustes da Home → criação; nível P)
+- Branch: `fix/criar-lobby-vazio` · Alterações: `main..fix/criar-lobby-vazio` (4 commits: 35de64f, 2f3ddb4, 3c88a12, d2952b5)
+- Itens em foco: RN-23, RN-24, CA-02.3, CA-02.5, CA-02.6 e RN-04
+- Data: 2026-10-06, por volta de 20:57 em Brasília (ou seja, já depois das 20:00, o caso real da CA-02.6)
 
-- Spec: `.specs/lobbies/spec.md`, itens RN-23, CA-02.3 e RN-04
-- Alterações: `main..fix/criar-lobby-vazio`, 1 commit (`35de64f fix(web): "Criar lobby" do aviso de lista vazia leva à criação [RN-23, CA-02.3]`), 3 arquivos, +23/−1
-- Nível: P (correção pontual)
-- Validado em 2026-10-06
+## Veredito geral: APROVADO
 
-## Execução
+Nenhum item ❌ ou 🚫. Ficam dois ⚠️ de cobertura e consistência, sem bloquear.
 
-Comandos rodados em `web/`, com o resultado real:
+## Execução (em `web/`)
 
 | Comando | Resultado |
 |---|---|
-| `npm test` (vitest) | 19 arquivos, 194 testes, todos passaram |
-| `npm run lint` (prettier + eslint) | sem erros ("All matched files use Prettier code style!", eslint sem saída) |
-| `npm run check` (svelte-check) | 487 arquivos, 0 erros, 0 avisos |
-| `npx playwright test home` | 14 testes, 14 passaram (22,0 s) |
+| `npm test` | 19 arquivos, 200 testes, todos passaram |
+| `npm run lint` | Prettier sem pendências, ESLint sem erros |
+| `npm run check` | 487 arquivos, 0 erros, 0 avisos |
+| `npx playwright test` | 40 testes passaram (30,6 s), com API e web subidas pelo próprio Playwright e PostgreSQL na 5432 |
 
 ## Itens
 
-| ID | Veredito | Evidência no código | Evidência no teste | Observação |
+| ID | Veredito | Evidência de código | Evidência de teste | Observação |
 |---|---|---|---|---|
-| RN-23 (todo "Criar lobby" da Home leva a `/lobbies/novo`) | ✅ | `web/src/lib/home/components/EmptyState.svelte:31`: o botão deixou de ser `soon` e virou `<Button iconLeft="plus" href={resolve('/lobbies/novo')}>`, sem condição por `kind`, então vale para `day` e para `filters`. Os outros dois já existiam: `TopBar.svelte:26` (desktop) e `TopBar.svelte:29-34` (`IconButton` no celular), ambos com `href={resolve('/lobbies/novo')}`. Não sobrou nenhum "Criar lobby" com `soon` em `web/src` fora dos exemplos de `ui.spec.ts`. | Unitário `web/src/routes/home.spec.ts:157-164`: renderiza `EmptyState` com `kind` `day` e `filters` e confere `<a href="/lobbies/novo" ...>Criar lobby` e a ausência de "Disponível em breve". E2E `web/test/e2e/home.spec.ts:207-212` (dia vazio): o link do aviso tem `href="/lobbies/novo"`. E2E `home.spec.ts:238-240` (filtros sem resultado): mesma asserção de `href`. Cabeçalho e ícone do celular: `home.spec.ts:73-75` (unitário) e `test/e2e/home.spec.ts:177-179` (já existiam). | O teste unitário renderiza o componente isolado, e o E2E confirma que o aviso aparece de fato na Home nos dois casos. |
-| CA-02.3 / RN-04 (visitante vai ao login e volta para a criação) | ✅ | O link aponta para `/lobbies/novo`, cujo `load` (`web/src/routes/lobbies/novo/+page.server.ts:18`) chama `toLogin(cookies, PATH)` sem sessão, com `PATH = '/lobbies/novo'`. O destino é o mesmo do botão do cabeçalho, então o retorno segue o mesmo caminho. | E2E `home.spec.ts:211-212`: clicar no "Criar lobby" do aviso de dia vazio leva a `/oauth2/authorize`. Volta para `/lobbies/novo` depois do login: `web/test/e2e/lobbies.spec.ts:76-85` (CA-02.3, já existia, pelo botão do cabeçalho). | Pelo aviso, o teste só confere a ida ao login. A volta não é testada a partir desse botão, mas a URL e o servidor são os mesmos do teste de `lobbies.spec.ts`, que confere a volta. Não bloqueia. |
-| Citação de IDs nos testes | ✅ | — | O nome do teste unitário cita `CA-02.3 / RN-23 (lobbies)`. Os trechos novos do E2E ficam dentro dos testes `CA-03.3` e `CA-04.7` (IDs da `home-local`) e citam `CA-02.3 / RN-23 (lobbies)` e `RN-04` em comentário (`home.spec.ts:207-208`). O commit cita `[RN-23, CA-02.3]`. | No E2E, o ID da lobbies aparece no comentário, não no nome do teste. Isso é aceitável, porque o teste continua sendo do critério da `home-local`. |
+| RN-23 / CA-02.3: "Criar lobby" da Home leva à criação (cabeçalho e aviso vazio) | ✅ | `TopBar.svelte` (desktop e celular usam `createHref`); `EmptyState.svelte` troca o botão `soon` por `href={createLobbyHref(createDate)}`; `+page.svelte` passa `createDate={day.date}` aos dois | `home.spec.ts` (unit): 2 links `/lobbies/novo?dia=<hoje>` no cabeçalho, um deles com `aria-label="Criar lobby"` (celular); EmptyState `day` e `filters` com link e sem "Disponível em breve". E2E `home.spec.ts:204-212` (dia vazio: href com o dia, o clique leva a `/oauth2/authorize`) e `:238-240` (filtros sem resultado: href com o dia) | — |
+| RN-24 (1): todo "Criar lobby" da Home leva o dia escolhido no seletor | ✅ | `createLobbyHref(date)` em `lib/lobbies/time.ts` monta `?dia=`; `day.date` vem do seletor (`selectedDate`, que começa em hoje) | Unit `lobbies.spec.ts` "RN-23 / RN-24: o link…"; `home.spec.ts` CA-02.5 (EmptyState com `createDate`). E2E `home.spec.ts:178-179` (aba 1 → cabeçalho com `spDay(1)`), `:210` (aviso de dia vazio com `spDay(index)`), `:240` (aviso de filtros com `spDay(1)`) | Os três pontos (cabeçalho desktop/celular, dia sem grupos, filtros sem resultado) têm asserção de href com o dia |
+| CA-02.5: criação abre com o dia escolhido e 20:00 | ✅ | `novo/+page.server.ts`: lê `url.searchParams.get('dia')` e aplica `defaultStart(requested, now, days)` | Unit `lobbies.spec.ts`: `defaultStart('2026-10-09', 16:40)` → `{2026-10-09, 20:00}`. Server `lobbies.server.spec.ts`: `?dia=<days[5]>` → `values = {date: escolhido, time: '20:00'}`. E2E `lobbies.spec.ts:90-100`: aba 9 → clique no cabeçalho → URL `?dia=spDay(9)`, campo Dia = `spDay(9)`, Hora = `20:00` | Comprova o Then de ponta a ponta |
+| RN-24 (2): dia fora dos 14 → amanhã; sem dia → amanhã | ✅ | `defaultStart`: `requested && days.includes(requested) ? requested : tomorrow` (`tomorrow = days[1]`) | Unit: `null` → `2026-10-07`; `2026-12-25` → `2026-10-07`. Server: `?dia=2000-01-01` → mesmo dia do padrão sem parâmetro | — |
+| CA-02.6: hoje com 20:00 passado → próxima hora cheia; depois das 23:00 → amanhã 20:00 | ✅ | `defaultStart`: `now.minutes < 20:00` → 20:00; senão `floor(min/60)+1`; `> 23` → `{tomorrow, 20:00}` | Unit `lobbies.spec.ts` "CA-02.6 / RN-24": 16:40 → 20:00; 19:59 → 20:00; 20:00 → 21:00; 20:40 → 21:00 (Then); 22:59 → 23:00; 23:10 → amanhã 20:00 (And) | Bordas cobertas, exceto 23:00 exatas (o código dá amanhã 20:00, coerente com "não sobra hora cheia hoje"). O Then só é provado em unidade: o `load` usa `new Date()` e o teste de servidor não fixa o relógio, o que é aceitável |
+| RN-24 (3) / RN-04: visitante passa pelo login e volta com o dia | ⚠️ | `novo/+page.server.ts`: `back = /lobbies/novo?dia=…`; `toLogin(cookies, back)`, `sessionCall(…, back)` e `loginHref(back)` | Server: visitante com `?dia=2026-10-09` → redirect a `/auth/discord/login?next=%2Flobbies%2Fnovo%3Fdia%3D2026-10-09`. E2E `lobbies.spec.ts:80-84`: visitante usa o cabeçalho, autoriza e volta para `/lobbies/novo?dia=spDay(0)` | O caso pedido está atendido. Ressalva: a linha 31, `if (!characters.ok && characters.kind === 'no_session') toLogin(cookies, PATH)`, ainda usa `PATH`. Com sessão expirada (cookie presente, API recusa), o dia se perde na volta |
+| RN-24 (4): fora da Home, "Criar lobby" vai a `/lobbies/novo` sem dia | ⚠️ | `TopBar` tem `createDate = null` por padrão; `+error`, `/perfil`, `/lobbies/novo`, `/lobbies/[id]` e `/lobbies/[id]/editar` não passam `createDate`, e `createLobbyHref(null)` dá `/lobbies/novo` | Unit: `createLobbyHref(null)` → `/lobbies/novo`; `defaultStart(null)` → amanhã 20:00 | Comportamento correto pelo código. Falta um teste que renderize o TopBar numa página fora da Home (ex.: `/perfil`) e confirme o href sem `?dia=` |
+| Scope creep | ✅ | O diff toca só a spec (RN-24, CA-02.5, CA-02.6 e a linha de revisão), o relatório do ciclo 1, TopBar, EmptyState, `time.ts`, `+page.svelte`, `novo/+page.server.ts` e os testes | — | Nada fora do pedido |
+| IDs nos testes | ✅ | — | Todos os testes novos ou alterados citam o ID: CA-02.3, CA-02.5, CA-02.6, RN-23, RN-24 | — |
+| Testes, lint, tipos, E2E | ✅ | — | Veja "Execução" | — |
 
-## Pendências
+## Pendências (não bloqueiam)
 
-Nenhuma.
+1. `web/src/routes/lobbies/novo/+page.server.ts:31`: trocar `toLogin(cookies, PATH)` por `toLogin(cookies, back)`, para a sessão expirada também voltar com o dia (RN-24, "o visitante passa pelo login e volta com o dia preenchido").
+2. Teste de que o "Criar lobby" fora da Home (ex.: `/perfil` ou o detalhe) aponta para `/lobbies/novo` sem `?dia=` (RN-24, "Fora da Home…").
+3. Opcional: incluir 23:00 exatas no teste unitário da CA-02.6.
 
 ## Scope creep
 
-Nenhum. O diff mexe só no botão do aviso de lista vazia (1 import e 1 linha trocada, mais o comentário com o ID) e nos testes desse comportamento. Não há mudança de backend, contrato, estilo nem de outros componentes.
+Nenhum.
 
 ## Observações
 
-- Fora do diff e sem efeito no veredito: o comentário em `web/src/routes/perfil/page.spec.ts:111` ainda fala do "aria-disabled de 'Criar lobby'", comportamento que não existe mais desde a RN-23. Vale ajustar numa próxima mexida.
-- A suíte E2E `lobbies` não foi rodada neste ciclo, porque o escopo pedia `playwright test home`. A volta do login para `/lobbies/novo` foi confirmada pela leitura do teste existente (`lobbies.spec.ts:76-85`), que não foi alterado.
+- O parâmetro `dia` é revalidado no servidor contra os 14 dias (`days.includes`), e o retorno do login é montado com `URLSearchParams` sobre um caminho fixo. Um valor arbitrário não abre redirecionamento externo e não preenche data inválida.
+- A Home e a criação calculam os 14 dias com o mesmo `buildDays(today, …)`, então qualquer aba do seletor é aceita na criação. Se a Home ficou aberta de um dia para o outro, o dia de ontem cai no padrão (amanhã), que é o comportamento definido.
+- A validação rodou às 20:57 de Brasília, e a suíte E2E passou nesse horário (o padrão de hoje já era 21:00). O CA-01.1 E2E entra pela Home em hoje e não quebrou. Depois das 23:00, o padrão desse fluxo passa a ser amanhã, e vale observar se algum E2E assume "hoje" no formulário.
