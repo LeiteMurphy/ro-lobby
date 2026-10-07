@@ -20,7 +20,7 @@ func TestHealthzIntegration_CA02_1_DatabaseAvailable(t *testing.T) {
 	}
 	defer pool.Close()
 
-	rec, _ := get(t, New(pool, nil, nil, nil), http.MethodGet)
+	rec, _ := get(t, New(pool, nil, nil, nil, nil), http.MethodGet)
 	assertBody(t, rec, http.StatusOK, map[string]string{"status": "ok", "database": "ok"})
 }
 
@@ -33,7 +33,7 @@ func TestHealthzIntegration_CA02_2_DatabaseDown(t *testing.T) {
 	}
 	defer pool.Close()
 
-	rec, took := get(t, New(pool, nil, nil, nil), http.MethodGet)
+	rec, took := get(t, New(pool, nil, nil, nil, nil), http.MethodGet)
 	assertBody(t, rec, http.StatusServiceUnavailable, map[string]string{"status": "degraded", "database": "unavailable"})
 	if took > 3*time.Second {
 		t.Errorf("resposta levou %s, esperado até 3s", took)

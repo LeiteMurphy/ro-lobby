@@ -54,3 +54,13 @@ export function featuredLobby(dayLobbies: readonly Lobby[], now: ZonedNow): Lobb
 		) ?? null
 	);
 }
+
+/**
+ * RN-34 da candidatura-lobby: o selo "N pendentes" aparece só para o dono do lobby, e só
+ * quando há pendentes. Devolve o texto do selo ou nulo.
+ */
+export function pendingFor(lobby: Lobby, viewerId: string | null | undefined): string | null {
+	const n = lobby.pendingCount ?? 0;
+	if (!viewerId || viewerId !== lobby.ownerId || n < 1) return null;
+	return n === 1 ? '1 pendente' : `${n} pendentes`;
+}

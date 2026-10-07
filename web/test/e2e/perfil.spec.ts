@@ -81,7 +81,7 @@ test.describe('perfil e personagens', () => {
 		await loginAs(page, `m${rand()}`, '/');
 		await page.getByRole('button', { name: /^Menu de / }).click();
 		const items = page.getByRole('menuitem');
-		await expect(items).toHaveText(['Meu perfil', 'Sair']);
+		await expect(items).toHaveText(['Meu perfil', 'Minhas candidaturas', 'Sair']);
 		await page.getByRole('menuitem', { name: 'Meu perfil' }).click();
 		await expect(page).toHaveURL('/perfil');
 	});

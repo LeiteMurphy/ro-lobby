@@ -4,6 +4,8 @@ import type { components } from './schema.gen';
 
 export type FieldError = components['schemas']['FieldError'];
 export type ApiErrorCode = components['schemas']['Error']['error'];
+/** Código de uma regra de candidatura no 409 `application_rule` (candidatura-lobby D-07). */
+export type ApplicationRuleCode = components['schemas']['ApplicationRuleError']['code'];
 
 const TIMEOUT_MS = 6000;
 
@@ -13,7 +15,7 @@ const TIMEOUT_MS = 6000;
  *   login);
  * - `not_found`: não existe ou é de outro Usuário;
  * - `conflict`: 409, com o código do erro (limite atingido, lobby fechado, personagem num
- *   lobby aberto);
+ *   lobby aberto) e, nas candidaturas, o código da regra em `rule`;
  * - `bad_request`: 400, com o código do erro;
  * - `invalid`: erros de campo;
  * - `unavailable`: a API não respondeu ou respondeu algo inesperado.
@@ -21,7 +23,12 @@ const TIMEOUT_MS = 6000;
 export type Result<T> =
 	| { ok: true; data: T }
 	| { ok: false; kind: 'no_session' | 'not_found' | 'unavailable' }
-	| { ok: false; kind: 'conflict' | 'bad_request'; code: ApiErrorCode | undefined }
+	| {
+			ok: false;
+			kind: 'conflict' | 'bad_request';
+			code: ApiErrorCode | undefined;
+			rule?: ApplicationRuleCode;
+	  }
 	| { ok: false; kind: 'invalid'; fields: FieldError[] };
 
 export interface Call {
@@ -64,7 +71,13 @@ export async function request<T>(
 				return { ok: false, kind: 'not_found' };
 			case 400:
 			case 409: {
-				const parsed = (await res.json().catch(() => ({}))) as { error?: ApiErrorCode };
+				const parsed = (await res.json().catch(() => ({}))) as {
+					error?: ApiErrorCode | 'application_rule';
+					code?: ApplicationRuleCode;
+				};
+				if (parsed.error === 'application_rule') {
+					return { ok: false, kind: 'conflict', code: undefined, rule: parsed.code };
+				}
 				return {
 					ok: false,
 					kind: res.status === 409 ? 'conflict' : 'bad_request',

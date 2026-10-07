@@ -122,9 +122,11 @@ describe('/lobbies/[id] renderizada no servidor', () => {
 		render(Detalhe, {
 			props: {
 				data: {
-					user: isOwner ? { id: 'u', username: 'ana', globalName: null } : null,
+					user: isOwner ? { id: TEMPLE.owner.userId, username: 'ana', globalName: null } : null,
 					lobby: { ...TEMPLE, ...lobby },
 					ownerClass: 'Arcebispo',
+					classNames: { arcebispo: 'Arcebispo' },
+					characters: [],
 					isOwner,
 					now: '2026-10-06T19:40:00.000Z',
 					loginHref: '/'
@@ -149,7 +151,7 @@ describe('/lobbies/[id] renderizada no servidor', () => {
 		expect(html).toContain('Grimbold');
 	});
 
-	it('CA-03.3 / RN-16: o dono vê Editar e Cancelar; os outros, Candidatar em breve', () => {
+	it('CA-03.3 / RN-16: o dono vê Editar e Cancelar; sem sessão, entrar para se candidatar', () => {
 		const owner = renderDetail({}, true);
 		expect(owner).toContain(`href="/lobbies/${TEMPLE.id}/editar"`);
 		expect(owner).toContain('Editar');
@@ -157,8 +159,8 @@ describe('/lobbies/[id] renderizada no servidor', () => {
 		expect(owner).not.toContain('Candidatar');
 		const other = renderDetail({}, false);
 		expect(other).not.toContain('Cancelar lobby');
-		expect(other).toMatch(/aria-disabled="true"[^>]*>[\s\S]*?Candidatar/);
-		expect(other).toContain('Disponível em breve');
+		expect(other).toContain('Entrar para se candidatar');
+		expect(other).not.toContain('Disponível em breve');
 	});
 
 	it('CA-05.1 / RN-19: cancelado mostra o selo e o motivo, sem ações', () => {
@@ -183,5 +185,112 @@ describe('/lobbies/[id] renderizada no servidor', () => {
 		);
 		expect(html).toContain('Personagem excluído');
 		expect(html).toMatch(/data-testid="lobby-status"[^>]*>\s*Iniciado/);
+	});
+});
+
+describe('/lobbies/[id] com candidaturas (candidatura-lobby, T-05)', () => {
+	const MEMBER = {
+		applicationId: 'a1',
+		userId: 'u-bia',
+		discordName: null,
+		characterId: 'c-brasa',
+		nick: 'Brasa',
+		classId: 'guardiao-real',
+		level: 200,
+		portrait: 'retrato-3',
+		link: null,
+		role: 'tank',
+		message: null,
+		createdAt: '2026-10-06T20:10:00Z'
+	};
+	const CANDIDATE = {
+		...MEMBER,
+		applicationId: 'a2',
+		nick: 'Fogo',
+		role: 'dps',
+		discordName: 'Caio',
+		message: 'tenho buff'
+	};
+	const BASE = {
+		occupied: { tank: 1, support: 1, dps: 0 },
+		members: [MEMBER],
+		pendingCount: 2
+	};
+	const renderAs = (userId: string | null, lobby: Record<string, unknown>) =>
+		render(Detalhe, {
+			props: {
+				data: {
+					user: userId ? { id: userId, username: 'x', globalName: null } : null,
+					lobby: { ...TEMPLE, ...BASE, ...lobby },
+					ownerClass: 'Arcebispo',
+					classNames: { 'guardiao-real': 'Guardião Real' },
+					characters: [],
+					isOwner: userId === TEMPLE.owner.userId,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body;
+	const mine = (status: string, reason: string | null = null) => ({
+		myApplication: {
+			id: 'm1',
+			characterId: 'c',
+			role: 'dps',
+			message: null,
+			status,
+			reason,
+			createdAt: '',
+			decidedAt: null
+		}
+	});
+
+	it('CA-02.1 / CA-10.1: o membro aceito ocupa a vaga e é um botão do painel', () => {
+		const html = renderAs(null, {});
+		expect(html).toMatch(
+			/<button[^>]*data-testid="member-slot"[\s\S]*?Brasa[\s\S]*?Guardião Real · Nv 200/
+		);
+		expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*data-testid="owner-slot"/);
+		expect(html.match(/Vaga aberta/g)).toHaveLength(4);
+		expect(html).toContain('data-testid="player-panel"');
+	});
+
+	it('CA-03.7 / CA-10.3 / RN-28: o terceiro vê só a quantidade; o dono vê os candidatos e o selo', () => {
+		const other = renderAs('u-duda', {});
+		expect(other).toMatch(/data-testid="pending-count"[^>]*>\s*2\s*candidaturas pendentes/);
+		expect(other).not.toContain('data-testid="pending-list"');
+		expect(other).not.toContain('data-testid="pending-badge"');
+		const owner = renderAs(TEMPLE.owner.userId, { pending: [CANDIDATE], pendingCount: 1 });
+		expect(owner).toMatch(/data-testid="pending-badge"[^>]*>\s*1 pendente/);
+		expect(owner).toMatch(/data-testid="pending-list"[\s\S]*?data-testid="candidate"[\s\S]*?Fogo/);
+		expect(owner).toContain('só você vê');
+	});
+
+	it('CA-01.1: com sessão e sem candidatura, o botão Candidatar abre o diálogo', () => {
+		const html = renderAs('u-duda', {});
+		expect(html).toMatch(/<button[^>]*>[\s\S]*?Candidatar<\/span>|>\s*Candidatar\s*</);
+		expect(html).not.toContain('Entrar para se candidatar');
+		expect(html).not.toContain('data-testid="my-application"');
+	});
+
+	it('CA-03.2 / RN-13: pendente mostra o aviso e o botão de retirar, sem Candidatar', () => {
+		const html = renderAs('u-duda', mine('pending'));
+		expect(html).toMatch(/data-testid="my-application"[\s\S]*?pendente/);
+		expect(html).toMatch(/action="\?\/withdraw"[\s\S]*?value="m1"[\s\S]*?Retirar candidatura/);
+		expect(html).not.toMatch(/>\s*Candidatar\s*</);
+	});
+
+	it('CA-03.8 / RN-29: recusada mostra a justificativa a quem se candidatou, sem Candidatar', () => {
+		const html = renderAs('u-duda', mine('rejected', 'já temos dano'));
+		expect(html).toContain('Sua candidatura foi recusada.');
+		expect(html).toContain('Justificativa: já temos dano');
+		expect(html).not.toMatch(/>\s*Candidatar\s*</);
+	});
+
+	it('CA-02.1: aceita mostra que está no grupo', () => {
+		const html = renderAs('u-duda', mine('accepted'));
+		expect(html).toContain('Você está no grupo.');
+		expect(html).not.toContain('Retirar candidatura');
 	});
 });

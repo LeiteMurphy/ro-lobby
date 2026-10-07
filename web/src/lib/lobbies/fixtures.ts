@@ -13,6 +13,7 @@ export const TEMPLE: ApiLobby = {
 	status: 'open',
 	slots: { tank: 1, support: 2, dps: 3 },
 	occupied: { tank: 0, support: 1, dps: 0 },
+	pendingCount: 0,
 	minLevel: 160,
 	note: null,
 	owner: {
@@ -23,6 +24,7 @@ export const TEMPLE: ApiLobby = {
 		classId: 'arcebispo',
 		level: 178,
 		portrait: 'retrato-2',
+		link: null,
 		role: 'support'
 	},
 	cancelReason: null,

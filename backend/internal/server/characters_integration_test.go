@@ -55,7 +55,7 @@ func TestCharactersFlowIntegration_CA02_3_CA03_3_CA04_3(t *testing.T) {
 		return token
 	}
 	ana, bia := session("1"), session("2")
-	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), nil)
+	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), nil, nil)
 
 	// CA-02.1: o primeiro personagem nasce principal.
 	rec, brasa := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"Brasa","classId":"guardiao-real","level":172,"role":"tank"}`)

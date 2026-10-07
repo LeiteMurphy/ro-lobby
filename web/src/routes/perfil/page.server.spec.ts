@@ -169,10 +169,11 @@ describe('actions de /perfil', () => {
 		expect(result).toMatchObject({ status: 409, data: { message: 'Você já tem 10 personagens' } });
 	});
 
-	it('CA-06.4 / RN-21 (lobbies): personagem dono de lobby aberto mostra o aviso ao excluir ou mudar a função', async () => {
+	it('CA-06.4 / RN-21 (lobbies), CA-09.1 / CA-09.3 / RN-25: personagem num lobby aberto mostra o aviso ao excluir ou mudar nível ou função', async () => {
 		const blocked = json(409, { error: 'character_in_open_lobby' });
 		const { fn } = fakeFetch({ 'DELETE /characters/c1': blocked, 'PUT /characters/c1': blocked });
-		const message = 'Esse personagem está num lobby aberto. Cancele o lobby antes.';
+		const message =
+			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função.';
 		expect(
 			await actions.delete(actionEvent(form({ id: 'c1' }), fakeCookies('t'), fn))
 		).toMatchObject({

@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/applications"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/auth"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/characters"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/config"
@@ -57,7 +58,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           server.New(pool, authService, characterService, lobbyService),
+		Handler:           server.New(pool, authService, characterService, lobbyService, applications.NewService(pool)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

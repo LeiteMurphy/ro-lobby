@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import Button from '$lib/ui/Button.svelte';
 	import { instanceArt } from '../catalog';
+	import { pendingFor } from '../lobbies';
 	import type { Lobby } from '../types';
 	import HostLine from './HostLine.svelte';
 	import RoleComposition from './RoleComposition.svelte';
@@ -9,9 +10,12 @@
 	interface Props {
 		lobby: Lobby;
 		relative: string;
+		/** Usuário da sessão; o dono vê o selo de pendentes (RN-34 da candidatura-lobby). */
+		viewerId?: string | null;
 	}
 
-	let { lobby, relative }: Props = $props();
+	let { lobby, relative, viewerId = null }: Props = $props();
+	const pending = $derived(pendingFor(lobby, viewerId));
 	const art = $derived(instanceArt(lobby.instance));
 </script>
 
@@ -26,12 +30,16 @@
 				<span class="rule"></span>
 				<span class="time">{lobby.time}</span>
 				{#if relative}<span class="relative">{relative}</span>{/if}
+				{#if pending}<span class="pending" data-testid="pending-badge">{pending}</span>{/if}
 			</div>
 			<h2>{lobby.instance}</h2>
 			<HostLine host={lobby.host} hostClass={lobby.hostClass} minLevel={lobby.minLevel} size="lg" />
 			<RoleComposition composition={lobby.composition} showTotal showBar />
 			<div class="actions">
-				<Button size="lg" iconLeft="user-plus" soon>Candidatar</Button>
+				<!-- RN-35 da candidatura-lobby: a candidatura acontece no detalhe do lobby. -->
+				<Button size="lg" iconLeft="user-plus" href={resolve('/lobbies/[id]', { id: lobby.id })}
+					>Candidatar</Button
+				>
 				<!-- spec lobbies, RN-23: "Ver grupo" abre o detalhe. -->
 				<Button size="lg" variant="secondary" href={resolve('/lobbies/[id]', { id: lobby.id })}
 					>Ver grupo</Button
@@ -42,6 +50,16 @@
 </section>
 
 <style>
+	.pending {
+		display: inline-flex;
+		align-items: center;
+		height: 22px;
+		padding: 0 8px;
+		border-radius: 999px;
+		background: var(--gold-400);
+		color: var(--on-accent);
+		font: 700 11px/1 var(--font-ui);
+	}
 	.hero {
 		position: relative;
 		border-radius: var(--radius-xl);

@@ -192,10 +192,10 @@ test.describe('lobbies', () => {
 		});
 		const url = `/lobbies/${lobby.id}`;
 
-		// CA-03.3: outra conta vê "Candidatar" em breve e nenhuma ação do dono.
+		// CA-03.3: outra conta vê "Candidatar" (candidatura-lobby) e nenhuma ação do dono.
 		const other = await newPage(browser);
 		await loginAs(other, `oth${s}`, url);
-		await expect(other.getByRole('button', { name: 'Candidatar' })).toBeDisabled();
+		await expect(other.getByRole('button', { name: 'Candidatar' })).toBeEnabled();
 		await expect(other.getByRole('link', { name: 'Editar' })).toHaveCount(0);
 		await expect(other.getByRole('button', { name: 'Cancelar lobby' })).toHaveCount(0);
 		await other.goto(`${url}/editar`);
@@ -207,7 +207,7 @@ test.describe('lobbies', () => {
 		await page.getByRole('menuitem', { name: 'Excluir' }).click();
 		await page.getByTestId('confirm-dialog').getByRole('button', { name: 'Excluir' }).click();
 		await expect(page.getByRole('alert')).toHaveText(
-			'Esse personagem está num lobby aberto. Cancele o lobby antes.'
+			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função.'
 		);
 		await expect(page.getByTestId('character-card')).toHaveCount(1);
 
