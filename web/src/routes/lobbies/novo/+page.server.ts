@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch, url }) => {
 		listInstances(fetch, apiBaseUrl),
 		listClasses(fetch, apiBaseUrl)
 	]);
-	if (!characters.ok && characters.kind === 'no_session') toLogin(cookies, PATH);
+	if (!characters.ok && characters.kind === 'no_session') toLogin(cookies, back);
 
 	const now = zonedNow(new Date());
 	const today = now.date;

@@ -148,6 +148,20 @@ describe('/lobbies/novo', () => {
 		expect(outside.values.date).toBe(first.values.date);
 	});
 
+	it('CA-02.3 / RN-24: sessão recusada pela API também volta do login com o dia', async () => {
+		const { fn } = fakeFetch({
+			'GET /characters': json(401, { error: 'no_session' }),
+			'GET /instances': json(200, INSTANCES),
+			'GET /classes': json(200, [])
+		});
+		const e = await thrown(() =>
+			novo.load(novoLoad(ANA, fakeCookies('vencido'), fn, '?dia=2026-10-09'))
+		);
+		expect(isRedirect(e) && e.location).toBe(
+			`/auth/discord/login?next=${encodeURIComponent('/lobbies/novo?dia=2026-10-09')}`
+		);
+	});
+
 	it('CA-02.3 / RN-24: o visitante volta do login com o dia', async () => {
 		const e = await thrown(() =>
 			novo.load(novoLoad(null, fakeCookies(), fakeFetch({}).fn, '?dia=2026-10-09'))

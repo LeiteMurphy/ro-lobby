@@ -169,6 +169,10 @@ describe('início padrão da criação', () => {
 			date: '2026-10-06',
 			time: '23:00'
 		});
+		expect(defaultStart('2026-10-06', at(23, 0), DAYS)).toEqual({
+			date: '2026-10-07',
+			time: '20:00'
+		});
 		expect(defaultStart('2026-10-06', at(23, 10), DAYS)).toEqual({
 			date: '2026-10-07',
 			time: '20:00'
