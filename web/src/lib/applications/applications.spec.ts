@@ -209,7 +209,7 @@ describe('painel do jogador', () => {
 	it('CA-10.3: candidato para o dono, com Discord, mensagem, Aceitar e Recusar', () => {
 		const html = panel(AS_OWNER, 'a2', true);
 		expect(html).toContain('Candidato');
-		expect(html).toMatch(/Dano[\s\S]{0,20}· pendente desde 17:10/);
+		expect(html.replace(/<!--[\s\S]*?-->/g, '')).toContain('Dano · pendente desde 17:10');
 		expect(html).toMatch(/Discord<\/span>\s*<b[^>]*>Caio<\/b>/);
 		expect(html).toContain('tenho buff de ASPD');
 		expect(html).toMatch(/action="\?\/accept"[\s\S]*name="applicationId" value="a2"/);
