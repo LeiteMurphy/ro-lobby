@@ -140,7 +140,7 @@ Os 44 critérios da Parte 1 estão cobertos.
 
 ## US-05 a US-08 — Base no backend
 
-### T-09 — Tabelas de pedido de troca e bloqueio  [ ]
+### T-09 — Tabelas de pedido de troca e bloqueio  [x]
 - Cobre: RN-15, RN-18, RN-20 (um pedido pendente), RN-24, D-08, D-09
 - Depende de: —
 - Arquivos: `backend/migrations/00006_swap_requests.sql`, `backend/queries/applications.sql`,
@@ -148,10 +148,10 @@ Os 44 critérios da Parte 1 estão cobertos.
 - Pronto quando: a migração aplica e reverte; testes de integração provam
   `applications.blocked` com padrão `false`, o pedido pendente único por candidatura, os
   `CHECK` de estado, motivo e justificativa, e o histórico em `swap_request_events`.
-- Commit:
+- Commit: 0e1afdd
 - Notion: https://app.notion.com/p/3f2d4a3a5eff810ab699fec4fc4e659a
 
-### T-10 — Sair do grupo, remover membro e bloqueio  [ ]
+### T-10 — Sair do grupo, remover membro e bloqueio  [x]
 - Cobre: US-05, US-06, RN-07, RN-09, RN-14, RN-15, RN-37, CA-05.1 a CA-05.4, CA-06.1 a
   CA-06.7, CA-08.10, D-09, D-10
 - Depende de: T-09
@@ -161,10 +161,10 @@ Os 44 critérios da Parte 1 estão cobertos.
   pendente cancelado na mesma transação, a nova candidatura depois de sair ou de ser
   removido sem bloqueio, o erro `blocked` só no lobby do bloqueio e saída concorrente com
   remoção.
-- Commit:
+- Commit: 118aee3
 - Notion: https://app.notion.com/p/3f2d4a3a5eff812182c3e8648404ec3c
 
-### T-11 — Troca do dono e pedidos de troca do membro  [ ]
+### T-11 — Troca do dono e pedidos de troca do membro  [x]
 - Cobre: US-07, US-08, RN-11, RN-16, RN-19 a RN-24, RN-27, RN-36, CA-07.1 a CA-07.6,
   CA-08.1 a CA-08.9, CA-08.11 a CA-08.13, D-10, D-11, D-12
 - Depende de: T-10 (mesmo pacote)
@@ -175,10 +175,10 @@ Os 44 critérios da Parte 1 estão cobertos.
   pedido com cada erro (motivo, segundo pendente, personagem de outro, nível no pedido e no
   aceite, vaga e conflito no aceite, pedido de outro); aceite concorrente com outro aceite
   na mesma vaga; pedido expirado pelo início e pelo cancelamento do lobby; histórico.
-- Commit:
+- Commit: 9dec763
 - Notion: https://app.notion.com/p/3f2d4a3a5eff813fbe17e7d00ca41d65
 
-### T-12 — Travas do personagem com pedido de troca  [P] [ ]
+### T-12 — Travas do personagem com pedido de troca  [P] [x]
 - Cobre: RN-25, RN-26, CA-09.1 a CA-09.4 (com pedido pendente)
 - Depende de: T-09
 - Paralelizável: [P] com T-10 e T-11 (pacote `characters` e a consulta da trava)
@@ -187,10 +187,10 @@ Os 44 critérios da Parte 1 estão cobertos.
 - Pronto quando: testes de integração provam que o personagem pedido numa troca pendente
   não muda nível nem função e não é excluído, e que fica livre depois do pedido recusado,
   retirado ou expirado.
-- Commit:
+- Commit: 3f6f517
 - Notion: https://app.notion.com/p/3f2d4a3a5eff819b8e5ddd2a0a7cd7a4
 
-### T-13 — Contrato e rotas da Parte 2, e o detalhe com pedidos e bloqueio  [ ]
+### T-13 — Contrato e rotas da Parte 2, e o detalhe com pedidos e bloqueio  [x]
 - Cobre: RN-28, RN-32, CA-05.1, CA-06.1, CA-06.3, CA-07.5, CA-08.1, CA-08.5, CA-08.12,
   D-12, D-13 e os endpoints do P2.5
 - Depende de: T-11, T-12
@@ -200,12 +200,12 @@ Os 44 critérios da Parte 1 estão cobertos.
   `Lobby` e `myApplication.swapRequest`/`blocked`; testes das rotas passam para cada papel
   (dono, membro, outro membro, visitante) e cada erro (401, 404, 409 com código, 422); os
   pedidos de troca só aparecem para o dono.
-- Commit:
+- Commit: 9eddae6
 - Notion: https://app.notion.com/p/3f2d4a3a5eff810bb6dec80598835a35
 
 ## US-05, US-06, US-08 — Tela do membro
 
-### T-14 — Aviso do membro, bloqueado e "Minhas candidaturas"  [ ]
+### T-14 — Aviso do membro, bloqueado e "Minhas candidaturas"  [x]
 - Cobre: RN-38, CA-05.5, CA-06.8 (visão do removido), CA-08.14 (visão do membro)
 - Depende de: T-13
 - Arquivos: `web/src/lib/applications/`, `web/src/routes/lobbies/[id]/`,
@@ -215,12 +215,12 @@ Os 44 critérios da Parte 1 estão cobertos.
   pendente para X" com "Retirar pedido", o aviso de bloqueado sem "Candidatar", "Sair do
   grupo" e os estados "Saiu" e "Removida" com justificativa em "Minhas candidaturas", e
   as mensagens dos códigos novos.
-- Commit:
+- Commit: a2867a5
 - Notion: https://app.notion.com/p/3f2d4a3a5eff8197bc3cddaf7b39f72e
 
 ## US-06, US-07, US-08 — Tela do dono
 
-### T-15 — Remover, trocar o próprio personagem e decidir pedidos de troca  [ ]
+### T-15 — Remover, trocar o próprio personagem e decidir pedidos de troca  [x]
 - Cobre: RN-38, CA-06.8 (visão do dono), CA-07.1 (tela), CA-08.14 (visão do dono)
 - Depende de: T-14 (mesmas páginas)
 - Arquivos: `web/src/lib/applications/components/`, `web/src/routes/lobbies/[id]/`
@@ -228,12 +228,12 @@ Os 44 critérios da Parte 1 estão cobertos.
   com justificativa e "Bloquear neste lobby"), "Trocar personagem" no próprio card
   (`SwapDialog` no modo dono), o bloco "Pedidos de troca" e o painel do pedido com o
   personagem atual, o novo, o motivo, "Aceitar" e "Recusar".
-- Commit:
+- Commit: b39784a
 - Notion: https://app.notion.com/p/3f2d4a3a5eff816faefefacc83680c30
 
 ## US-05 a US-08 — Ponta a ponta
 
-### T-16 — Ponta a ponta da Parte 2 com dono, membro e removido  [ ]
+### T-16 — Ponta a ponta da Parte 2 com dono, membro e removido  [x]
 - Cobre: CA-05.5, CA-06.8, CA-07.1, CA-08.14, CA-05.4, RN-31 (teclado)
 - Depende de: T-15
 - Arquivos: `web/test/e2e/candidatura.spec.ts`, `web/test/e2e/seed.ts`
@@ -241,7 +241,7 @@ Os 44 critérios da Parte 1 estão cobertos.
   bloqueio e o aviso do removido no detalhe e em "Minhas candidaturas"; o dono trocar o
   próprio personagem; o membro pedir troca, o dono ver e aceitar, e o membro retirar outro
   pedido.
-- Commit:
+- Commit: 3b5d28b
 - Notion: https://app.notion.com/p/3f2d4a3a5eff81b39c98d42470aca832
 
 ## Matriz de cobertura (Parte 2)
@@ -261,3 +261,16 @@ Os 44 critérios da Parte 1 estão cobertos.
 | CA-09.1 a CA-09.4 (pedido pendente) | T-12 |
 
 Os 33 critérios da Parte 2 estão cobertos, mais a extensão da CA-09 ao pedido de troca.
+
+## Descobertas (Parte 2)
+- T-11 (2026-10-07): o P2.5 dizia 404 para a troca de personagem do dono pedida por outro
+  Usuário; vale a CA-07.5 (`not_owner`, 409). O design foi corrigido (ver Descobertas da
+  Parte 1, acima).
+- T-15 (2026-10-07): a spec não diz quem vê a justificativa da recusa de um pedido de troca
+  (RN-22). Hoje ela fica gravada e sai na API (`myApplication.swapRequest.decisionReason`),
+  mas a tela do membro não mostra. Pergunta ao usuário: mostrar no aviso do membro, como a
+  recusa da candidatura (RN-29)?
+- T-15 (2026-10-07): o Svelte descarta o espaço no começo de um `{#if}` quebrado em linha;
+  na Parte 2 isso foi corrigido com expressões. O painel do jogador da Parte 1 tem o mesmo
+  padrão em "· pendente desde" (provável "Suporte· pendente desde 17:10"). Fora do escopo;
+  pergunta ao usuário se corrige.
