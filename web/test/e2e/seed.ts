@@ -94,3 +94,30 @@ export function spDay(day: number): string {
 export function startsAt(day: number, time: string): string {
 	return new Date(`${spDay(day)}T${time}:00-03:00`).toISOString();
 }
+
+/** Candidatura pela API (spec candidatura-lobby, T-07). */
+export function applyTo(
+	request: APIRequestContext,
+	token: string,
+	lobbyId: string,
+	characterId: string,
+	message?: string
+) {
+	return post<{ id: string }>(request, token, `/lobbies/${lobbyId}/applications`, {
+		characterId,
+		...(message ? { message } : {})
+	});
+}
+
+export function acceptApplication(request: APIRequestContext, token: string, id: string) {
+	return post<{ id: string }>(request, token, `/applications/${id}/accept`, {});
+}
+
+export function cancelLobby(
+	request: APIRequestContext,
+	token: string,
+	lobbyId: string,
+	reason: string
+) {
+	return post<{ id: string }>(request, token, `/lobbies/${lobbyId}/cancel`, { reason });
+}

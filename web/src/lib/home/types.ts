@@ -27,4 +27,8 @@ export interface Lobby {
 	hostClass: string;
 	minLevel: number;
 	composition: Composition;
+	/** Usuário dono do lobby, para o selo de pendentes (RN-34 da candidatura-lobby). */
+	ownerId?: string;
+	/** Candidaturas pendentes (RN-28 da candidatura-lobby). */
+	pendingCount?: number;
 }

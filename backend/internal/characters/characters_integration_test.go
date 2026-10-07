@@ -450,7 +450,7 @@ func TestCreate_RN01_UnknownUser(t *testing.T) {
 
 // ownLobby cria, direto no banco, um lobby com o personagem como dono, começando em
 // startsAt; cancelled marca como cancelado.
-func (e *env) ownLobby(t *testing.T, userID, characterID string, role string, startsAt time.Time, cancelled bool) {
+func (e *env) ownLobby(t *testing.T, userID, characterID string, role string, startsAt time.Time, cancelled bool) pgtype.UUID {
 	t.Helper()
 	q := db.New(e.pool)
 	var uid, cid pgtype.UUID
@@ -469,10 +469,11 @@ func (e *env) ownLobby(t *testing.T, userID, characterID string, role string, st
 			t.Fatal(err)
 		}
 	}
+	return id
 }
 
-// CA-06.4 (lobbies) / RN-21: o personagem dono de um lobby aberto não é excluído nem muda
-// de função; os outros campos mudam.
+// CA-06.4 (lobbies) / RN-21, CA-09.1 / RN-25: o personagem dono de um lobby aberto não é
+// excluído nem muda de função ou nível; os outros campos mudam.
 func TestOwnerOfOpenLobby_CA06_4_Locked(t *testing.T) {
 	e := setup(t)
 	ana := e.user(t, "1")
@@ -486,11 +487,15 @@ func TestOwnerOfOpenLobby_CA06_4_Locked(t *testing.T) {
 	if !errors.Is(err, ErrInOpenLobby) {
 		t.Errorf("mudar a função: err = %v, quer ErrInOpenLobby", err)
 	}
-	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 180, Role: "support", Portrait: "retrato-2"})
-	if err != nil || got.Level != 180 || got.Role != "support" {
-		t.Errorf("mudar o nível: %+v, %v", got, err)
+	_, err = e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 180, Role: "support"})
+	if !errors.Is(err, ErrInOpenLobby) {
+		t.Errorf("mudar o nível: err = %v, quer ErrInOpenLobby", err)
 	}
-	if list := e.list(t, ana); len(list) != 1 || list[0].Role != "support" {
+	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien Nova", ClassID: "arcebispo", Level: 178, Role: "support", Portrait: "retrato-2", Link: "https://ragnaplace.com/x"})
+	if err != nil || got.Nick != "Lirien Nova" || got.Portrait != "retrato-2" || got.Level != 178 {
+		t.Errorf("mudar os outros campos: %+v, %v", got, err)
+	}
+	if list := e.list(t, ana); len(list) != 1 || list[0].Role != "support" || list[0].Level != 178 {
 		t.Errorf("personagem mudou: %+v", list)
 	}
 }
@@ -526,5 +531,92 @@ func TestOwnerOfOpenLobby_RN02_OtherUserStillNotFound(t *testing.T) {
 	}
 	if _, err := e.svc.Update(t.Context(), bia, lirien.ID, Input{Nick: "X", ClassID: "aprendiz", Level: 1, Role: "dps"}); !errors.Is(err, ErrNotFound) {
 		t.Errorf("editar de outro: %v", err)
+	}
+}
+
+// applyTo grava, direto no banco, uma candidatura do personagem ao lobby com o estado dado.
+func (e *env) applyTo(t *testing.T, lobbyID pgtype.UUID, userID, characterID, status string) {
+	t.Helper()
+	q := db.New(e.pool)
+	var uid, cid pgtype.UUID
+	_ = uid.Scan(userID)
+	_ = cid.Scan(characterID)
+	a, err := q.CreateApplication(t.Context(), db.CreateApplicationParams{
+		LobbyID: lobbyID, UserID: uid, CharacterID: cid, Role: "support", Now: e.clock,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != "pending" {
+		if _, err := q.SetApplicationStatus(t.Context(), db.SetApplicationStatusParams{ID: a.ID, Status: status, Now: e.clock}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// CA-09.1 / CA-09.3 / RN-25 / RN-26: com candidatura pendente ou aceita num lobby aberto,
+// nível e função travam e a exclusão é recusada; nick, classe, retrato e link mudam.
+func TestApplicant_CA09_1_CA09_3_Locked(t *testing.T) {
+	for _, status := range []string{"pending", "accepted"} {
+		t.Run(status, func(t *testing.T) {
+			e := setup(t)
+			ana, bia := e.user(t, "1"), e.user(t, "2")
+			host := e.create(t, bia, "Anfitria")
+			lobby := e.ownLobby(t, bia, host.ID, "support", e.clock.Add(48*time.Hour), false)
+			lirien := e.create(t, ana, "Lirien") // Suporte, nível 178
+			e.applyTo(t, lobby, ana, lirien.ID, status)
+
+			for name, in := range map[string]Input{
+				"nível":  {Nick: "Lirien", ClassID: "arcebispo", Level: 179, Role: "support"},
+				"função": {Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "dps"},
+			} {
+				if _, err := e.svc.Update(t.Context(), ana, lirien.ID, in); !errors.Is(err, ErrInOpenLobby) {
+					t.Errorf("mudar %s: err = %v, quer ErrInOpenLobby", name, err)
+				}
+			}
+			got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien Nova", ClassID: "sumo-sacerdote", Level: 178, Role: "support", Portrait: "retrato-3", Link: "https://ragnaplace.com/y"})
+			if err != nil || got.Nick != "Lirien Nova" || got.ClassID != "sumo-sacerdote" {
+				t.Errorf("outros campos: %+v, %v", got, err)
+			}
+			if err := e.svc.Delete(t.Context(), ana, lirien.ID); !errors.Is(err, ErrInOpenLobby) {
+				t.Errorf("excluir: err = %v, quer ErrInOpenLobby", err)
+			}
+		})
+	}
+}
+
+// CA-09.2 / RN-25: sem vínculos ativos (recusada, retirada, expirada), nível e função
+// ficam livres.
+func TestApplicant_CA09_2_FreeWithoutActiveLinks(t *testing.T) {
+	e := setup(t)
+	ana, bia := e.user(t, "1"), e.user(t, "2")
+	host := e.create(t, bia, "Anfitria")
+	lirien := e.create(t, ana, "Lirien")
+	for i, status := range []string{"rejected", "withdrawn", "expired"} {
+		lobby := e.ownLobby(t, bia, host.ID, "support", e.clock.Add(time.Duration(48+3*i)*time.Hour), false)
+		e.applyTo(t, lobby, ana, lirien.ID, status)
+	}
+	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 200, Role: "dps"})
+	if err != nil || got.Level != 200 || got.Role != "dps" {
+		t.Errorf("mudar nível e função: %+v, %v", got, err)
+	}
+}
+
+// CA-09.4 / RN-26: aceito num lobby que já iniciou, ou pendente num cancelado, o personagem
+// é excluído.
+func TestApplicant_CA09_4_DeleteAfterLobby(t *testing.T) {
+	e := setup(t)
+	ana, bia := e.user(t, "1"), e.user(t, "2")
+	host := e.create(t, bia, "Anfitria")
+	started := e.ownLobby(t, bia, host.ID, "support", e.clock.Add(-time.Hour), false)
+	cancelled := e.ownLobby(t, bia, host.ID, "support", e.clock.Add(48*time.Hour), true)
+	lirien := e.create(t, ana, "Lirien")
+	brasa := e.create(t, ana, "Brasa")
+	e.applyTo(t, started, ana, lirien.ID, "accepted")
+	e.applyTo(t, cancelled, ana, brasa.ID, "pending")
+	for _, c := range []Character{lirien, brasa} {
+		if err := e.svc.Delete(t.Context(), ana, c.ID); err != nil {
+			t.Errorf("excluir %s: %v", c.Nick, err)
+		}
 	}
 }

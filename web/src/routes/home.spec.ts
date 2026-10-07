@@ -1,7 +1,7 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import { DAY_COUNTS, getHomeLobbies } from '$lib/home/fixtures';
-import { lobbiesForDay } from '$lib/home/lobbies';
+import { isFull, lobbiesForDay } from '$lib/home/lobbies';
 import EmptyState from '$lib/home/components/EmptyState.svelte';
 import Page from './+page.svelte';
 
@@ -51,23 +51,15 @@ describe('Home renderizada no servidor', () => {
 		expect(html).toContain('em 1 h 20 min');
 	});
 
-	it('CA-02.5 / RN-18: ações sem backend continuam desabilitadas com "Disponível em breve"', () => {
-		const buttons = [...html.matchAll(/<button(\s[^>]*)?>([\s\S]*?)<\/button>/g)].map(
-			([, attrs, inner]) => ({
-				disabled: (attrs ?? '').includes('aria-disabled="true"'),
-				text: inner.replace(/<[^>]+>/g, '').trim()
-			})
-		);
-		// Desde a spec lobbies, "Criar lobby" e "Ver grupo" funcionam; "Candidatar" segue em breve.
-		for (const label of ['Candidatar']) {
-			const matching = buttons.filter((b) => b.text === label);
-			expect(matching.length, label).toBeGreaterThan(0);
-			expect(
-				matching.every((b) => b.disabled),
-				label
-			).toBe(true);
+	it('CA-10.6 / RN-35 (candidatura-lobby): "Candidatar" do card e do destaque leva ao lobby', () => {
+		const open = today.filter((l) => !isFull(l.composition));
+		expect(open.length).toBeGreaterThan(0);
+		for (const l of open) {
+			expect(html).toMatch(
+				new RegExp(`<a href="/lobbies/${l.id}"[^>]*>(?:\\s|<[^>]+>)*Candidatar`)
+			);
 		}
-		expect(html).toContain('Disponível em breve');
+		expect(html).not.toMatch(/aria-disabled="true"[^>]*>(?:\s|<[^>]+>)*Candidatar/);
 	});
 
 	it('CA-02.3 / CA-02.4 / CA-02.5 / RN-23 / RN-24 (lobbies): "Criar lobby" leva à criação no dia escolhido, e "Ver grupo" ao detalhe', () => {
@@ -130,7 +122,17 @@ describe('Home com login (spec login-discord)', () => {
 		expect(menu).toMatch(/<div[^>]*hidden/); // fechado até o Usuário abrir
 		expect(menu).toMatch(/<a href="\/perfil"[^>]*role="menuitem"[^>]*>[\s\S]*?Meu perfil/);
 		expect(menu.indexOf('Meu perfil')).toBeLessThan(menu.indexOf('Sair'));
-		expect(menu.match(/role="menuitem"/g)).toHaveLength(2);
+		expect(menu.match(/role="menuitem"/g)).toHaveLength(3);
+	});
+
+	it('CA-10.4 / RN-33 (candidatura-lobby): "Minhas candidaturas" fica entre "Meu perfil" e "Sair"', () => {
+		const html = renderHome(GRIMBOLD);
+		const menu = html.match(/<div[^>]*role="menu"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
+		expect(menu).toMatch(
+			/<a href="\/candidaturas"[^>]*role="menuitem"[^>]*>[\s\S]*?Minhas candidaturas/
+		);
+		expect(menu.indexOf('Meu perfil')).toBeLessThan(menu.indexOf('Minhas candidaturas'));
+		expect(menu.indexOf('Minhas candidaturas')).toBeLessThan(menu.indexOf('Sair'));
 	});
 
 	it('CA-02.2: sem nome de exibição, mostra o nome de usuário e a inicial dele', () => {

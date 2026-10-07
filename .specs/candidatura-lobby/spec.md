@@ -1,9 +1,11 @@
 # Spec — Candidatura a lobby
 
-- Feature: `candidatura-lobby` · Nível: G · Status: Aprovada
+- Feature: `candidatura-lobby` · Nível: G · Status: Aprovada (revisão de 2026-10-06)
 - Notion: [Épico](https://app.notion.com/p/3ead4a3a5eff810bb7f4eae87f4ab3b2)
-- Última revisão: 2026-09-29 — aprovada pelo usuário; perguntas em aberto resolvidas: retirada do pedido de troca,
-  visibilidade, bloqueio na remoção
+- Última revisão: 2026-10-06 — alinhada com `personagens` e `lobbies` antes da
+  implementação: entrega em duas partes, janela de 2 h, nível mínimo, travas do
+  personagem (nível incluído), painel de detalhes do jogador, "Minhas candidaturas" e
+  selo de pendentes. A versão de 2026-09-29 foi aprovada antes de existir código.
 
 ## 1. Contexto
 Montar grupo para instância difícil depende de conseguir as funções certas (1 Tank,
@@ -12,10 +14,19 @@ Esta feature define como um jogador se candidata a um lobby com um dos seus
 personagens, como o dono do lobby aceita ou recusa (a recusa sempre com justificativa)
 e como a composição muda depois disso: saída, remoção e troca de personagem.
 
-### Premissas vindas de outras features (ainda sem spec)
+### Entrega em duas partes
+- **Parte 1 (esta entrega):** US-01 a US-04 e US-10, as regras de personagem (RN-25,
+  RN-26, RN-30) e a tela (RN-31 a RN-34).
+- **Parte 2 (depois):** US-05 a US-08 — sair do grupo, remover membro, troca de
+  personagem do dono e pedido de troca do membro. As regras e critérios delas ficam
+  nesta spec, mas não entram na Parte 1.
+
+### Premissas vindas de outras features (cumpridas pela spec `lobbies`)
 Esta spec não define estas regras. Ela só depende de que existam:
-- **P-01 (Lobby)** — O lobby tem um dono (o usuário que criou), horário de início e
-  de fim em UTC e um número de vagas por função, com no máximo 12 vagas no total.
+- **P-01 (Lobby)** — O lobby tem um dono (o usuário que criou), horário de início em
+  UTC, nível mínimo e um número de vagas por função, com no máximo 12 vagas no total.
+  O lobby não tem fim: para conflito de horário, cada lobby ocupa a janela
+  [início, início + 2 h) (RN-10 da `lobbies`).
 - **P-02 (Lobby)** — O dono escolhe um dos seus personagens ao criar o lobby, e esse
   personagem ocupa uma vaga da função dele desde a criação.
 - **P-03 (Lobby)** — O lobby está *aberto* (antes do início e não cancelado),
@@ -42,6 +53,10 @@ Esta spec não define estas regras. Ela só depende de que existam:
 | US-06 | P2 | Como dono, quero remover um membro com justificativa, para ajustar a composição antes do início. |
 | US-07 | P2 | Como dono, quero trocar meu personagem no lobby, para cobrir uma função que ninguém preencheu. |
 | US-08 | P2 | Como membro, quero pedir ao dono a troca do meu personagem, informando o motivo, para cobrir uma função sem perder a vaga. |
+| US-10 | P1 | Como jogador, quero ver os detalhes de quem está no lobby clicando no card da pessoa, para saber com quem vou jogar. |
+
+US-05 a US-08 são da Parte 2. Não existe US-09: os critérios CA-09.x são as regras
+transversais de personagem.
 
 ## 4. Regras de domínio
 
@@ -55,6 +70,8 @@ Esta spec não define estas regras. Ela só depende de que existam:
 - **RN-05** — Só é possível se candidatar a um lobby aberto em que a função do
   personagem tenha pelo menos uma vaga livre. Vagas livres da função = vagas da função
   − ocupantes da função (dono e membros aceitos).
+- **RN-30** — O personagem precisa ter o nível mínimo do lobby, na candidatura e no
+  aceite.
 - **RN-06** — A mensagem do candidato é opcional e tem no máximo 250 caracteres.
 - **RN-07** — Quem teve candidatura recusada num lobby, ou foi removido dele com
   bloqueio (RN-15), não pode se candidatar de novo a esse lobby, com nenhum
@@ -68,8 +85,9 @@ Esta spec não define estas regras. Ela só depende de que existam:
 - **RN-10** — O aceite só acontece se a função ainda tiver vaga livre no momento do
   aceite. Se não tiver, o aceite falha e a candidatura continua pendente.
 - **RN-11** — O aceite é bloqueado se o personagem ocupar vaga (como dono ou membro)
-  em outro lobby não cancelado cujo intervalo [início, fim) se sobrepõe ao deste.
-  Ter candidatura pendente em lobbies sobrepostos é permitido.
+  em outro lobby não cancelado com início a menos de 2 h do início deste (a janela da
+  RN-10 da `lobbies`). Ter candidatura pendente em lobbies próximos é permitido. A
+  janela de 2 h fica como está e será revista se os jogadores reclamarem.
 - **RN-12** — Dois aceites simultâneos nunca deixam uma função com mais ocupantes do
   que vagas.
 
@@ -126,10 +144,30 @@ Esta spec não define estas regras. Ela só depende de que existam:
 
 ### Personagem
 - **RN-25** — Um personagem com candidatura pendente, vaga ocupada num lobby aberto
-  ou pedido de troca pendente não pode ter a função alterada.
-- **RN-26** — Quando um personagem é excluído, as candidaturas dele (pendentes e
-  aceitas) passam para *cancelada*, liberando as vagas que ele ocupava, e os pedidos
-  de troca pendentes em que ele aparece passam para *cancelado*.
+  (como dono ou membro) ou pedido de troca pendente não pode ter a função nem o nível
+  alterados. A mensagem no perfil é "Esse personagem está num lobby aberto. Saia ou
+  cancele antes de mudar nível ou função." Vale também para o personagem do dono
+  (amplia a RN-21 da `lobbies`, que travava só a função).
+- **RN-26** — O mesmo personagem da RN-25 não pode ser excluído enquanto tiver esses
+  vínculos. Depois que o lobby inicia ou é cancelado, ou a candidatura deixa de estar
+  ativa, a exclusão volta a ser permitida. (Substitui a regra anterior, que cancelava
+  as candidaturas na exclusão.)
+
+### Tela (Parte 1)
+- **RN-31** — No detalhe do lobby, clicar no card de uma pessoa da composição (ou de um
+  candidato, para o dono) mostra os detalhes dela no painel da direita: retrato, nick,
+  classe, nível, função e link externo. O painel abre no anfitrião, o card escolhido
+  fica destacado e tudo funciona pelo teclado.
+- **RN-32** — O nome do Discord de cada pessoa aparece só para o dono e para os membros
+  aceitos do lobby. Para o dono, o painel de um candidato mostra também a mensagem e os
+  botões "Aceitar" e "Recusar".
+- **RN-33** — A página "Minhas candidaturas", no menu do usuário abaixo de "Meu perfil",
+  lista as candidaturas do jogador com o lobby, o personagem, o estado e a justificativa
+  quando houver, e permite retirar as pendentes.
+- **RN-34** — Na Home, o card de um lobby do próprio Usuário mostra o selo
+  "N pendentes" quando há candidaturas pendentes. Os outros não veem o selo.
+- **RN-35** — Na Home, o botão "Candidatar" do card e do destaque leva ao detalhe do
+  lobby, onde a candidatura acontece.
 
 ## 5. Critérios de aceite
 
@@ -183,11 +221,16 @@ Given o jogador teve candidatura recusada no lobby
 When ele tenta se candidatar de novo ao mesmo lobby com qualquer personagem
 Then a candidatura é rejeitada com o erro "candidatura recusada anteriormente neste lobby"
 
-CA-01.10 — Pendência com horário sobreposto é permitida  [US-01, RN-11]
-Given o personagem ocupa vaga num lobby das 20:00 às 22:00 UTC
-  And outro lobby aberto das 21:00 às 23:00 UTC tem vaga na função dele
+CA-01.10 — Pendência com horário próximo é permitida  [US-01, RN-11]
+Given o personagem ocupa vaga num lobby que começa às 20:00
+  And outro lobby aberto que começa às 21:00 tem vaga na função dele
 When o jogador se candidata ao segundo lobby com esse personagem
 Then a candidatura é criada como pendente
+
+CA-01.11 — Personagem abaixo do nível mínimo  [US-01, RN-30]
+Given um lobby com nível mínimo 200
+When o jogador tenta se candidatar com um personagem de nível 199
+Then a candidatura é rejeitada com o erro "personagem abaixo do nível mínimo"
 ```
 
 ### US-02 — Aceitar ou recusar candidatura
@@ -251,21 +294,21 @@ Then exatamente um deles é concluído
   And a função Tank tem 1 ocupante
 
 CA-02.10 — Conflito de horário no aceite  [US-02, RN-11]
-Given o personagem ocupa vaga num lobby das 20:00 às 22:00 UTC
-  And ele tem candidatura pendente noutro lobby das 21:00 às 23:00 UTC
+Given o personagem ocupa vaga num lobby que começa às 20:00
+  And ele tem candidatura pendente noutro lobby que começa às 21:30
 When o dono do segundo lobby aceita a candidatura
 Then o aceite é rejeitado com o erro "personagem em outro lobby no mesmo horário"
   And a candidatura continua pendente
 
-CA-02.11 — Horários encostados não conflitam  [US-02, RN-11]
-Given o personagem ocupa vaga num lobby das 20:00 às 22:00 UTC
-  And ele tem candidatura pendente noutro lobby das 22:00 às 23:00 UTC
+CA-02.11 — 2 h de distância não conflita  [US-02, RN-11]
+Given o personagem ocupa vaga num lobby que começa às 20:00
+  And ele tem candidatura pendente noutro lobby que começa às 22:00
 When o dono do segundo lobby aceita a candidatura
 Then a candidatura passa para aceita
 
 CA-02.12 — Lobby cancelado não gera conflito  [US-02, RN-11]
-Given o personagem estava aceito num lobby das 20:00 às 22:00 UTC que foi cancelado
-  And ele tem candidatura pendente noutro lobby das 21:00 às 23:00 UTC
+Given o personagem estava aceito num lobby das 20:00 que foi cancelado
+  And ele tem candidatura pendente noutro lobby que começa às 21:00
 When o dono do segundo lobby aceita a candidatura
 Then a candidatura passa para aceita
 ```
@@ -515,29 +558,70 @@ Then a ação é rejeitada com o erro "pedido não pertence ao usuário"
 
 ### Regras de personagem (transversais)
 ```gherkin
-CA-09.1 — Função travada com candidatura ativa  [RN-25]
-Given um personagem com candidatura pendente ou vaga ocupada num lobby aberto
-When o dono do personagem tenta alterar a função dele
-Then a alteração é rejeitada com o erro "personagem em uso em lobby"
+CA-09.1 — Função e nível travados com vínculo ativo  [RN-25]
+Given um personagem com candidatura pendente, ou vaga ocupada num lobby aberto como dono ou membro
+When o dono do personagem tenta alterar a função ou o nível dele
+Then a alteração é rejeitada com a mensagem "Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função."
+  And os outros campos (nick, classe, retrato, link) continuam editáveis
 
 CA-09.2 — Função liberada sem vínculos  [RN-25]
 Given um personagem sem candidaturas pendentes, sem vaga em lobby aberto e sem pedido de troca pendente
 When o dono do personagem altera a função
 Then a alteração é aceita
 
-CA-09.3 — Exclusão do personagem  [RN-26]
-Given um personagem com uma candidatura pendente num lobby e uma aceita noutro
-When o personagem é excluído
-Then a candidatura pendente passa para cancelada
-  And a candidatura aceita passa para cancelada
-  And a vaga que ele ocupava volta a ficar livre
+CA-09.3 — Exclusão travada com vínculo ativo  [RN-26]
+Given um personagem com uma candidatura pendente num lobby aberto
+When o dono do personagem tenta excluí-lo
+Then a exclusão é rejeitada com a mesma mensagem da CA-09.1
+
+CA-09.4 — Exclusão liberada depois do lobby  [RN-26]
+Given um personagem aceito num lobby que já iniciou, e sem outros vínculos
+When o dono do personagem o exclui
+Then a exclusão é aceita
+```
+
+### US-10 — Detalhes do jogador e acompanhamento (Parte 1)
+```gherkin
+CA-10.1 — Painel de detalhes  [US-10, RN-31]
+Given um lobby com o anfitrião e um membro aceito
+When um visitante abre o detalhe e clica no card do membro
+Then o painel da direita mostra retrato, nick, classe, nível, função e link externo do membro
+  And o card do membro fica destacado
+
+CA-10.2 — Discord só para o grupo  [US-10, RN-32]
+Given um lobby com o anfitrião e um membro aceito
+When um visitante, um membro e o dono abrem o painel do membro
+Then só o membro e o dono veem o nome do Discord
+
+CA-10.3 — Candidato no painel do dono  [US-10, RN-28, RN-32]
+Given uma candidatura pendente com a mensagem "tenho buff de ASPD"
+When o dono abre o detalhe e clica no candidato
+Then o painel mostra os dados do personagem, a mensagem e os botões "Aceitar" e "Recusar"
+  And um terceiro não vê o card do candidato, só a quantidade de pendentes
+
+CA-10.4 — Minhas candidaturas  [US-10, US-03, RN-33]
+Given um jogador com candidaturas pendente, aceita e recusada
+When ele abre "Minhas candidaturas" pelo menu do usuário
+Then vê cada candidatura com lobby, personagem e estado, a justificativa da recusa
+  And pode retirar a pendente
+
+CA-10.5 — Selo de pendentes  [US-10, RN-34]
+Given um lobby do Usuário com 2 candidaturas pendentes
+When ele abre a Home
+Then o card do lobby mostra "2 pendentes"
+  And outro jogador não vê o selo
+
+CA-10.6 — "Candidatar" da Home abre o lobby  [US-10, RN-35]
+Given um lobby aberto com vaga na Home
+When o jogador clica em "Candidatar" no card
+Then ele vai para o detalhe do lobby
 ```
 
 ## 6. Casos de borda
 - Dois aceites para a última vaga ao mesmo tempo → só um conclui [RN-12 / CA-02.9]
 - Função lotada com candidaturas pendentes → elas continuam pendentes e podem ser
   aceitas se a vaga abrir de novo (por saída, remoção ou troca) [RN-10 / CA-02.8]
-- Lobbies encostados (um acaba às 22:00 e o outro começa às 22:00) → não conflitam
+- Lobbies a exatamente 2 h de distância (20:00 e 22:00) → não conflitam
   [RN-11 / CA-02.11]
 - Lobby cancelado não conta para conflito de horário [RN-11 / CA-02.12]
 - Justificativa só com espaços → conta como vazia [RN-09 / CA-02.3]
@@ -565,8 +649,9 @@ Then a candidatura pendente passa para cancelada
 - Criar, editar e cancelar lobby, e definir as vagas por função — spec de Lobby.
 - Notificações fora do app (DM no Discord, e-mail) — o status fica visível dentro do
   app. Pode entrar numa feature de notificações.
-- Requisitos de nível ou classe definidos pelo lobby — pode entrar depois, na spec
-  de Lobby.
+- Requisito de classe definido pelo lobby (o de nível já existe: RN-30).
+- Parte 2: US-05 a US-08 (sair, remover, trocas de personagem).
+- Mudar a janela de conflito de 2 h — fica para quando os jogadores reclamarem.
 - Lista de espera quando a função está lotada.
 - Reputação de jogador.
 - Candidaturas de guilda — item futuro no CLAUDE.md.
@@ -577,8 +662,7 @@ Then a candidatura pendente passa para cancelada
 
 ## 9. Perguntas em aberto
 - Nenhuma. As premissas assumidas foram resolvidas na aprovação (ver seção 10).
-- Fica para a spec de Lobby: o que acontece se o personagem que o dono usa num lobby
-  aberto for excluído.
+- Nenhuma da revisão de 2026-10-06.
 
 ## 10. Decisões tomadas na entrevista
 - Mais de um personagem do mesmo usuário no mesmo lobby → não, uma candidatura ativa
@@ -608,3 +692,21 @@ Then a candidatura pendente passa para cancelada
 - Removido se candidata de novo → sim, a menos que o dono bloqueie na remoção, por
   exemplo por comportamento desrespeitoso (RN-07, RN-15).
 - Personagem do dono excluído → fica para a spec de Lobby.
+
+### Revisão de 2026-10-06
+- Entrega em duas partes; a Parte 1 tem US-01 a US-04, US-10 e as regras de
+  personagem.
+- Conflito de horário → janela de 2 h a partir do início, como nos lobbies; revisar se
+  os jogadores reclamarem.
+- Nível mínimo do lobby vale na candidatura e no aceite (RN-30).
+- Personagem num grupo (pendente, aceito ou dono de lobby aberto) não muda nível nem
+  função e não pode ser excluído (RN-25, RN-26) — "seria um vacilo" perder nível.
+- Painel de detalhes do jogador no detalhe do lobby (RN-31); Discord só para o dono e
+  os membros (RN-32); página "Minhas candidaturas" (RN-33); selo de pendentes para o
+  dono (RN-34).
+
+### Decisões de 2026-10-06, depois da implementação
+- O dono pode subir o nível mínimo acima do nível de um membro já aceito. O membro
+  continua no grupo; o mínimo novo vale para os próximos aceites (RN-30).
+- O botão "Candidatar" da Home vira um atalho para o detalhe do lobby (RN-35, CA-10.6).
+- O Discord do anfitrião segue a RN-32: visitantes e candidatos não o veem.

@@ -111,6 +111,7 @@
 				<FeaturedLobby
 					lobby={featured}
 					relative={relativeLabel(featured.date, featured.time, now)}
+					viewerId={data.user?.id ?? null}
 				/>
 			{/if}
 
@@ -144,7 +145,11 @@
 			{:else}
 				<div class="grid">
 					{#each filtered as lobby (lobby.id)}
-						<LobbyCard {lobby} relative={relativeLabel(lobby.date, lobby.time, now)} />
+						<LobbyCard
+							{lobby}
+							relative={relativeLabel(lobby.date, lobby.time, now)}
+							viewerId={data.user?.id ?? null}
+						/>
 					{/each}
 				</div>
 			{/if}

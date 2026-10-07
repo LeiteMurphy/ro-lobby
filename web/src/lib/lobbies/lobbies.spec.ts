@@ -50,6 +50,8 @@ describe('lobby da API para a Home (RN-22, D-09)', () => {
 			host: 'Lirien',
 			hostClass: 'Arcebispo',
 			minLevel: 160,
+			ownerId: TEMPLE.owner.userId,
+			pendingCount: 0,
 			composition: {
 				tank: { filled: 0, total: 1 },
 				support: { filled: 1, total: 2 },

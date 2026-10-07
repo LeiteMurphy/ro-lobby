@@ -10,6 +10,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Application struct {
+	ID          pgtype.UUID
+	LobbyID     pgtype.UUID
+	UserID      pgtype.UUID
+	CharacterID pgtype.UUID
+	Role        string
+	Message     pgtype.Text
+	Status      string
+	Reason      pgtype.Text
+	CreatedAt   time.Time
+	DecidedAt   pgtype.Timestamptz
+}
+
+type ApplicationEvent struct {
+	ID            int64
+	ApplicationID pgtype.UUID
+	FromStatus    pgtype.Text
+	ToStatus      string
+	ActorID       pgtype.UUID
+	Reason        pgtype.Text
+	At            time.Time
+}
+
 type Character struct {
 	ID        pgtype.UUID
 	Seq       int64

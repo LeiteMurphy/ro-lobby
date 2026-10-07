@@ -167,7 +167,9 @@ test.describe('Home no desktop', () => {
 		expect(html.match(/role="tab"/g)).toHaveLength(14);
 	});
 
-	test('CA-02.5: "Candidatar" segue desabilitado, com "Disponível em breve"', async ({ page }) => {
+	test('CA-02.5 / CA-10.6 (candidatura-lobby): "Candidatar" do card abre o lobby', async ({
+		page
+	}) => {
 		await page.goto('/');
 		await dayTabs(page).nth(1).click();
 		// RN-14 (login-discord) e RN-23 (lobbies): "Entrar com Discord" e "Criar lobby" já funcionam.
@@ -177,10 +179,13 @@ test.describe('Home no desktop', () => {
 		await expect(
 			page.getByRole('banner').getByRole('link', { name: 'Criar lobby' })
 		).toHaveAttribute('href', `/lobbies/novo?dia=${spDay(1)}`);
-		const apply = ownCards(page).getByRole('button', { name: 'Candidatar' }).first();
-		await expect(apply).toBeDisabled();
-		await apply.hover();
-		await expect(page.getByRole('tooltip', { name: 'Disponível em breve' }).first()).toBeVisible();
+		// RN-35: a candidatura acontece no detalhe do lobby.
+		const apply = ownCards(page).getByRole('link', { name: 'Candidatar' }).first();
+		const href = await apply.getAttribute('href');
+		expect(href).toMatch(/^\/lobbies\/[0-9a-f-]{36}$/);
+		await apply.click();
+		await expect(page).toHaveURL(href!);
+		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 	});
 
 	test('CA-03.2: trocar o dia mostra os grupos daquele dia', async ({ page }) => {

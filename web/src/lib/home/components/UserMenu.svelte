@@ -71,6 +71,10 @@
 		<a href={resolve('/perfil')} role="menuitem" class="item" onclick={() => (open = false)}>
 			<Icon name="user" size={15} />Meu perfil
 		</a>
+		<!-- RN-33 da candidatura-lobby: "Minhas candidaturas" logo abaixo do perfil. -->
+		<a href={resolve('/candidaturas')} role="menuitem" class="item" onclick={() => (open = false)}>
+			<Icon name="users" size={15} />Minhas candidaturas
+		</a>
 		<form method="POST" action="/auth/logout">
 			<button type="submit" role="menuitem" class="item item--logout">
 				<Icon name="log-in" size={15} />Sair

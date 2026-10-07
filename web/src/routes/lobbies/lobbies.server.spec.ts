@@ -327,8 +327,12 @@ describe('/lobbies/[id]', () => {
 			[`GET /lobbies/${TEMPLE.id}`]: lobby,
 			'GET /classes': json(200, [{ id: 'arcebispo', name: 'Arcebispo' }])
 		}).fn;
-	const detailLoad = (user: unknown, f: typeof fetch) =>
-		({ params: { id: TEMPLE.id }, locals: { user }, fetch: f }) as unknown as DetailLoad;
+	const detailLoad = (
+		user: unknown,
+		f: typeof fetch,
+		cookies = fakeCookies(user ? 't' : undefined)
+	) =>
+		({ params: { id: TEMPLE.id }, locals: { user }, cookies, fetch: f }) as unknown as DetailLoad;
 
 	it('CA-03.1 / RN-15: público, com a classe do dono pelo nome', async () => {
 		const data = (await detalhe.load(detailLoad(null, detailFetch(json(200, TEMPLE))))) as Record<
@@ -346,10 +350,12 @@ describe('/lobbies/[id]', () => {
 			unknown
 		>;
 		expect(data.isOwner).toBe(true);
-		const other = (await detalhe.load(detailLoad(BIA, detailFetch(json(200, TEMPLE))))) as Record<
-			string,
-			unknown
-		>;
+		const biaFetch = fakeFetch({
+			[`GET /lobbies/${TEMPLE.id}`]: json(200, TEMPLE),
+			'GET /classes': json(200, []),
+			'GET /characters': json(200, [])
+		}).fn;
+		const other = (await detalhe.load(detailLoad(BIA, biaFetch))) as Record<string, unknown>;
 		expect(other.isOwner).toBe(false);
 	});
 
@@ -398,5 +404,171 @@ describe('/lobbies/[id]', () => {
 		const e = await thrown(() => cancel('Metade do grupo não pode', fn, fakeCookies()));
 		expect(isRedirect(e) && e.location).toBe(`/auth/discord/login?next=%2Flobbies%2F${TEMPLE.id}`);
 		expect(calls).toEqual([]);
+	});
+});
+
+describe('/lobbies/[id] — candidatura (candidatura-lobby, T-05)', () => {
+	type AnyAction = Parameters<(typeof detalhe.actions)['apply']>[0];
+	const act = (
+		name: 'apply' | 'accept' | 'reject' | 'withdraw',
+		fields: Record<string, string>,
+		f: typeof fetch,
+		cookies = fakeCookies('t')
+	) =>
+		detalhe.actions[name]({
+			params: { id: TEMPLE.id },
+			request: (() => {
+				const d = new FormData();
+				for (const [k, v] of Object.entries(fields)) d.set(k, v);
+				return new Request(`http://web/lobbies/${TEMPLE.id}`, { method: 'POST', body: d });
+			})(),
+			cookies,
+			fetch: f
+		} as unknown as AnyAction);
+	const APP = { id: 'a1', status: 'pending' };
+
+	it('D-06: com sessão, o detalhe vai com o token e traz os personagens de quem pode se candidatar', async () => {
+		const { fn, calls } = fakeFetch({
+			[`GET /lobbies/${TEMPLE.id}`]: json(200, TEMPLE),
+			'GET /classes': json(200, [{ id: 'arcebispo', name: 'Arcebispo' }]),
+			'GET /characters': json(200, [LIRIEN])
+		});
+		const seen: (string | null)[] = [];
+		const spy = (async (input: string | URL, init?: RequestInit) => {
+			seen.push(new Headers(init?.headers).get('authorization'));
+			return fn(input, init);
+		}) as typeof fetch;
+		const cookies = fakeCookies('token-da-bia');
+		const data = (await detalhe.load({
+			params: { id: TEMPLE.id },
+			locals: { user: BIA },
+			cookies,
+			fetch: spy
+		} as unknown as DetailLoad)) as Record<string, unknown>;
+		expect(seen[calls.findIndex((c) => c.key === `GET /lobbies/${TEMPLE.id}`)]).toBe(
+			'Bearer token-da-bia'
+		);
+		expect(data.characters).toEqual([LIRIEN]);
+		expect(data.classNames).toEqual({ arcebispo: 'Arcebispo' });
+	});
+
+	it('RN-03: o dono e o visitante não carregam personagens', async () => {
+		for (const user of [ANA, null]) {
+			const { fn, calls } = fakeFetch({
+				[`GET /lobbies/${TEMPLE.id}`]: json(200, TEMPLE),
+				'GET /classes': json(200, [])
+			});
+			const data = (await detalhe.load({
+				params: { id: TEMPLE.id },
+				locals: { user },
+				cookies: fakeCookies(user ? 't' : undefined),
+				fetch: fn
+			} as unknown as DetailLoad)) as Record<string, unknown>;
+			expect(data.characters).toEqual([]);
+			expect(calls.map((c) => c.key)).not.toContain('GET /characters');
+		}
+	});
+
+	it('CA-01.1 / CA-01.2: candidatar manda personagem e mensagem sem espaços nas pontas', async () => {
+		const { fn, calls } = fakeFetch({
+			[`POST /lobbies/${TEMPLE.id}/applications`]: json(201, APP)
+		});
+		expect(await act('apply', { characterId: 'c2', message: '  tenho buff  ' }, fn)).toEqual({
+			done: 'apply'
+		});
+		expect(calls[0].body).toEqual({ characterId: 'c2', message: 'tenho buff' });
+	});
+
+	it('CA-01.7 / D-07: a regra da API volta como mensagem em pt-BR, com o que foi digitado', async () => {
+		const { fn } = fakeFetch({
+			[`POST /lobbies/${TEMPLE.id}/applications`]: json(409, {
+				error: 'application_rule',
+				code: 'role_full'
+			})
+		});
+		expect(await act('apply', { characterId: 'c2', message: 'oi' }, fn)).toMatchObject({
+			status: 409,
+			data: {
+				action: 'apply',
+				characterId: 'c2',
+				text: 'oi',
+				message: 'Essa função não tem mais vaga.'
+			}
+		});
+	});
+
+	it('CA-01.3: mensagem longa volta com o erro do campo', async () => {
+		const { fn } = fakeFetch({
+			[`POST /lobbies/${TEMPLE.id}/applications`]: json(422, {
+				error: 'validation',
+				fields: [{ field: 'message', code: 'too_long' }]
+			})
+		});
+		expect(await act('apply', { characterId: 'c2', message: 'x' }, fn)).toMatchObject({
+			status: 422,
+			data: { action: 'apply', errors: { message: 'Use até 250 caracteres' } }
+		});
+	});
+
+	it('CA-02.1 / CA-02.10: aceitar chama a API; conflito de horário vira aviso', async () => {
+		const ok = fakeFetch({ 'POST /applications/a1/accept': json(200, APP) });
+		expect(await act('accept', { applicationId: 'a1' }, ok.fn)).toEqual({ done: 'accept' });
+		const conflict = fakeFetch({
+			'POST /applications/a1/accept': json(409, {
+				error: 'application_rule',
+				code: 'schedule_conflict'
+			})
+		});
+		expect(await act('accept', { applicationId: 'a1' }, conflict.fn)).toMatchObject({
+			status: 409,
+			data: {
+				action: 'accept',
+				message: 'O personagem já está em outro grupo a menos de 2 h deste horário.'
+			}
+		});
+	});
+
+	it('CA-02.2 / CA-02.3: recusar manda a justificativa; vazia volta com o erro', async () => {
+		const ok = fakeFetch({ 'POST /applications/a1/reject': json(200, APP) });
+		expect(await act('reject', { applicationId: 'a1', reason: 'já temos tank' }, ok.fn)).toEqual({
+			done: 'reject'
+		});
+		expect(ok.calls[0].body).toEqual({ reason: 'já temos tank' });
+		const bad = fakeFetch({
+			'POST /applications/a1/reject': json(422, {
+				error: 'validation',
+				fields: [{ field: 'reason', code: 'required' }]
+			})
+		});
+		expect(await act('reject', { applicationId: 'a1', reason: '' }, bad.fn)).toMatchObject({
+			status: 422,
+			data: { action: 'reject', applicationId: 'a1', errors: { reason: 'Escreva a justificativa' } }
+		});
+	});
+
+	it('CA-03.2 / CA-03.3: retirar chama a API; não pendente vira aviso', async () => {
+		const ok = fakeFetch({ 'POST /applications/a1/withdraw': json(200, APP) });
+		expect(await act('withdraw', { applicationId: 'a1' }, ok.fn)).toEqual({ done: 'withdraw' });
+		const late = fakeFetch({
+			'POST /applications/a1/withdraw': json(409, {
+				error: 'application_rule',
+				code: 'not_pending'
+			})
+		});
+		expect(await act('withdraw', { applicationId: 'a1' }, late.fn)).toMatchObject({
+			status: 409,
+			data: { action: 'withdraw', message: 'Essa candidatura não está mais pendente.' }
+		});
+	});
+
+	it('RN-04: sem sessão, as ações levam ao login sem chamar a API', async () => {
+		for (const name of ['apply', 'accept', 'reject', 'withdraw'] as const) {
+			const { fn, calls } = fakeFetch({});
+			const e = await thrown(() => act(name, { applicationId: 'a1' }, fn, fakeCookies()));
+			expect(isRedirect(e) && e.location).toBe(
+				`/auth/discord/login?next=%2Flobbies%2F${TEMPLE.id}`
+			);
+			expect(calls).toEqual([]);
+		}
 	});
 });

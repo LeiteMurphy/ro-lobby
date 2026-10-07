@@ -18,6 +18,99 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ApplicationRuleErrorCode.
+const (
+	ApplicationRuleErrorCodeAlreadyActive    ApplicationRuleErrorCode = "already_active"
+	ApplicationRuleErrorCodeBelowMinLevel    ApplicationRuleErrorCode = "below_min_level"
+	ApplicationRuleErrorCodeNotOpen          ApplicationRuleErrorCode = "not_open"
+	ApplicationRuleErrorCodeNotOwner         ApplicationRuleErrorCode = "not_owner"
+	ApplicationRuleErrorCodeNotPending       ApplicationRuleErrorCode = "not_pending"
+	ApplicationRuleErrorCodeNotYours         ApplicationRuleErrorCode = "not_yours"
+	ApplicationRuleErrorCodeOwnLobby         ApplicationRuleErrorCode = "own_lobby"
+	ApplicationRuleErrorCodeRejectedBefore   ApplicationRuleErrorCode = "rejected_before"
+	ApplicationRuleErrorCodeRoleFull         ApplicationRuleErrorCode = "role_full"
+	ApplicationRuleErrorCodeScheduleConflict ApplicationRuleErrorCode = "schedule_conflict"
+)
+
+// Valid indicates whether the value is a known member of the ApplicationRuleErrorCode enum.
+func (e ApplicationRuleErrorCode) Valid() bool {
+	switch e {
+	case ApplicationRuleErrorCodeAlreadyActive:
+		return true
+	case ApplicationRuleErrorCodeBelowMinLevel:
+		return true
+	case ApplicationRuleErrorCodeNotOpen:
+		return true
+	case ApplicationRuleErrorCodeNotOwner:
+		return true
+	case ApplicationRuleErrorCodeNotPending:
+		return true
+	case ApplicationRuleErrorCodeNotYours:
+		return true
+	case ApplicationRuleErrorCodeOwnLobby:
+		return true
+	case ApplicationRuleErrorCodeRejectedBefore:
+		return true
+	case ApplicationRuleErrorCodeRoleFull:
+		return true
+	case ApplicationRuleErrorCodeScheduleConflict:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ApplicationRuleErrorError.
+const (
+	ApplicationRuleErrorErrorApplicationRule ApplicationRuleErrorError = "application_rule"
+)
+
+// Valid indicates whether the value is a known member of the ApplicationRuleErrorError enum.
+func (e ApplicationRuleErrorError) Valid() bool {
+	switch e {
+	case ApplicationRuleErrorErrorApplicationRule:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ApplicationStatus.
+const (
+	ApplicationStatusAccepted  ApplicationStatus = "accepted"
+	ApplicationStatusCancelled ApplicationStatus = "cancelled"
+	ApplicationStatusExpired   ApplicationStatus = "expired"
+	ApplicationStatusLeft      ApplicationStatus = "left"
+	ApplicationStatusPending   ApplicationStatus = "pending"
+	ApplicationStatusRejected  ApplicationStatus = "rejected"
+	ApplicationStatusRemoved   ApplicationStatus = "removed"
+	ApplicationStatusWithdrawn ApplicationStatus = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the ApplicationStatus enum.
+func (e ApplicationStatus) Valid() bool {
+	switch e {
+	case ApplicationStatusAccepted:
+		return true
+	case ApplicationStatusCancelled:
+		return true
+	case ApplicationStatusExpired:
+		return true
+	case ApplicationStatusLeft:
+		return true
+	case ApplicationStatusPending:
+		return true
+	case ApplicationStatusRejected:
+		return true
+	case ApplicationStatusRemoved:
+		return true
+	case ApplicationStatusWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ClassTier.
 const (
 	ClassTierAprendiz       ClassTier = "aprendiz"
@@ -136,6 +229,7 @@ const (
 	FieldErrorFieldInstanceId  FieldErrorField = "instanceId"
 	FieldErrorFieldLevel       FieldErrorField = "level"
 	FieldErrorFieldLink        FieldErrorField = "link"
+	FieldErrorFieldMessage     FieldErrorField = "message"
 	FieldErrorFieldMinLevel    FieldErrorField = "minLevel"
 	FieldErrorFieldNick        FieldErrorField = "nick"
 	FieldErrorFieldNote        FieldErrorField = "note"
@@ -158,6 +252,8 @@ func (e FieldErrorField) Valid() bool {
 	case FieldErrorFieldLevel:
 		return true
 	case FieldErrorFieldLink:
+		return true
+	case FieldErrorFieldMessage:
 		return true
 	case FieldErrorFieldMinLevel:
 		return true
@@ -288,6 +384,30 @@ func (e LobbyOwnerPortrait) Valid() bool {
 	}
 }
 
+// Defines values for LobbyParticipantPortrait.
+const (
+	LobbyParticipantPortraitRetrato1 LobbyParticipantPortrait = "retrato-1"
+	LobbyParticipantPortraitRetrato2 LobbyParticipantPortrait = "retrato-2"
+	LobbyParticipantPortraitRetrato3 LobbyParticipantPortrait = "retrato-3"
+	LobbyParticipantPortraitRetrato4 LobbyParticipantPortrait = "retrato-4"
+)
+
+// Valid indicates whether the value is a known member of the LobbyParticipantPortrait enum.
+func (e LobbyParticipantPortrait) Valid() bool {
+	switch e {
+	case LobbyParticipantPortraitRetrato1:
+		return true
+	case LobbyParticipantPortraitRetrato2:
+		return true
+	case LobbyParticipantPortraitRetrato3:
+		return true
+	case LobbyParticipantPortraitRetrato4:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LobbyStatus.
 const (
 	LobbyStatusCancelled LobbyStatus = "cancelled"
@@ -303,6 +423,30 @@ func (e LobbyStatus) Valid() bool {
 	case LobbyStatusOpen:
 		return true
 	case LobbyStatusStarted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MyApplicationCharacterPortrait.
+const (
+	MyApplicationCharacterPortraitRetrato1 MyApplicationCharacterPortrait = "retrato-1"
+	MyApplicationCharacterPortraitRetrato2 MyApplicationCharacterPortrait = "retrato-2"
+	MyApplicationCharacterPortraitRetrato3 MyApplicationCharacterPortrait = "retrato-3"
+	MyApplicationCharacterPortraitRetrato4 MyApplicationCharacterPortrait = "retrato-4"
+)
+
+// Valid indicates whether the value is a known member of the MyApplicationCharacterPortrait enum.
+func (e MyApplicationCharacterPortrait) Valid() bool {
+	switch e {
+	case MyApplicationCharacterPortraitRetrato1:
+		return true
+	case MyApplicationCharacterPortraitRetrato2:
+		return true
+	case MyApplicationCharacterPortraitRetrato3:
+		return true
+	case MyApplicationCharacterPortraitRetrato4:
 		return true
 	default:
 		return false
@@ -367,6 +511,50 @@ func (e ValidationErrorError) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// Application defines model for Application.
+type Application struct {
+	// CharacterId Nulo se o personagem foi excluído depois do lobby (RN-26).
+	CharacterId *openapi_types.UUID `json:"characterId"`
+	CreatedAt   time.Time           `json:"createdAt"`
+	DecidedAt   *time.Time          `json:"decidedAt"`
+	Id          openapi_types.UUID  `json:"id"`
+	LobbyId     openapi_types.UUID  `json:"lobbyId"`
+	Message     *string             `json:"message"`
+
+	// Reason Justificativa da recusa (RN-29).
+	Reason *string `json:"reason"`
+
+	// Role Função do personagem (RN-08).
+	Role Role `json:"role"`
+
+	// Status Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
+	Status ApplicationStatus `json:"status"`
+}
+
+// ApplicationRuleError defines model for ApplicationRuleError.
+type ApplicationRuleError struct {
+	Code  ApplicationRuleErrorCode  `json:"code"`
+	Error ApplicationRuleErrorError `json:"error"`
+}
+
+// ApplicationRuleErrorCode defines model for ApplicationRuleError.Code.
+type ApplicationRuleErrorCode string
+
+// ApplicationRuleErrorError defines model for ApplicationRuleError.Error.
+type ApplicationRuleErrorError string
+
+// ApplicationStatus Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
+type ApplicationStatus string
+
+// ApplyInput defines model for ApplyInput.
+type ApplyInput struct {
+	// CharacterId Um dos personagens do Usuário da sessão.
+	CharacterId string `json:"characterId"`
+
+	// Message Opcional, até 250 caracteres (RN-06).
+	Message *string `json:"message,omitempty"`
 }
 
 // CancelLobby defines model for CancelLobby.
@@ -504,13 +692,25 @@ type Lobby struct {
 	CreatedAt    time.Time          `json:"createdAt"`
 	Id           openapi_types.UUID `json:"id"`
 	Instance     LobbyInstance      `json:"instance"`
-	MinLevel     int                `json:"minLevel"`
-	Note         *string            `json:"note"`
-	Occupied     Slots              `json:"occupied"`
-	Owner        LobbyOwner         `json:"owner"`
-	Slots        Slots              `json:"slots"`
-	StartsAt     time.Time          `json:"startsAt"`
-	Status       LobbyStatus        `json:"status"`
+
+	// Members Membros aceitos. Só no detalhe (D-06).
+	Members  *[]LobbyParticipant `json:"members,omitempty"`
+	MinLevel int                 `json:"minLevel"`
+
+	// MyApplication A candidatura mais recente de quem olha o lobby (RN-29, D-06).
+	MyApplication *ViewerApplication `json:"myApplication,omitempty"`
+	Note          *string            `json:"note"`
+	Occupied      Slots              `json:"occupied"`
+	Owner         LobbyOwner         `json:"owner"`
+
+	// Pending Candidaturas pendentes. Só no detalhe e só para o dono (RN-28).
+	Pending *[]LobbyParticipant `json:"pending,omitempty"`
+
+	// PendingCount Candidaturas pendentes; zero depois do início (RN-28, D-02).
+	PendingCount int         `json:"pendingCount"`
+	Slots        Slots       `json:"slots"`
+	StartsAt     time.Time   `json:"startsAt"`
+	Status       LobbyStatus `json:"status"`
 }
 
 // LobbyInput defines model for LobbyInput.
@@ -550,9 +750,14 @@ type LobbyOwner struct {
 	// CharacterId Nulo se o personagem foi excluído depois do início (D-01).
 	CharacterId *openapi_types.UUID `json:"characterId"`
 	ClassId     *string             `json:"classId"`
-	DiscordName string              `json:"discordName"`
-	Level       *int                `json:"level"`
-	Nick        *string             `json:"nick"`
+
+	// DiscordName Só para o próprio dono e para os membros aceitos; nulo para os outros e na lista pública (RN-32 da candidatura-lobby).
+	DiscordName *string `json:"discordName"`
+	Level       *int    `json:"level"`
+
+	// Link Link externo do personagem do dono, para o painel do jogador (RN-31).
+	Link *string `json:"link"`
+	Nick *string `json:"nick"`
 
 	// Portrait Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
 	Portrait *LobbyOwnerPortrait `json:"portrait"`
@@ -565,6 +770,31 @@ type LobbyOwner struct {
 // LobbyOwnerPortrait Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
 type LobbyOwnerPortrait string
 
+// LobbyParticipant Membro aceito ou candidato pendente, como quem olha pode ver (RN-31, RN-32).
+type LobbyParticipant struct {
+	ApplicationId openapi_types.UUID  `json:"applicationId"`
+	CharacterId   *openapi_types.UUID `json:"characterId"`
+	ClassId       *string             `json:"classId"`
+	CreatedAt     time.Time           `json:"createdAt"`
+
+	// DiscordName Só para o dono e para os membros (RN-32).
+	DiscordName *string `json:"discordName"`
+	Level       *int    `json:"level"`
+	Link        *string `json:"link"`
+
+	// Message Mensagem da candidatura, só para o dono (RN-28).
+	Message  *string                   `json:"message"`
+	Nick     *string                   `json:"nick"`
+	Portrait *LobbyParticipantPortrait `json:"portrait"`
+
+	// Role Função do personagem (RN-08).
+	Role   Role               `json:"role"`
+	UserId openapi_types.UUID `json:"userId"`
+}
+
+// LobbyParticipantPortrait defines model for LobbyParticipant.Portrait.
+type LobbyParticipantPortrait string
+
 // LobbyStatus defines model for LobbyStatus.
 type LobbyStatus string
 
@@ -576,8 +806,35 @@ type LobbyUpdate struct {
 	StartsAt time.Time `json:"startsAt"`
 }
 
+// MyApplication Uma candidatura do Usuário com o lobby e o personagem (RN-33).
+type MyApplication struct {
+	Application Application `json:"application"`
+
+	// Character Nulo se o personagem foi excluído depois do lobby (RN-26).
+	Character *struct {
+		ClassId  string                         `json:"classId"`
+		Level    int                            `json:"level"`
+		Nick     string                         `json:"nick"`
+		Portrait MyApplicationCharacterPortrait `json:"portrait"`
+	} `json:"character"`
+	Lobby struct {
+		InstanceName string      `json:"instanceName"`
+		StartsAt     time.Time   `json:"startsAt"`
+		Status       LobbyStatus `json:"status"`
+	} `json:"lobby"`
+}
+
+// MyApplicationCharacterPortrait defines model for MyApplication.Character.Portrait.
+type MyApplicationCharacterPortrait string
+
 // Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
 type Portrait string
+
+// RejectInput defines model for RejectInput.
+type RejectInput struct {
+	// Reason De 10 a 250 caracteres (RN-09).
+	Reason string `json:"reason"`
+}
 
 // Role Função do personagem (RN-08).
 type Role string
@@ -613,11 +870,36 @@ type ValidationError struct {
 // ValidationErrorError defines model for ValidationError.Error.
 type ValidationErrorError string
 
+// ViewerApplication A candidatura mais recente de quem olha o lobby (RN-29, D-06).
+type ViewerApplication struct {
+	CharacterId *openapi_types.UUID `json:"characterId"`
+	CreatedAt   time.Time           `json:"createdAt"`
+	DecidedAt   *time.Time          `json:"decidedAt"`
+	Id          openapi_types.UUID  `json:"id"`
+	Message     *string             `json:"message"`
+	Reason      *string             `json:"reason"`
+
+	// Role Função do personagem (RN-08).
+	Role Role `json:"role"`
+
+	// Status Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
+	Status ApplicationStatus `json:"status"`
+}
+
+// ApplicationId defines model for ApplicationId.
+type ApplicationId = string
+
 // CharacterId defines model for CharacterId.
 type CharacterId = string
 
 // LobbyId defines model for LobbyId.
 type LobbyId = string
+
+// ApplicationNotFound defines model for ApplicationNotFound.
+type ApplicationNotFound = Error
+
+// ApplicationRule defines model for ApplicationRule.
+type ApplicationRule = ApplicationRuleError
 
 // Invalid defines model for Invalid.
 type Invalid = ValidationError
@@ -640,6 +922,9 @@ type ListLobbiesParams struct {
 	To   openapi_types.Date `form:"to" json:"to"`
 }
 
+// RejectApplicationJSONRequestBody defines body for RejectApplication for application/json ContentType.
+type RejectApplicationJSONRequestBody = RejectInput
+
 // CreateSessionFromDiscordJSONRequestBody defines body for CreateSessionFromDiscord for application/json ContentType.
 type CreateSessionFromDiscordJSONRequestBody = DiscordLogin
 
@@ -655,11 +940,23 @@ type CreateLobbyJSONRequestBody = LobbyInput
 // UpdateLobbyJSONRequestBody defines body for UpdateLobby for application/json ContentType.
 type UpdateLobbyJSONRequestBody = LobbyUpdate
 
+// ApplyToLobbyJSONRequestBody defines body for ApplyToLobby for application/json ContentType.
+type ApplyToLobbyJSONRequestBody = ApplyInput
+
 // CancelLobbyJSONRequestBody defines body for CancelLobby for application/json ContentType.
 type CancelLobbyJSONRequestBody = CancelLobby
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// AcceptApplication O dono aceita a candidatura
+	// (POST /applications/{id}/accept)
+	AcceptApplication(w http.ResponseWriter, r *http.Request, id ApplicationId)
+	// RejectApplication O dono recusa a candidatura
+	// (POST /applications/{id}/reject)
+	RejectApplication(w http.ResponseWriter, r *http.Request, id ApplicationId)
+	// WithdrawApplication O candidato retira a candidatura pendente
+	// (POST /applications/{id}/withdraw)
+	WithdrawApplication(w http.ResponseWriter, r *http.Request, id ApplicationId)
 	// CreateSessionFromDiscord Troca o código do Discord por uma sessão
 	// (POST /auth/discord)
 	CreateSessionFromDiscord(w http.ResponseWriter, r *http.Request)
@@ -699,12 +996,18 @@ type ServerInterface interface {
 	// UpdateLobby Edita o lobby
 	// (PUT /lobbies/{id})
 	UpdateLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
+	// ApplyToLobby Candidata-se ao lobby
+	// (POST /lobbies/{id}/applications)
+	ApplyToLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
 	// CancelLobby Cancela o lobby
 	// (POST /lobbies/{id}/cancel)
 	CancelLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
+	// ListMyApplications Minhas candidaturas
+	// (GET /me/applications)
+	ListMyApplications(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request)
@@ -718,6 +1021,84 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// AcceptApplication operation middleware
+func (siw *ServerInterfaceWrapper) AcceptApplication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ApplicationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptApplication(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RejectApplication operation middleware
+func (siw *ServerInterfaceWrapper) RejectApplication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ApplicationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RejectApplication(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// WithdrawApplication operation middleware
+func (siw *ServerInterfaceWrapper) WithdrawApplication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ApplicationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.WithdrawApplication(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // CreateSessionFromDiscord operation middleware
 func (siw *ServerInterfaceWrapper) CreateSessionFromDiscord(w http.ResponseWriter, r *http.Request) {
@@ -993,6 +1374,32 @@ func (siw *ServerInterfaceWrapper) UpdateLobby(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// ApplyToLobby operation middleware
+func (siw *ServerInterfaceWrapper) ApplyToLobby(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApplyToLobby(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CancelLobby operation middleware
 func (siw *ServerInterfaceWrapper) CancelLobby(w http.ResponseWriter, r *http.Request) {
 
@@ -1024,6 +1431,20 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMyApplications operation middleware
+func (siw *ServerInterfaceWrapper) ListMyApplications(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMyApplications(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1183,9 +1604,18 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}", wrapper.GetLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}", wrapper.UpdateLobby)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/cancel", wrapper.CancelLobby)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/applications", wrapper.ApplyToLobby)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/accept", wrapper.AcceptApplication)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/reject", wrapper.RejectApplication)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/withdraw", wrapper.WithdrawApplication)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me/applications", wrapper.ListMyApplications)
 
 	return m
 }
+
+type ApplicationNotFoundJSONResponse Error
+
+type ApplicationRuleJSONResponse ApplicationRuleError
 
 type InvalidJSONResponse ValidationError
 
@@ -1196,6 +1626,219 @@ type LobbyNotOpenJSONResponse Error
 type NoSessionJSONResponse Error
 
 type NotFoundJSONResponse Error
+
+type AcceptApplicationRequestObject struct {
+	Id ApplicationId `json:"id"`
+}
+
+type AcceptApplicationResponseObject interface {
+	VisitAcceptApplicationResponse(w http.ResponseWriter) error
+}
+
+type AcceptApplication200JSONResponse Application
+
+func (response AcceptApplication200JSONResponse) VisitAcceptApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptApplication401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response AcceptApplication401JSONResponse) VisitAcceptApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptApplication404JSONResponse struct {
+	ApplicationNotFoundJSONResponse
+}
+
+func (response AcceptApplication404JSONResponse) VisitAcceptApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptApplication409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response AcceptApplication409JSONResponse) VisitAcceptApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectApplicationRequestObject struct {
+	Id   ApplicationId `json:"id"`
+	Body *RejectApplicationJSONRequestBody
+}
+
+type RejectApplicationResponseObject interface {
+	VisitRejectApplicationResponse(w http.ResponseWriter) error
+}
+
+type RejectApplication200JSONResponse Application
+
+func (response RejectApplication200JSONResponse) VisitRejectApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectApplication401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response RejectApplication401JSONResponse) VisitRejectApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectApplication404JSONResponse struct {
+	ApplicationNotFoundJSONResponse
+}
+
+func (response RejectApplication404JSONResponse) VisitRejectApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectApplication409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response RejectApplication409JSONResponse) VisitRejectApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectApplication422JSONResponse struct{ InvalidJSONResponse }
+
+func (response RejectApplication422JSONResponse) VisitRejectApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawApplicationRequestObject struct {
+	Id ApplicationId `json:"id"`
+}
+
+type WithdrawApplicationResponseObject interface {
+	VisitWithdrawApplicationResponse(w http.ResponseWriter) error
+}
+
+type WithdrawApplication200JSONResponse Application
+
+func (response WithdrawApplication200JSONResponse) VisitWithdrawApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawApplication401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response WithdrawApplication401JSONResponse) VisitWithdrawApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawApplication404JSONResponse struct {
+	ApplicationNotFoundJSONResponse
+}
+
+func (response WithdrawApplication404JSONResponse) VisitWithdrawApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawApplication409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response WithdrawApplication409JSONResponse) VisitWithdrawApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type CreateSessionFromDiscordRequestObject struct {
 	Body *CreateSessionFromDiscordJSONRequestBody
@@ -1819,6 +2462,85 @@ func (response UpdateLobby422JSONResponse) VisitUpdateLobbyResponse(w http.Respo
 	return err
 }
 
+type ApplyToLobbyRequestObject struct {
+	Id   LobbyId `json:"id"`
+	Body *ApplyToLobbyJSONRequestBody
+}
+
+type ApplyToLobbyResponseObject interface {
+	VisitApplyToLobbyResponse(w http.ResponseWriter) error
+}
+
+type ApplyToLobby201JSONResponse Application
+
+func (response ApplyToLobby201JSONResponse) VisitApplyToLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyToLobby401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response ApplyToLobby401JSONResponse) VisitApplyToLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyToLobby404JSONResponse struct{ LobbyNotFoundJSONResponse }
+
+func (response ApplyToLobby404JSONResponse) VisitApplyToLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyToLobby409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response ApplyToLobby409JSONResponse) VisitApplyToLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApplyToLobby422JSONResponse struct{ InvalidJSONResponse }
+
+func (response ApplyToLobby422JSONResponse) VisitApplyToLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CancelLobbyRequestObject struct {
 	Id   LobbyId `json:"id"`
 	Body *CancelLobbyJSONRequestBody
@@ -1933,6 +2655,41 @@ func (response GetMe401JSONResponse) VisitGetMeResponse(w http.ResponseWriter) e
 	return err
 }
 
+type ListMyApplicationsRequestObject struct {
+}
+
+type ListMyApplicationsResponseObject interface {
+	VisitListMyApplicationsResponse(w http.ResponseWriter) error
+}
+
+type ListMyApplications200JSONResponse []MyApplication
+
+func (response ListMyApplications200JSONResponse) VisitListMyApplicationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyApplications401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response ListMyApplications401JSONResponse) VisitListMyApplicationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteSessionRequestObject struct {
 }
 
@@ -1950,6 +2707,15 @@ func (response DeleteSession204Response) VisitDeleteSessionResponse(w http.Respo
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// AcceptApplication O dono aceita a candidatura
+	// (POST /applications/{id}/accept)
+	AcceptApplication(ctx context.Context, request AcceptApplicationRequestObject) (AcceptApplicationResponseObject, error)
+	// RejectApplication O dono recusa a candidatura
+	// (POST /applications/{id}/reject)
+	RejectApplication(ctx context.Context, request RejectApplicationRequestObject) (RejectApplicationResponseObject, error)
+	// WithdrawApplication O candidato retira a candidatura pendente
+	// (POST /applications/{id}/withdraw)
+	WithdrawApplication(ctx context.Context, request WithdrawApplicationRequestObject) (WithdrawApplicationResponseObject, error)
 	// CreateSessionFromDiscord Troca o código do Discord por uma sessão
 	// (POST /auth/discord)
 	CreateSessionFromDiscord(ctx context.Context, request CreateSessionFromDiscordRequestObject) (CreateSessionFromDiscordResponseObject, error)
@@ -1989,12 +2755,18 @@ type StrictServerInterface interface {
 	// UpdateLobby Edita o lobby
 	// (PUT /lobbies/{id})
 	UpdateLobby(ctx context.Context, request UpdateLobbyRequestObject) (UpdateLobbyResponseObject, error)
+	// ApplyToLobby Candidata-se ao lobby
+	// (POST /lobbies/{id}/applications)
+	ApplyToLobby(ctx context.Context, request ApplyToLobbyRequestObject) (ApplyToLobbyResponseObject, error)
 	// CancelLobby Cancela o lobby
 	// (POST /lobbies/{id}/cancel)
 	CancelLobby(ctx context.Context, request CancelLobbyRequestObject) (CancelLobbyResponseObject, error)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+	// ListMyApplications Minhas candidaturas
+	// (GET /me/applications)
+	ListMyApplications(ctx context.Context, request ListMyApplicationsRequestObject) (ListMyApplicationsResponseObject, error)
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
@@ -2037,6 +2809,91 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// AcceptApplication operation middleware
+func (sh *strictHandler) AcceptApplication(w http.ResponseWriter, r *http.Request, id ApplicationId) {
+	var request AcceptApplicationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptApplication(ctx, request.(AcceptApplicationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptApplication")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptApplicationResponseObject); ok {
+		if err := validResponse.VisitAcceptApplicationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RejectApplication operation middleware
+func (sh *strictHandler) RejectApplication(w http.ResponseWriter, r *http.Request, id ApplicationId) {
+	var request RejectApplicationRequestObject
+
+	request.Id = id
+
+	var body RejectApplicationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RejectApplication(ctx, request.(RejectApplicationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RejectApplication")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RejectApplicationResponseObject); ok {
+		if err := validResponse.VisitRejectApplicationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// WithdrawApplication operation middleware
+func (sh *strictHandler) WithdrawApplication(w http.ResponseWriter, r *http.Request, id ApplicationId) {
+	var request WithdrawApplicationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.WithdrawApplication(ctx, request.(WithdrawApplicationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "WithdrawApplication")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(WithdrawApplicationResponseObject); ok {
+		if err := validResponse.VisitWithdrawApplicationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // CreateSessionFromDiscord operation middleware
@@ -2398,6 +3255,39 @@ func (sh *strictHandler) UpdateLobby(w http.ResponseWriter, r *http.Request, id 
 	}
 }
 
+// ApplyToLobby operation middleware
+func (sh *strictHandler) ApplyToLobby(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request ApplyToLobbyRequestObject
+
+	request.Id = id
+
+	var body ApplyToLobbyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApplyToLobby(ctx, request.(ApplyToLobbyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApplyToLobby")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApplyToLobbyResponseObject); ok {
+		if err := validResponse.VisitApplyToLobbyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CancelLobby operation middleware
 func (sh *strictHandler) CancelLobby(w http.ResponseWriter, r *http.Request, id LobbyId) {
 	var request CancelLobbyRequestObject
@@ -2448,6 +3338,30 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetMeResponseObject); ok {
 		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMyApplications operation middleware
+func (sh *strictHandler) ListMyApplications(w http.ResponseWriter, r *http.Request) {
+	var request ListMyApplicationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMyApplications(ctx, request.(ListMyApplicationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMyApplications")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMyApplicationsResponseObject); ok {
+		if err := validResponse.VisitListMyApplicationsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

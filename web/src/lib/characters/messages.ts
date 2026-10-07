@@ -26,9 +26,9 @@ const MESSAGES: Record<CharacterField, Partial<Record<Code, string>> & { fallbac
 };
 
 export const LIMIT_MESSAGE = 'Você já tem 10 personagens';
-/** RN-21 da spec lobbies: personagem dono de lobby aberto. */
+/** RN-21 da spec lobbies e RN-25/RN-26 da candidatura-lobby: personagem num lobby aberto. */
 export const IN_OPEN_LOBBY_MESSAGE =
-	'Esse personagem está num lobby aberto. Cancele o lobby antes.';
+	'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função.';
 export const UNAVAILABLE_MESSAGE = 'Não foi possível falar com o servidor. Tente de novo.';
 export const NOT_FOUND_MESSAGE = 'Esse personagem não existe mais.';
 
