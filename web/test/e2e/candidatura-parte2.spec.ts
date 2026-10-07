@@ -9,7 +9,7 @@ import { acceptApplication, apiLogin, applyTo, createCharacter, createLobby, ran
 const notice = (page: Page) => page.getByTestId('my-application');
 
 test.describe('candidatura, Parte 2', () => {
-	test('CA-08.14 / CA-07.1: o membro pede troca, o dono aceita; o membro retira outro pedido; o dono troca o dele', async ({
+	test('CA-08.14 / CA-08.15 / CA-07.1: o membro pede troca, o dono aceita; o membro retira outro pedido; o dono troca o dele', async ({
 		browser,
 		request
 	}) => {
@@ -105,6 +105,25 @@ test.describe('candidatura, Parte 2', () => {
 		await notice(bia).getByRole('button', { name: 'Retirar pedido' }).click();
 		await expect(notice(bia)).toContainText(`Você está no grupo com Bri${s} (Tank)`);
 		await expect(notice(bia).getByRole('button', { name: 'Pedir troca' })).toBeVisible();
+
+		// CA-08.15 / RN-39: o dono recusa um novo pedido; Bia vê a justificativa.
+		await notice(bia).getByRole('button', { name: 'Pedir troca' }).click();
+		await ask.getByRole('radio', { name: new RegExp(`Fog${s}`) }).check({ force: true });
+		await ask.getByLabel('Motivo').fill('Melhor voltar para o dano');
+		await ask.getByRole('button', { name: 'Enviar pedido' }).click();
+		await expect(notice(bia)).toContainText('Pedido de troca pendente');
+		await owner.reload();
+		await owner.getByTestId('swap-request').first().click();
+		await owner.getByTestId('swap-panel').getByRole('button', { name: 'Recusar' }).click();
+		const refuse = owner.getByTestId('reject-dialog');
+		await refuse.getByLabel('Justificativa').fill('Precisamos de você no tank');
+		await refuse.getByRole('button', { name: 'Recusar' }).click();
+		await expect(owner.getByTestId('swap-list')).toContainText('Nenhum pedido de troca.');
+		await bia.reload();
+		await expect(bia.getByTestId('swap-rejected')).toHaveText(
+			'Seu pedido de troca foi recusado. Justificativa: Precisamos de você no tank'
+		);
+		await expect(notice(bia)).toContainText(`Você está no grupo com Bri${s} (Tank)`);
 
 		// CA-07.1: o dono troca o próprio Suporte pelo Dano, sem aprovação.
 		await owner.reload();

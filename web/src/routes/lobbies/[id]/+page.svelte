@@ -111,6 +111,14 @@
 	const pendingSwap = $derived(
 		mine?.status === 'accepted' && mine.swapRequest?.status === 'pending' ? mine.swapRequest : null
 	);
+	const rejectedSwap = $derived(
+		mine?.status === 'accepted' &&
+			lobby.status === 'open' &&
+			mine.swapRequest?.status === 'rejected' &&
+			mine.swapRequest.decisionReason
+			? mine.swapRequest
+			: null
+	);
 	const swapTarget = $derived(
 		pendingSwap ? data.characters.find((c) => c.id === pendingSwap.toCharacterId) : undefined
 	);
@@ -245,10 +253,16 @@
 						<Button type="submit" variant="secondary" size="sm">Retirar pedido</Button>
 					</form>
 				{:else if mine.status === 'accepted'}
-					<span
-						><b>Você está no grupo</b>{myPlace
-							? ` com ${myPlace.nick} (${ROLE_LABELS[myPlace.role]})`
-							: ''}. Combine os detalhes no Discord.</span
+					<span class="col"
+						><span
+							><b>Você está no grupo</b>{myPlace
+								? ` com ${myPlace.nick} (${ROLE_LABELS[myPlace.role]})`
+								: ''}. Combine os detalhes no Discord.</span
+						>{#if rejectedSwap}
+							<!-- RN-39: a justificativa da recusa do pedido de troca, só para o membro. -->
+							<span data-testid="swap-rejected"
+								>Seu pedido de troca foi recusado. Justificativa: {rejectedSwap.decisionReason}</span
+							>{/if}</span
 					>
 					{#if lobby.status === 'open'}
 						<!-- RN-14 / RN-20 / RN-38: pedir troca e sair (Candidatura 2a). -->
