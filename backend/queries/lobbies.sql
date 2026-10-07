@@ -84,3 +84,8 @@ SELECT EXISTS (
                       WHERE a.lobby_id = l.id AND a.character_id = @character_id
                         AND a.status IN ('pending', 'accepted')))
 );
+
+-- name: SetLobbyOwnerCharacter :exec
+-- RN-19 da candidatura: o dono troca o próprio personagem, e a vaga passa a ser da função
+-- do personagem novo.
+UPDATE lobbies SET owner_character_id = @character_id, owner_role = @role WHERE id = @id;

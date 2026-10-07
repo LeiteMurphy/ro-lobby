@@ -340,6 +340,23 @@ func (q *Queries) ListOpenLobbies(ctx context.Context, arg ListOpenLobbiesParams
 	return items, nil
 }
 
+const setLobbyOwnerCharacter = `-- name: SetLobbyOwnerCharacter :exec
+UPDATE lobbies SET owner_character_id = $1, owner_role = $2 WHERE id = $3
+`
+
+type SetLobbyOwnerCharacterParams struct {
+	CharacterID pgtype.UUID
+	Role        string
+	ID          pgtype.UUID
+}
+
+// RN-19 da candidatura: o dono troca o próprio personagem, e a vaga passa a ser da função
+// do personagem novo.
+func (q *Queries) SetLobbyOwnerCharacter(ctx context.Context, arg SetLobbyOwnerCharacterParams) error {
+	_, err := q.db.Exec(ctx, setLobbyOwnerCharacter, arg.CharacterID, arg.Role, arg.ID)
+	return err
+}
+
 const updateLobby = `-- name: UpdateLobby :exec
 UPDATE lobbies
 SET starts_at = $1, slots_tank = $2, slots_support = $3,
