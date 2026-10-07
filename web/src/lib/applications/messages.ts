@@ -12,7 +12,7 @@ const RULES: Record<ApplicationRuleCode, string> = {
 	below_min_level: 'O personagem está abaixo do nível mínimo do lobby.',
 	schedule_conflict: 'O personagem já está em outro grupo a menos de 2 h deste horário.',
 	not_pending: 'Essa candidatura não está mais pendente.',
-	not_owner: 'Só o anfitrião decide as candidaturas.',
+	not_owner: 'Só o anfitrião pode decidir.',
 	not_yours: 'Essa candidatura não é sua.',
 	blocked: 'Você não pode se candidatar a este lobby.',
 	not_member: 'Você não está mais no grupo.',
@@ -23,7 +23,17 @@ export function ruleMessage(code: ApplicationRuleCode | undefined): string | nul
 	return code ? RULES[code] : null;
 }
 
-/** Erros de campo da candidatura e da recusa (RN-06, RN-09). */
+// Nas ações do pedido de troca, os códigos falam do pedido, não da candidatura.
+const SWAP_RULES: Partial<Record<ApplicationRuleCode, string>> = {
+	not_yours: 'Esse pedido de troca não é seu.',
+	not_pending: 'Esse pedido de troca não está mais pendente.'
+};
+
+export function swapRuleMessage(code: ApplicationRuleCode | undefined): string | null {
+	return code ? (SWAP_RULES[code] ?? RULES[code]) : null;
+}
+
+/** Erros de campo da candidatura, da recusa, da remoção e da troca (RN-06, RN-09, RN-20). */
 export function applicationFieldMessage({ field, code }: FieldError): string {
 	if (field === 'message') return 'Use até 250 caracteres';
 	if (field === 'characterId') return 'Escolha um dos seus personagens';

@@ -572,3 +572,105 @@ describe('/lobbies/[id] — candidatura (candidatura-lobby, T-05)', () => {
 		}
 	});
 });
+
+describe('/lobbies/[id] — sair e trocas do membro (candidatura-lobby, T-14)', () => {
+	type AnyAction = Parameters<(typeof detalhe.actions)['leave']>[0];
+	const act = (
+		name: 'leave' | 'requestSwap' | 'withdrawSwap',
+		fields: Record<string, string>,
+		f: typeof fetch,
+		cookies = fakeCookies('t')
+	) =>
+		detalhe.actions[name]({
+			params: { id: TEMPLE.id },
+			request: (() => {
+				const d = new FormData();
+				for (const [k, v] of Object.entries(fields)) d.set(k, v);
+				return new Request(`http://web/lobbies/${TEMPLE.id}`, { method: 'POST', body: d });
+			})(),
+			cookies,
+			fetch: f
+		} as unknown as AnyAction);
+	const rule = (code: string) => json(409, { error: 'application_rule', code });
+	const SWAP = { applicationId: 'm1', characterId: 'c-brisa', reason: 'ninguém apareceu de tank' };
+
+	it('CA-05.1 / CA-05.2: sair chama a API; lobby iniciado volta com o aviso', async () => {
+		const ok = fakeFetch({ 'POST /applications/m1/leave': json(200, { id: 'm1' }) });
+		expect(await act('leave', { applicationId: 'm1' }, ok.fn)).toEqual({ done: 'leave' });
+		const late = fakeFetch({ 'POST /applications/m1/leave': rule('not_open') });
+		expect(await act('leave', { applicationId: 'm1' }, late.fn)).toMatchObject({
+			status: 409,
+			data: { action: 'leave', message: 'Esse lobby já começou ou foi cancelado.' }
+		});
+	});
+
+	it('CA-08.1: pedir troca manda personagem e motivo', async () => {
+		const { fn, calls } = fakeFetch({
+			'POST /applications/m1/swap-requests': json(201, { id: 's1' })
+		});
+		expect(await act('requestSwap', SWAP, fn)).toEqual({ done: 'requestSwap' });
+		expect(calls[0].body).toEqual({ characterId: 'c-brisa', reason: 'ninguém apareceu de tank' });
+	});
+
+	it('CA-08.2 / CA-08.3 / CA-08.13: motivo vazio, segundo pedido e nível voltam com o que foi digitado', async () => {
+		const empty = fakeFetch({
+			'POST /applications/m1/swap-requests': json(422, {
+				error: 'validation',
+				fields: [{ field: 'reason', code: 'required' }]
+			})
+		});
+		expect(await act('requestSwap', { ...SWAP, reason: '' }, empty.fn)).toMatchObject({
+			status: 422,
+			data: {
+				action: 'requestSwap',
+				characterId: 'c-brisa',
+				errors: { reason: 'Escreva a justificativa' }
+			}
+		});
+		for (const [code, message] of [
+			['swap_pending', 'Você já tem um pedido de troca pendente neste lobby.'],
+			['below_min_level', 'O personagem está abaixo do nível mínimo do lobby.']
+		]) {
+			const { fn } = fakeFetch({ 'POST /applications/m1/swap-requests': rule(code) });
+			expect(await act('requestSwap', SWAP, fn)).toMatchObject({
+				status: 409,
+				data: {
+					action: 'requestSwap',
+					characterId: 'c-brisa',
+					reason: 'ninguém apareceu de tank',
+					message
+				}
+			});
+		}
+	});
+
+	it('CA-08.11 / CA-08.12: retirar o pedido chama a API; pedido de outro volta falando do pedido', async () => {
+		const ok = fakeFetch({ 'POST /swap-requests/s1/withdraw': json(200, { id: 's1' }) });
+		expect(await act('withdrawSwap', { swapId: 's1' }, ok.fn)).toEqual({ done: 'withdrawSwap' });
+		const other = fakeFetch({ 'POST /swap-requests/s1/withdraw': rule('not_yours') });
+		expect(await act('withdrawSwap', { swapId: 's1' }, other.fn)).toMatchObject({
+			status: 409,
+			data: { action: 'withdrawSwap', message: 'Esse pedido de troca não é seu.' }
+		});
+		const gone = fakeFetch({
+			'POST /swap-requests/s1/withdraw': json(404, { error: 'not_found' })
+		});
+		expect(await act('withdrawSwap', { swapId: 's1' }, gone.fn)).toMatchObject({
+			status: 404,
+			data: { message: 'Esse pedido de troca não existe mais.' }
+		});
+	});
+
+	it('RN-04: sem sessão, as ações do membro levam ao login sem chamar a API', async () => {
+		for (const name of ['leave', 'requestSwap', 'withdrawSwap'] as const) {
+			const { fn, calls } = fakeFetch({});
+			const e = await thrown(() =>
+				act(name, { applicationId: 'm1', swapId: 's1' }, fn, fakeCookies())
+			);
+			expect(isRedirect(e) && e.location).toBe(
+				`/auth/discord/login?next=%2Flobbies%2F${TEMPLE.id}`
+			);
+			expect(calls).toEqual([]);
+		}
+	});
+});
