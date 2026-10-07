@@ -34,7 +34,11 @@ SELECT EXISTS (
       AND (l.owner_character_id = $2
            OR EXISTS (SELECT 1 FROM applications a
                       WHERE a.lobby_id = l.id AND a.character_id = $2
-                        AND a.status IN ('pending', 'accepted')))
+                        AND a.status IN ('pending', 'accepted'))
+           OR EXISTS (SELECT 1 FROM swap_requests r
+                      JOIN applications a ON a.id = r.application_id
+                      WHERE a.lobby_id = l.id AND r.to_character_id = $2
+                        AND r.status = 'pending'))
 )
 `
 
@@ -43,8 +47,9 @@ type CharacterInOpenLobbyParams struct {
 	CharacterID pgtype.UUID
 }
 
-// RN-21 da lobbies e RN-25/RN-26 da candidatura: o personagem é dono de um lobby aberto
-// ou tem candidatura pendente ou aceita num lobby aberto.
+// RN-21 da lobbies e RN-25/RN-26 da candidatura: o personagem é dono de um lobby aberto,
+// tem candidatura pendente ou aceita num lobby aberto, ou é o personagem novo de um pedido
+// de troca pendente num lobby aberto.
 func (q *Queries) CharacterInOpenLobby(ctx context.Context, arg CharacterInOpenLobbyParams) (bool, error) {
 	row := q.db.QueryRow(ctx, characterInOpenLobby, arg.Now, arg.CharacterID)
 	var exists bool
@@ -338,6 +343,23 @@ func (q *Queries) ListOpenLobbies(ctx context.Context, arg ListOpenLobbiesParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const setLobbyOwnerCharacter = `-- name: SetLobbyOwnerCharacter :exec
+UPDATE lobbies SET owner_character_id = $1, owner_role = $2 WHERE id = $3
+`
+
+type SetLobbyOwnerCharacterParams struct {
+	CharacterID pgtype.UUID
+	Role        string
+	ID          pgtype.UUID
+}
+
+// RN-19 da candidatura: o dono troca o próprio personagem, e a vaga passa a ser da função
+// do personagem novo.
+func (q *Queries) SetLobbyOwnerCharacter(ctx context.Context, arg SetLobbyOwnerCharacterParams) error {
+	_, err := q.db.Exec(ctx, setLobbyOwnerCharacter, arg.CharacterID, arg.Role, arg.ID)
+	return err
 }
 
 const updateLobby = `-- name: UpdateLobby :exec

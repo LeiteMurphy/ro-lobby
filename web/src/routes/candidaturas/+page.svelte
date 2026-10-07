@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import LeaveDialog from '$lib/applications/components/LeaveDialog.svelte';
+	import type { MyApplication } from '$lib/applications/api';
 	import { STATUS_LABELS } from '$lib/applications/messages';
 	import { buildDays } from '$lib/home/days';
 	import TopBar from '$lib/home/components/TopBar.svelte';
@@ -17,6 +19,11 @@
 		const { date, time } = fromUtcIso(iso);
 		return `${buildDays(date, [])[0].label} · ${time}`;
 	};
+	// RN-14 / RN-38: sair pede a mesma confirmação do detalhe (Candidatura 2f).
+	let leaving = $state<MyApplication | null>(null);
+	let leaveKey = $state(0);
+	// O erro só volta para o diálogo da mesma abertura (AJ-04).
+	let staleForm = $state.raw<typeof form>(null);
 	// Cor do selo de cada estado (Candidatura 1e).
 	const TONE: Record<string, string> = {
 		pending: 'pend',
@@ -73,6 +80,24 @@
 								<input type="hidden" name="applicationId" value={a.application.id} />
 								<Button type="submit" variant="secondary" size="sm">Retirar</Button>
 							</form>
+						{:else if a.application.status === 'accepted' && a.lobby.status === 'open'}
+							<span class="acts">
+								<Button
+									variant="ghost"
+									size="sm"
+									href={resolve('/lobbies/[id]', { id: a.application.lobbyId })}>Ver grupo</Button
+								>
+								<Button
+									variant="outline"
+									size="sm"
+									class="danger"
+									onclick={() => {
+										staleForm = form;
+										leaveKey++;
+										leaving = a;
+									}}>Sair do grupo</Button
+								>
+							</span>
 						{:else}
 							<Button
 								variant="ghost"
@@ -81,7 +106,8 @@
 							>
 						{/if}
 						{#if a.application.reason}
-							<!-- RN-29: a justificativa da recusa só para quem se candidatou. -->
+							<!-- RN-29 / RN-15: a justificativa da recusa ou da remoção, só para quem se
+							candidatou. -->
 							<p class="why"><b>Justificativa:</b> {a.application.reason}</p>
 						{/if}
 					</li>
@@ -90,6 +116,18 @@
 		{/if}
 	</main>
 </div>
+
+{#key leaveKey}
+	{#if leaving}
+		<LeaveDialog
+			applicationId={leaving.application.id}
+			title="{leaving.lobby.instanceName} · {when(leaving.lobby.startsAt)}"
+			roleLabel={ROLE_LABELS[leaving.application.role]}
+			message={form !== staleForm ? (form?.message ?? null) : null}
+			onclose={() => (leaving = null)}
+		/>
+	{/if}
+{/key}
 
 <style>
 	.page {
@@ -156,6 +194,15 @@
 	}
 	.row form {
 		margin: 0;
+	}
+	.acts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.acts :global(.danger) {
+		color: var(--status-error);
+		border-color: rgba(240, 100, 140, 0.4);
 	}
 	.portrait {
 		width: 52px;

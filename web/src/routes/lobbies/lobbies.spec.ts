@@ -290,7 +290,218 @@ describe('/lobbies/[id] com candidaturas (candidatura-lobby, T-05)', () => {
 
 	it('CA-02.1: aceita mostra que está no grupo', () => {
 		const html = renderAs('u-duda', mine('accepted'));
-		expect(html).toContain('Você está no grupo.');
+		expect(html).toContain('Você está no grupo');
 		expect(html).not.toContain('Retirar candidatura');
+	});
+});
+
+describe('/lobbies/[id] do lado do membro (candidatura-lobby, T-14)', () => {
+	// Bia é membro como Dano (Fogo); tem também Brisa (Tank).
+	const FOGO = {
+		applicationId: 'm1',
+		userId: 'u-bia',
+		discordName: 'Bia',
+		characterId: 'c-fogo',
+		nick: 'Fogo',
+		classId: 'arquimago',
+		level: 200,
+		portrait: 'retrato-1',
+		link: null,
+		role: 'dps',
+		message: null,
+		createdAt: '2026-10-06T20:10:00Z'
+	};
+	const BRISA = {
+		id: 'c-brisa',
+		nick: 'Brisa',
+		classId: 'guardiao-real',
+		level: 246,
+		role: 'tank',
+		portrait: 'retrato-3',
+		link: null,
+		isMain: false,
+		createdAt: ''
+	};
+	const mine = (status: string, over: Record<string, unknown> = {}) => ({
+		id: 'm1',
+		characterId: 'c-fogo',
+		role: 'dps',
+		message: null,
+		status,
+		reason: null,
+		blocked: false,
+		createdAt: '',
+		decidedAt: null,
+		swapRequest: null,
+		...over
+	});
+	const renderAs = (myApplication: Record<string, unknown>, lobby: Record<string, unknown> = {}) =>
+		render(Detalhe, {
+			props: {
+				data: {
+					user: { id: 'u-bia', username: 'bia', globalName: 'Bia' },
+					lobby: {
+						...TEMPLE,
+						occupied: { tank: 0, support: 1, dps: 1 },
+						members: [FOGO],
+						myApplication,
+						...lobby
+					},
+					ownerClass: 'Arcebispo',
+					classNames: {},
+					characters: [BRISA],
+					isOwner: false,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body.replace(/<!--[\s\S]*?-->/g, ''); // sem os marcadores do Svelte, para ler o texto
+	const candidate = />\s*Candidatar\s*</;
+	const empty = { members: [], occupied: { tank: 0, support: 1, dps: 0 } };
+
+	it('CA-05.5 / CA-08.14 / RN-38: o membro está no grupo com o personagem e tem Pedir troca e Sair do grupo', () => {
+		const html = renderAs(mine('accepted'));
+		expect(html).toMatch(/Você está no grupo<\/b>\s*com Fogo \(Dano\)/);
+		expect(html).toMatch(/data-testid="my-application"[\s\S]*?Pedir troca[\s\S]*?Sair do grupo/);
+		expect(html).not.toMatch(candidate);
+	});
+
+	it('RN-14: com o lobby iniciado, o membro não tem mais Pedir troca nem Sair do grupo', () => {
+		const html = renderAs(mine('accepted'), { status: 'started' });
+		expect(html).toContain('Você está no grupo');
+		expect(html).not.toContain('Pedir troca');
+		expect(html).not.toContain('Sair do grupo');
+	});
+
+	it('CA-08.14 / RN-21 / RN-27: com pedido pendente, o aviso mostra o personagem pedido e Retirar pedido', () => {
+		const swap = {
+			id: 's1',
+			applicationId: 'm1',
+			fromCharacterId: 'c-fogo',
+			toCharacterId: 'c-brisa',
+			toRole: 'tank',
+			reason: 'ninguém apareceu de tank',
+			status: 'pending',
+			decisionReason: null,
+			createdAt: '',
+			decidedAt: null
+		};
+		const html = renderAs(mine('accepted', { swapRequest: swap }));
+		expect(html).toMatch(/Pedido de troca pendente<\/b>\s*para Brisa \(Tank, Nv 246\)/);
+		expect(html).toContain('Você continua com Fogo até o anfitrião decidir.');
+		expect(html).toMatch(
+			/action="\?\/withdrawSwap"[\s\S]*?name="swapId" value="s1"[\s\S]*?Retirar pedido/
+		);
+		expect(html).not.toContain('Pedir troca');
+
+		// Pedido já decidido não muda o aviso.
+		const decided = renderAs(mine('accepted', { swapRequest: { ...swap, status: 'rejected' } }));
+		expect(decided).toContain('Pedir troca');
+		expect(decided).not.toContain('Retirar pedido');
+	});
+
+	it('CA-06.8 / RN-15 / RN-38: removido com bloqueio vê a justificativa e não tem Candidatar', () => {
+		const html = renderAs(
+			mine('removed', { reason: 'mudamos o horário da run', blocked: true }),
+			empty
+		);
+		expect(html).toContain('Você foi removido deste lobby.');
+		expect(html).toContain('Justificativa: mudamos o horário da run');
+		expect(html).toContain('Você não pode se candidatar a este lobby.');
+		expect(html).not.toMatch(candidate);
+	});
+
+	it('CA-06.5 / CA-05.4 / RN-37: removido sem bloqueio e quem saiu podem se candidatar de novo', () => {
+		const removed = renderAs(mine('removed', { reason: 'mudamos o horário da run' }), empty);
+		expect(removed).toContain('Você foi removido deste lobby.');
+		expect(removed).not.toContain('Você não pode se candidatar a este lobby.');
+		expect(removed).toMatch(candidate);
+		const left = renderAs(mine('left'), empty);
+		expect(left).toContain('Você saiu do grupo.');
+		expect(left).toMatch(candidate);
+	});
+});
+
+describe('/lobbies/[id] do lado do dono (candidatura-lobby, T-15)', () => {
+	const FAISCA = {
+		applicationId: 'a1',
+		userId: 'u-bia',
+		discordName: 'faisca.ro',
+		characterId: 'c-faisca',
+		nick: 'Faísca',
+		classId: 'elementalista',
+		level: 255,
+		portrait: 'retrato-1',
+		link: null,
+		role: 'dps',
+		message: null,
+		createdAt: '2026-10-06T17:30:00Z'
+	};
+	const SWAP = {
+		id: 's1',
+		applicationId: 'a1',
+		userId: 'u-bia',
+		discordName: 'faisca.ro',
+		from: { ...FAISCA, characterId: 'c-faisca' },
+		to: {
+			characterId: 'c-brisa',
+			nick: 'Brisa',
+			classId: 'guardiao-real',
+			level: 246,
+			portrait: 'retrato-3',
+			role: 'tank'
+		},
+		reason: 'posso cobrir de tank',
+		createdAt: '2026-10-06T18:00:00Z'
+	};
+	const renderOwner = (lobby: Record<string, unknown>) =>
+		render(Detalhe, {
+			props: {
+				data: {
+					user: { id: TEMPLE.owner.userId, username: 'ana', globalName: 'Ana' },
+					lobby: {
+						...TEMPLE,
+						occupied: { tank: 0, support: 1, dps: 1 },
+						members: [FAISCA],
+						pending: [],
+						pendingCount: 0,
+						swapRequests: [],
+						...lobby
+					},
+					ownerClass: 'Arcebispo',
+					classNames: {},
+					characters: [],
+					isOwner: true,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body.replace(/<!--[\s\S]*?-->/g, '');
+
+	it('CA-08.14 / RN-38 / D-12: o dono vê os pedidos de troca num bloco próprio, com o selo', () => {
+		const html = renderOwner({ swapRequests: [SWAP], pendingCount: 1 });
+		expect(html).toMatch(/data-testid="pending-badge"[^>]*>\s*1 pendente · 1 troca/);
+		expect(html).toMatch(
+			/data-testid="swap-list"[\s\S]*?Pedidos de troca[\s\S]*?só você vê[\s\S]*?data-testid="swap-request"[\s\S]*?Faísca → Brisa[\s\S]*?Dano → Tank · Nv 246/
+		);
+	});
+
+	it('RN-38: sem pedidos, o bloco diz que não há nenhum', () => {
+		expect(renderOwner({})).toContain('Nenhum pedido de troca.');
+	});
+
+	it('CA-07.1 / RN-19 / RN-38: o painel começa no anfitrião, com Trocar personagem para o dono', () => {
+		const html = renderOwner({});
+		expect(html).toMatch(/data-testid="player-panel"[\s\S]*?Trocar personagem/);
+	});
+
+	it('RN-16 / RN-38: com o lobby iniciado, o dono não tem os pedidos nem as ações', () => {
+		const html = renderOwner({ status: 'started', swapRequests: [] });
+		expect(html).not.toContain('data-testid="swap-list"');
+		expect(html).not.toContain('Trocar personagem');
 	});
 });

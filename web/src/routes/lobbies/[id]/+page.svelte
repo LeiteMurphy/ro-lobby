@@ -2,14 +2,20 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import ApplyDialog from '$lib/applications/components/ApplyDialog.svelte';
+	import LeaveDialog from '$lib/applications/components/LeaveDialog.svelte';
 	import PlayerPanel from '$lib/applications/components/PlayerPanel.svelte';
 	import RejectDialog from '$lib/applications/components/RejectDialog.svelte';
+	import RemoveDialog from '$lib/applications/components/RemoveDialog.svelte';
+	import SwapDialog from '$lib/applications/components/SwapDialog.svelte';
+	import SwapPanel from '$lib/applications/components/SwapPanel.svelte';
+	import type { LobbySwapRequest } from '$lib/applications/api';
 	import {
 		applyState,
 		composition,
 		eligibility,
 		HOST_KEY,
 		people,
+		swapEligibility,
 		type Person
 	} from '$lib/applications/detail';
 	import { buildDays } from '$lib/home/days';
@@ -52,6 +58,10 @@
 	// escolhida sair da lista (aceita, recusada ou retirada).
 	let selectedKey = $state(HOST_KEY);
 	const selected = $derived(list.find((p) => p.key === selectedKey) ?? list[0]);
+	// RN-38: o dono também escolhe um pedido de troca, que abre o painel do pedido (2d).
+	const swapRequests = $derived(lobby.swapRequests ?? []);
+	const swapKey = (s: LobbySwapRequest) => `swap:${s.id}`;
+	const selectedSwap = $derived(swapRequests.find((s) => swapKey(s) === selectedKey) ?? null);
 	const classLevel = (p: Person) =>
 		[p.classId ? (data.classNames[p.classId] ?? p.classId) : null, p.level ? `Nv ${p.level}` : null]
 			.filter(Boolean)
@@ -65,7 +75,12 @@
 
 	let cancelOpen = $state(false);
 	let applyOpen = $state(false);
+	let leaveOpen = $state(false);
+	let swapOpen = $state(false);
+	let ownerSwapOpen = $state(false);
 	let rejecting = $state<Person | null>(null);
+	let removing = $state<Person | null>(null);
+	let rejectingSwap = $state<LobbySwapRequest | null>(null);
 	let dialogKey = $state(0);
 	const open = (set: () => void) => {
 		staleForm = form;
@@ -75,10 +90,64 @@
 	const cancelForm = $derived(formOf('cancel'));
 	const applyForm = $derived(formOf('apply'));
 	const rejectForm = $derived(formOf('reject'));
+	const leaveForm = $derived(formOf('leave'));
+	const swapForm = $derived(formOf('requestSwap'));
+	const removeForm = $derived(formOf('remove'));
+	const ownerSwapForm = $derived(formOf('ownerSwap'));
+	const rejectSwapForm = $derived(formOf('rejectSwap'));
 	// Erros de aceitar e retirar aparecem num aviso na página.
-	const pageError = $derived(formOf('accept')?.message ?? formOf('withdraw')?.message ?? null);
+	const pageError = $derived(
+		formOf('accept')?.message ??
+			formOf('withdraw')?.message ??
+			formOf('withdrawSwap')?.message ??
+			formOf('acceptSwap')?.message ??
+			null
+	);
 	const options = $derived(eligibility(lobby, data.characters));
 	const mine = $derived(lobby.myApplication);
+
+	// RN-21 / RN-38: o membro, o personagem dele no grupo e o pedido de troca pendente.
+	const myPlace = $derived(list.find((p) => p.kind === 'member' && p.key === mine?.id) ?? null);
+	const pendingSwap = $derived(
+		mine?.status === 'accepted' && mine.swapRequest?.status === 'pending' ? mine.swapRequest : null
+	);
+	const swapTarget = $derived(
+		pendingSwap ? data.characters.find((c) => c.id === pendingSwap.toCharacterId) : undefined
+	);
+	const swapOptions = $derived(
+		mine
+			? swapEligibility(
+					lobby,
+					data.characters,
+					{ characterId: mine.characterId, role: mine.role },
+					'request'
+				)
+			: []
+	);
+	const lobbyTitle = $derived(`${lobby.instance.name} · ${dayLabel} às ${when.time}`);
+	// RN-19 / RN-36: para qual personagem o dono pode trocar o dele (2h).
+	const ownerSwapOptions = $derived(
+		data.isOwner
+			? swapEligibility(
+					lobby,
+					data.characters,
+					{ characterId: lobby.owner.characterId, role: lobby.owner.role },
+					'owner'
+				)
+			: []
+	);
+	const ownerBadge = $derived(
+		[
+			lobby.pendingCount > 0
+				? `${lobby.pendingCount} ${lobby.pendingCount === 1 ? 'pendente' : 'pendentes'}`
+				: null,
+			swapRequests.length > 0
+				? `${swapRequests.length} ${swapRequests.length === 1 ? 'troca' : 'trocas'}`
+				: null
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
 </script>
 
 <svelte:head>
@@ -107,11 +176,9 @@
 					<span>Nível mínimo <b>{lobby.minLevel}</b></span>
 					{#if lobby.instance.reset}<span>{RESET_LABELS[lobby.instance.reset]}</span>{/if}
 					<span><b>{occupied} de {total}</b> vagas ocupadas</span>
-					{#if data.isOwner && lobby.pendingCount > 0}
-						<!-- RN-34: o selo de pendentes é do dono. -->
-						<span class="pill pill--pend" data-testid="pending-badge"
-							>{lobby.pendingCount} {lobby.pendingCount === 1 ? 'pendente' : 'pendentes'}</span
-						>
+					{#if data.isOwner && ownerBadge}
+						<!-- RN-34: o selo de pendentes (e de trocas) é do dono. -->
+						<span class="pill pill--pend" data-testid="pending-badge">{ownerBadge}</span>
 					{/if}
 				</div>
 			</div>
@@ -148,6 +215,11 @@
 		{#if form && 'done' in form && form.done === 'apply'}
 			<p class="page-ok" role="status">Candidatura enviada. O anfitrião vai aceitar ou recusar.</p>
 		{/if}
+		{#if form && 'done' in form && form.done === 'requestSwap'}
+			<p class="page-ok" role="status">
+				Pedido de troca enviado. O anfitrião vai aceitar ou recusar.
+			</p>
+		{/if}
 
 		{#if mine && viewerState !== 'owner'}
 			<!-- RN-29 / RN-13: a própria candidatura, com a justificativa e o botão de retirar. -->
@@ -160,8 +232,48 @@
 							<Button type="submit" variant="secondary" size="sm">Retirar candidatura</Button>
 						</form>
 					{/if}
+				{:else if mine.status === 'accepted' && pendingSwap && lobby.status === 'open'}
+					<!-- RN-21 / RN-27: o pedido pendente, com o personagem pedido (Candidatura 2b). -->
+					<span
+						><b>Pedido de troca pendente</b> para {swapTarget?.nick ?? 'outro personagem'} ({ROLE_LABELS[
+							pendingSwap.toRole
+						]}{#if swapTarget}, Nv {swapTarget.level}{/if}). Você continua com {myPlace?.nick ??
+							'o personagem atual'} até o anfitrião decidir.</span
+					>
+					<form method="POST" action="?/withdrawSwap" use:enhance>
+						<input type="hidden" name="swapId" value={pendingSwap.id} />
+						<Button type="submit" variant="secondary" size="sm">Retirar pedido</Button>
+					</form>
 				{:else if mine.status === 'accepted'}
-					<span><b>Você está no grupo.</b> Combine os detalhes com o anfitrião no Discord.</span>
+					<span
+						><b>Você está no grupo</b>{myPlace
+							? ` com ${myPlace.nick} (${ROLE_LABELS[myPlace.role]})`
+							: ''}. Combine os detalhes no Discord.</span
+					>
+					{#if lobby.status === 'open'}
+						<!-- RN-14 / RN-20 / RN-38: pedir troca e sair (Candidatura 2a). -->
+						<span class="mine-acts">
+							<Button variant="secondary" size="sm" onclick={() => open(() => (swapOpen = true))}
+								>Pedir troca</Button
+							>
+							<Button
+								variant="outline"
+								size="sm"
+								class="danger"
+								onclick={() => open(() => (leaveOpen = true))}>Sair do grupo</Button
+							>
+						</span>
+					{/if}
+				{:else if mine.status === 'removed'}
+					<!-- RN-15 / RN-38: a justificativa e, com bloqueio, o aviso (Candidatura 2j). -->
+					<span class="col"
+						><b>Você foi removido deste lobby.</b>{#if mine.reason}<span
+								>Justificativa: {mine.reason}</span
+							>{/if}</span
+					>
+					{#if mine.blocked}<span class="sub">Você não pode se candidatar a este lobby.</span>{/if}
+				{:else if mine.status === 'left'}
+					<span>Você saiu do grupo. Pode se candidatar de novo enquanto houver vaga.</span>
 				{:else if mine.status === 'rejected'}
 					<span class="col"
 						><b>Sua candidatura foi recusada.</b>{#if mine.reason}<span
@@ -271,6 +383,50 @@
 							</ul>
 						{/if}
 					</div>
+					<!-- RN-38 / D-12: os pedidos de troca, só para o dono (Candidatura 2c). -->
+					<div class="pending" data-testid="swap-list">
+						<div class="rolehead">
+							<span class="role">Pedidos de troca</span>
+							<span class="hint">só você vê</span>
+						</div>
+						{#if swapRequests.length === 0}
+							<span class="hint">Nenhum pedido de troca.</span>
+						{:else}
+							<ul class="slots">
+								{#each swapRequests as r (r.id)}
+									<li>
+										<button
+											type="button"
+											class="slot sreq"
+											class:sel={selectedKey === swapKey(r)}
+											aria-pressed={selectedKey === swapKey(r)}
+											data-testid="swap-request"
+											onclick={() => (selectedKey = swapKey(r))}
+										>
+											{#if r.to.portrait}<img
+													class="portrait"
+													src="/portraits/{r.to.portrait}.svg"
+													alt=""
+													width="52"
+													height="52"
+												/>{/if}
+											<span class="who">
+												<span class="nm">{r.from.nick ?? '?'} → {r.to.nick ?? '?'}</span>
+												<span class="sub"
+													>{[
+														`${ROLE_LABELS[r.from.role]} → ${ROLE_LABELS[r.to.role]}`,
+														r.to.level ? `Nv ${r.to.level}` : null
+													]
+														.filter(Boolean)
+														.join(' · ')}</span
+												>
+											</span>
+										</button>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</div>
 				{:else if lobby.pendingCount > 0}
 					<!-- RN-28: os outros veem só a quantidade. -->
 					<span class="hint" data-testid="pending-count"
@@ -281,12 +437,22 @@
 			</section>
 
 			<div class="side">
-				<PlayerPanel
-					person={selected}
-					classNames={data.classNames}
-					{canDecide}
-					onreject={(p) => open(() => (rejecting = p))}
-				/>
+				{#if selectedSwap && canDecide}
+					<SwapPanel
+						swap={selectedSwap}
+						{lobby}
+						onreject={(r) => open(() => (rejectingSwap = r))}
+					/>
+				{:else}
+					<PlayerPanel
+						person={selected}
+						classNames={data.classNames}
+						{canDecide}
+						onreject={(p) => open(() => (rejecting = p))}
+						onremove={(p) => open(() => (removing = p))}
+						onswap={() => open(() => (ownerSwapOpen = true))}
+					/>
+				{/if}
 				{#if lobby.note}
 					<section class="panel" aria-labelledby="note-title">
 						<h2 id="note-title">Observação</h2>
@@ -318,6 +484,63 @@
 			errors={applyForm?.errors ?? {}}
 			formError={applyForm?.message ?? null}
 			onclose={() => (applyOpen = false)}
+		/>
+	{/if}
+	{#if leaveOpen && mine}
+		<LeaveDialog
+			applicationId={mine.id}
+			title={lobbyTitle}
+			roleLabel={ROLE_LABELS[mine.role]}
+			message={leaveForm?.message ?? null}
+			onclose={() => (leaveOpen = false)}
+		/>
+	{/if}
+	{#if swapOpen && mine}
+		<SwapDialog
+			mode="request"
+			hint="O anfitrião decide. Você continua no grupo com {myPlace?.nick ??
+				'o personagem atual'} até lá."
+			options={swapOptions}
+			classNames={data.classNames}
+			applicationId={mine.id}
+			characterId={swapForm?.characterId ?? ''}
+			reason={swapForm?.reason ?? ''}
+			errors={swapForm?.errors ?? {}}
+			formError={swapForm?.message ?? null}
+			onclose={() => (swapOpen = false)}
+		/>
+	{/if}
+	{#if removing && removing.applicationId}
+		<RemoveDialog
+			applicationId={removing.applicationId}
+			nick={removing.nick}
+			reason={removeForm?.reason ?? ''}
+			block={removeForm?.block ?? false}
+			error={removeForm?.errors?.reason ?? null}
+			message={removeForm?.message ?? null}
+			onclose={() => (removing = null)}
+		/>
+	{/if}
+	{#if ownerSwapOpen}
+		<SwapDialog
+			mode="owner"
+			hint="{lobby.instance.name} · nível mínimo {lobby.minLevel} · sem aprovação"
+			options={ownerSwapOptions}
+			classNames={data.classNames}
+			characterId={ownerSwapForm?.characterId ?? ''}
+			errors={ownerSwapForm?.errors ?? {}}
+			formError={ownerSwapForm?.message ?? null}
+			onclose={() => (ownerSwapOpen = false)}
+		/>
+	{/if}
+	{#if rejectingSwap}
+		<RejectDialog
+			swapId={rejectingSwap.id}
+			nick={rejectingSwap.from.nick ?? 'membro'}
+			reason={rejectSwapForm?.reason ?? ''}
+			error={rejectSwapForm?.errors?.reason ?? null}
+			message={rejectSwapForm?.message ?? null}
+			onclose={() => (rejectingSwap = null)}
 		/>
 	{/if}
 	{#if rejecting && rejecting.applicationId}
@@ -655,6 +878,10 @@
 	.slots > li {
 		display: flex;
 	}
+	.slot.sreq {
+		border: 1px solid var(--accent-line);
+		background: rgba(59, 120, 235, 0.1);
+	}
 	.slot.cand {
 		border: 1px solid var(--gold-line);
 		background: var(--gold-soft);
@@ -696,6 +923,18 @@
 	}
 	.mine form {
 		margin: 0;
+	}
+	.mine-acts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.mine :global(.danger) {
+		color: var(--status-error);
+		border-color: rgba(240, 100, 140, 0.4);
+	}
+	.mine--removed {
+		border-color: rgba(240, 100, 140, 0.4);
 	}
 	.mine--pending {
 		border-color: var(--gold-line);

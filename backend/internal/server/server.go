@@ -28,7 +28,7 @@ func New(db health.Pinger, authenticator Authenticator, chars CharacterService, 
 		authHandler:         authHandler{auth: authenticator},
 		charactersHandler:   session,
 		lobbiesHandler:      lobbiesHandler{session: session, lobbies: lobbySvc},
-		applicationsHandler: applicationsHandler{session: session, apps: apps},
+		applicationsHandler: applicationsHandler{session: session, apps: apps, lobbies: lobbySvc},
 	}, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)

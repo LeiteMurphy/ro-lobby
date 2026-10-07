@@ -452,21 +452,32 @@ describe('/lobbies/[id] — candidatura (candidatura-lobby, T-05)', () => {
 		expect(data.classNames).toEqual({ arcebispo: 'Arcebispo' });
 	});
 
-	it('RN-03: o dono e o visitante não carregam personagens', async () => {
-		for (const user of [ANA, null]) {
-			const { fn, calls } = fakeFetch({
-				[`GET /lobbies/${TEMPLE.id}`]: json(200, TEMPLE),
-				'GET /classes': json(200, [])
-			});
-			const data = (await detalhe.load({
-				params: { id: TEMPLE.id },
-				locals: { user },
-				cookies: fakeCookies(user ? 't' : undefined),
-				fetch: fn
-			} as unknown as DetailLoad)) as Record<string, unknown>;
-			expect(data.characters).toEqual([]);
-			expect(calls.map((c) => c.key)).not.toContain('GET /characters');
-		}
+	it('RN-03 / RN-19: o visitante não carrega personagens; o dono carrega, para trocar o dele', async () => {
+		const visitor = fakeFetch({
+			[`GET /lobbies/${TEMPLE.id}`]: json(200, TEMPLE),
+			'GET /classes': json(200, [])
+		});
+		const seen = (await detalhe.load({
+			params: { id: TEMPLE.id },
+			locals: { user: null },
+			cookies: fakeCookies(),
+			fetch: visitor.fn
+		} as unknown as DetailLoad)) as Record<string, unknown>;
+		expect(seen.characters).toEqual([]);
+		expect(visitor.calls.map((c) => c.key)).not.toContain('GET /characters');
+
+		const owner = fakeFetch({
+			[`GET /lobbies/${TEMPLE.id}`]: json(200, TEMPLE),
+			'GET /classes': json(200, []),
+			'GET /characters': json(200, [LIRIEN, BRASA])
+		});
+		const data = (await detalhe.load({
+			params: { id: TEMPLE.id },
+			locals: { user: ANA },
+			cookies: fakeCookies('t'),
+			fetch: owner.fn
+		} as unknown as DetailLoad)) as Record<string, unknown>;
+		expect(data.characters).toEqual([LIRIEN, BRASA]);
 	});
 
 	it('CA-01.1 / CA-01.2: candidatar manda personagem e mensagem sem espaços nas pontas', async () => {
@@ -565,6 +576,219 @@ describe('/lobbies/[id] — candidatura (candidatura-lobby, T-05)', () => {
 		for (const name of ['apply', 'accept', 'reject', 'withdraw'] as const) {
 			const { fn, calls } = fakeFetch({});
 			const e = await thrown(() => act(name, { applicationId: 'a1' }, fn, fakeCookies()));
+			expect(isRedirect(e) && e.location).toBe(
+				`/auth/discord/login?next=%2Flobbies%2F${TEMPLE.id}`
+			);
+			expect(calls).toEqual([]);
+		}
+	});
+});
+
+describe('/lobbies/[id] — sair e trocas do membro (candidatura-lobby, T-14)', () => {
+	type AnyAction = Parameters<(typeof detalhe.actions)['leave']>[0];
+	const act = (
+		name: 'leave' | 'requestSwap' | 'withdrawSwap',
+		fields: Record<string, string>,
+		f: typeof fetch,
+		cookies = fakeCookies('t')
+	) =>
+		detalhe.actions[name]({
+			params: { id: TEMPLE.id },
+			request: (() => {
+				const d = new FormData();
+				for (const [k, v] of Object.entries(fields)) d.set(k, v);
+				return new Request(`http://web/lobbies/${TEMPLE.id}`, { method: 'POST', body: d });
+			})(),
+			cookies,
+			fetch: f
+		} as unknown as AnyAction);
+	const rule = (code: string) => json(409, { error: 'application_rule', code });
+	const SWAP = { applicationId: 'm1', characterId: 'c-brisa', reason: 'ninguém apareceu de tank' };
+
+	it('CA-05.1 / CA-05.2: sair chama a API; lobby iniciado volta com o aviso', async () => {
+		const ok = fakeFetch({ 'POST /applications/m1/leave': json(200, { id: 'm1' }) });
+		expect(await act('leave', { applicationId: 'm1' }, ok.fn)).toEqual({ done: 'leave' });
+		const late = fakeFetch({ 'POST /applications/m1/leave': rule('not_open') });
+		expect(await act('leave', { applicationId: 'm1' }, late.fn)).toMatchObject({
+			status: 409,
+			data: { action: 'leave', message: 'Esse lobby já começou ou foi cancelado.' }
+		});
+	});
+
+	it('CA-08.1: pedir troca manda personagem e motivo', async () => {
+		const { fn, calls } = fakeFetch({
+			'POST /applications/m1/swap-requests': json(201, { id: 's1' })
+		});
+		expect(await act('requestSwap', SWAP, fn)).toEqual({ done: 'requestSwap' });
+		expect(calls[0].body).toEqual({ characterId: 'c-brisa', reason: 'ninguém apareceu de tank' });
+	});
+
+	it('CA-08.2 / CA-08.3 / CA-08.13: motivo vazio, segundo pedido e nível voltam com o que foi digitado', async () => {
+		const empty = fakeFetch({
+			'POST /applications/m1/swap-requests': json(422, {
+				error: 'validation',
+				fields: [{ field: 'reason', code: 'required' }]
+			})
+		});
+		expect(await act('requestSwap', { ...SWAP, reason: '' }, empty.fn)).toMatchObject({
+			status: 422,
+			data: {
+				action: 'requestSwap',
+				characterId: 'c-brisa',
+				errors: { reason: 'Escreva a justificativa' }
+			}
+		});
+		for (const [code, message] of [
+			['swap_pending', 'Você já tem um pedido de troca pendente neste lobby.'],
+			['below_min_level', 'O personagem está abaixo do nível mínimo do lobby.']
+		]) {
+			const { fn } = fakeFetch({ 'POST /applications/m1/swap-requests': rule(code) });
+			expect(await act('requestSwap', SWAP, fn)).toMatchObject({
+				status: 409,
+				data: {
+					action: 'requestSwap',
+					characterId: 'c-brisa',
+					reason: 'ninguém apareceu de tank',
+					message
+				}
+			});
+		}
+	});
+
+	it('CA-08.11 / CA-08.12: retirar o pedido chama a API; pedido de outro volta falando do pedido', async () => {
+		const ok = fakeFetch({ 'POST /swap-requests/s1/withdraw': json(200, { id: 's1' }) });
+		expect(await act('withdrawSwap', { swapId: 's1' }, ok.fn)).toEqual({ done: 'withdrawSwap' });
+		const other = fakeFetch({ 'POST /swap-requests/s1/withdraw': rule('not_yours') });
+		expect(await act('withdrawSwap', { swapId: 's1' }, other.fn)).toMatchObject({
+			status: 409,
+			data: { action: 'withdrawSwap', message: 'Esse pedido de troca não é seu.' }
+		});
+		const gone = fakeFetch({
+			'POST /swap-requests/s1/withdraw': json(404, { error: 'not_found' })
+		});
+		expect(await act('withdrawSwap', { swapId: 's1' }, gone.fn)).toMatchObject({
+			status: 404,
+			data: { message: 'Esse pedido de troca não existe mais.' }
+		});
+	});
+
+	it('RN-04: sem sessão, as ações do membro levam ao login sem chamar a API', async () => {
+		for (const name of ['leave', 'requestSwap', 'withdrawSwap'] as const) {
+			const { fn, calls } = fakeFetch({});
+			const e = await thrown(() =>
+				act(name, { applicationId: 'm1', swapId: 's1' }, fn, fakeCookies())
+			);
+			expect(isRedirect(e) && e.location).toBe(
+				`/auth/discord/login?next=%2Flobbies%2F${TEMPLE.id}`
+			);
+			expect(calls).toEqual([]);
+		}
+	});
+});
+
+describe('/lobbies/[id] — remover e trocas do dono (candidatura-lobby, T-15)', () => {
+	type AnyAction = Parameters<(typeof detalhe.actions)['remove']>[0];
+	const act = (
+		name: 'remove' | 'ownerSwap' | 'acceptSwap' | 'rejectSwap',
+		fields: Record<string, string>,
+		f: typeof fetch,
+		cookies = fakeCookies('t')
+	) =>
+		detalhe.actions[name]({
+			params: { id: TEMPLE.id },
+			request: (() => {
+				const d = new FormData();
+				for (const [k, v] of Object.entries(fields)) d.set(k, v);
+				return new Request(`http://web/lobbies/${TEMPLE.id}`, { method: 'POST', body: d });
+			})(),
+			cookies,
+			fetch: f
+		} as unknown as AnyAction);
+	const rule = (code: string) => json(409, { error: 'application_rule', code });
+	const REASON = 'mudamos o horário da run';
+
+	it('CA-06.1 / CA-06.6: remover manda a justificativa e o bloqueio marcado ou não', async () => {
+		const blocked = fakeFetch({ 'POST /applications/a1/remove': json(200, { id: 'a1' }) });
+		expect(
+			await act('remove', { applicationId: 'a1', reason: REASON, block: 'on' }, blocked.fn)
+		).toEqual({ done: 'remove' });
+		expect(blocked.calls[0].body).toEqual({ reason: REASON, block: true });
+		const plain = fakeFetch({ 'POST /applications/a1/remove': json(200, { id: 'a1' }) });
+		await act('remove', { applicationId: 'a1', reason: REASON }, plain.fn);
+		expect(plain.calls[0].body).toEqual({ reason: REASON, block: false });
+	});
+
+	it('CA-06.2 / CA-06.4: justificativa vazia volta com o erro e o bloqueio; lobby iniciado vira aviso', async () => {
+		const empty = fakeFetch({
+			'POST /applications/a1/remove': json(422, {
+				error: 'validation',
+				fields: [{ field: 'reason', code: 'required' }]
+			})
+		});
+		expect(
+			await act('remove', { applicationId: 'a1', reason: '', block: 'on' }, empty.fn)
+		).toMatchObject({
+			status: 422,
+			data: { action: 'remove', block: true, errors: { reason: 'Escreva a justificativa' } }
+		});
+		const late = fakeFetch({ 'POST /applications/a1/remove': rule('not_open') });
+		expect(await act('remove', { applicationId: 'a1', reason: REASON }, late.fn)).toMatchObject({
+			status: 409,
+			data: { action: 'remove', reason: REASON, message: 'Esse lobby já começou ou foi cancelado.' }
+		});
+	});
+
+	it('CA-07.1 / CA-07.3 / CA-07.4: trocar o personagem do dono chama a API; sem vaga e conflito viram aviso', async () => {
+		const ok = fakeFetch({ [`PUT /lobbies/${TEMPLE.id}/owner-character`]: json(200, TEMPLE) });
+		expect(await act('ownerSwap', { characterId: 'c2' }, ok.fn)).toEqual({ done: 'ownerSwap' });
+		expect(ok.calls[0].body).toEqual({ characterId: 'c2' });
+		for (const [code, message] of [
+			['role_full', 'Essa função não tem mais vaga.'],
+			['schedule_conflict', 'O personagem já está em outro grupo a menos de 2 h deste horário.'],
+			['below_min_level', 'O personagem está abaixo do nível mínimo do lobby.']
+		]) {
+			const { fn } = fakeFetch({ [`PUT /lobbies/${TEMPLE.id}/owner-character`]: rule(code) });
+			expect(await act('ownerSwap', { characterId: 'c2' }, fn)).toMatchObject({
+				status: 409,
+				data: { action: 'ownerSwap', characterId: 'c2', message }
+			});
+		}
+	});
+
+	it('CA-08.5 / CA-08.6: aceitar a troca chama a API; função lotada vira aviso', async () => {
+		const ok = fakeFetch({ 'POST /swap-requests/s1/accept': json(200, { id: 's1' }) });
+		expect(await act('acceptSwap', { swapId: 's1' }, ok.fn)).toEqual({ done: 'acceptSwap' });
+		const full = fakeFetch({ 'POST /swap-requests/s1/accept': rule('role_full') });
+		expect(await act('acceptSwap', { swapId: 's1' }, full.fn)).toMatchObject({
+			status: 409,
+			data: { action: 'acceptSwap', message: 'Essa função não tem mais vaga.' }
+		});
+	});
+
+	it('CA-08.8 / CA-08.9: recusar a troca manda a justificativa; vazia volta com o erro', async () => {
+		const ok = fakeFetch({ 'POST /swap-requests/s1/reject': json(200, { id: 's1' }) });
+		expect(await act('rejectSwap', { swapId: 's1', reason: 'já achamos um tank' }, ok.fn)).toEqual({
+			done: 'rejectSwap'
+		});
+		expect(ok.calls[0].body).toEqual({ reason: 'já achamos um tank' });
+		const empty = fakeFetch({
+			'POST /swap-requests/s1/reject': json(422, {
+				error: 'validation',
+				fields: [{ field: 'reason', code: 'required' }]
+			})
+		});
+		expect(await act('rejectSwap', { swapId: 's1', reason: '' }, empty.fn)).toMatchObject({
+			status: 422,
+			data: { action: 'rejectSwap', swapId: 's1', errors: { reason: 'Escreva a justificativa' } }
+		});
+	});
+
+	it('RN-04: sem sessão, as ações do dono levam ao login sem chamar a API', async () => {
+		for (const name of ['remove', 'ownerSwap', 'acceptSwap', 'rejectSwap'] as const) {
+			const { fn, calls } = fakeFetch({});
+			const e = await thrown(() =>
+				act(name, { applicationId: 'a1', swapId: 's1', characterId: 'c2' }, fn, fakeCookies())
+			);
 			expect(isRedirect(e) && e.location).toBe(
 				`/auth/discord/login?next=%2Flobbies%2F${TEMPLE.id}`
 			);

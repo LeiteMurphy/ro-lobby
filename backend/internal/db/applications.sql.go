@@ -15,7 +15,7 @@ import (
 const createApplication = `-- name: CreateApplication :one
 INSERT INTO applications (lobby_id, user_id, character_id, role, message, status, created_at)
 VALUES ($1, $2, $3, $4, $5, 'pending', $6)
-RETURNING id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at
+RETURNING id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at, blocked
 `
 
 type CreateApplicationParams struct {
@@ -48,6 +48,7 @@ func (q *Queries) CreateApplication(ctx context.Context, arg CreateApplicationPa
 		&i.Reason,
 		&i.CreatedAt,
 		&i.DecidedAt,
+		&i.Blocked,
 	)
 	return i, err
 }
@@ -85,7 +86,7 @@ func (q *Queries) ExpirePendingForLobby(ctx context.Context, arg ExpirePendingFo
 }
 
 const getApplication = `-- name: GetApplication :one
-SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at FROM applications WHERE id = $1
+SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at, blocked FROM applications WHERE id = $1
 `
 
 // Leitura sem trava, para descobrir o candidato antes de travar (D-05).
@@ -103,12 +104,13 @@ func (q *Queries) GetApplication(ctx context.Context, id pgtype.UUID) (Applicati
 		&i.Reason,
 		&i.CreatedAt,
 		&i.DecidedAt,
+		&i.Blocked,
 	)
 	return i, err
 }
 
 const getApplicationForUpdate = `-- name: GetApplicationForUpdate :one
-SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at FROM applications WHERE id = $1 FOR UPDATE
+SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at, blocked FROM applications WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) GetApplicationForUpdate(ctx context.Context, id pgtype.UUID) (Application, error) {
@@ -125,12 +127,13 @@ func (q *Queries) GetApplicationForUpdate(ctx context.Context, id pgtype.UUID) (
 		&i.Reason,
 		&i.CreatedAt,
 		&i.DecidedAt,
+		&i.Blocked,
 	)
 	return i, err
 }
 
 const getUserApplicationInLobby = `-- name: GetUserApplicationInLobby :one
-SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at FROM applications
+SELECT id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at, blocked FROM applications
 WHERE lobby_id = $1 AND user_id = $2
 ORDER BY created_at DESC, id DESC
 LIMIT 1
@@ -156,6 +159,7 @@ func (q *Queries) GetUserApplicationInLobby(ctx context.Context, arg GetUserAppl
 		&i.Reason,
 		&i.CreatedAt,
 		&i.DecidedAt,
+		&i.Blocked,
 	)
 	return i, err
 }
@@ -207,6 +211,26 @@ func (q *Queries) InsertApplicationEvent(ctx context.Context, arg InsertApplicat
 	return err
 }
 
+const isBlocked = `-- name: IsBlocked :one
+SELECT EXISTS (
+    SELECT 1 FROM applications
+    WHERE lobby_id = $1 AND user_id = $2 AND status = 'removed' AND blocked
+)
+`
+
+type IsBlockedParams struct {
+	LobbyID pgtype.UUID
+	UserID  pgtype.UUID
+}
+
+// RN-07, RN-15: removido com bloqueio não se candidata de novo ao mesmo lobby.
+func (q *Queries) IsBlocked(ctx context.Context, arg IsBlockedParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isBlocked, arg.LobbyID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const listApplicationEvents = `-- name: ListApplicationEvents :many
 SELECT id, application_id, from_status, to_status, actor_id, reason, at FROM application_events WHERE application_id = $1 ORDER BY at, id
 `
@@ -240,7 +264,7 @@ func (q *Queries) ListApplicationEvents(ctx context.Context, applicationID pgtyp
 }
 
 const listLobbyApplications = `-- name: ListLobbyApplications :many
-SELECT applications.id, applications.lobby_id, applications.user_id, applications.character_id, applications.role, applications.message, applications.status, applications.reason, applications.created_at, applications.decided_at,
+SELECT applications.id, applications.lobby_id, applications.user_id, applications.character_id, applications.role, applications.message, applications.status, applications.reason, applications.created_at, applications.decided_at, applications.blocked,
        c.nick, c.class_id, c.level, c.portrait, c.link,
        u.username, u.global_name
 FROM applications
@@ -282,6 +306,7 @@ func (q *Queries) ListLobbyApplications(ctx context.Context, lobbyID pgtype.UUID
 			&i.Application.Reason,
 			&i.Application.CreatedAt,
 			&i.Application.DecidedAt,
+			&i.Application.Blocked,
 			&i.Nick,
 			&i.ClassID,
 			&i.Level,
@@ -301,7 +326,7 @@ func (q *Queries) ListLobbyApplications(ctx context.Context, lobbyID pgtype.UUID
 }
 
 const listMyApplications = `-- name: ListMyApplications :many
-SELECT applications.id, applications.lobby_id, applications.user_id, applications.character_id, applications.role, applications.message, applications.status, applications.reason, applications.created_at, applications.decided_at,
+SELECT applications.id, applications.lobby_id, applications.user_id, applications.character_id, applications.role, applications.message, applications.status, applications.reason, applications.created_at, applications.decided_at, applications.blocked,
        l.instance_name, l.starts_at, l.cancelled_at AS lobby_cancelled_at,
        c.nick, c.class_id, c.level, c.portrait
 FROM applications
@@ -343,6 +368,7 @@ func (q *Queries) ListMyApplications(ctx context.Context, userID pgtype.UUID) ([
 			&i.Application.Reason,
 			&i.Application.CreatedAt,
 			&i.Application.DecidedAt,
+			&i.Application.Blocked,
 			&i.InstanceName,
 			&i.StartsAt,
 			&i.LobbyCancelledAt,
@@ -373,11 +399,53 @@ func (q *Queries) LockLobby(ctx context.Context, id pgtype.UUID) (pgtype.UUID, e
 	return id_2, err
 }
 
+const setApplicationBlocked = `-- name: SetApplicationBlocked :exec
+UPDATE applications SET blocked = true WHERE id = $1
+`
+
+// RN-15: remoção com bloqueio.
+func (q *Queries) SetApplicationBlocked(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, setApplicationBlocked, id)
+	return err
+}
+
+const setApplicationCharacter = `-- name: SetApplicationCharacter :one
+UPDATE applications SET character_id = $1, role = $2
+WHERE id = $3
+RETURNING id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at, blocked
+`
+
+type SetApplicationCharacterParams struct {
+	CharacterID pgtype.UUID
+	Role        string
+	ID          pgtype.UUID
+}
+
+// RN-23: o aceite da troca muda o personagem e a função de uma vez.
+func (q *Queries) SetApplicationCharacter(ctx context.Context, arg SetApplicationCharacterParams) (Application, error) {
+	row := q.db.QueryRow(ctx, setApplicationCharacter, arg.CharacterID, arg.Role, arg.ID)
+	var i Application
+	err := row.Scan(
+		&i.ID,
+		&i.LobbyID,
+		&i.UserID,
+		&i.CharacterID,
+		&i.Role,
+		&i.Message,
+		&i.Status,
+		&i.Reason,
+		&i.CreatedAt,
+		&i.DecidedAt,
+		&i.Blocked,
+	)
+	return i, err
+}
+
 const setApplicationStatus = `-- name: SetApplicationStatus :one
 UPDATE applications
 SET status = $1, reason = $2, decided_at = $3::timestamptz
 WHERE id = $4
-RETURNING id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at
+RETURNING id, lobby_id, user_id, character_id, role, message, status, reason, created_at, decided_at, blocked
 `
 
 type SetApplicationStatusParams struct {
@@ -406,6 +474,7 @@ func (q *Queries) SetApplicationStatus(ctx context.Context, arg SetApplicationSt
 		&i.Reason,
 		&i.CreatedAt,
 		&i.DecidedAt,
+		&i.Blocked,
 	)
 	return i, err
 }

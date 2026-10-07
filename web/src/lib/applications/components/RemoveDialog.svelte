@@ -5,22 +5,21 @@
 	import Icon from '$lib/ui/Icon.svelte';
 
 	interface Props {
-		/** A candidatura recusada; ou o pedido de troca, com `swapId` (RN-22). */
-		applicationId?: string;
-		swapId?: string;
+		applicationId: string;
 		nick: string;
-		/** Valor e erros de uma tentativa anterior desta abertura (RN-09). */
+		/** Valores e erros de uma tentativa anterior desta abertura (RN-09). */
 		reason?: string;
+		block?: boolean;
 		error?: string | null;
 		message?: string | null;
 		onclose: () => void;
 	}
 
 	let {
-		applicationId = '',
-		swapId = '',
+		applicationId,
 		nick,
 		reason = '',
+		block = false,
 		error = null,
 		message = null,
 		onclose
@@ -29,7 +28,7 @@
 	let dialog: HTMLDialogElement | undefined = $state();
 	let submitting = $state(false);
 
-	// RN-09 / RN-22: recusar pede justificativa de 10 a 250 caracteres. O foco começa no campo.
+	// RN-15: remover pede justificativa e oferece o bloqueio só neste lobby (Candidatura 2g).
 	onMount(() => dialog?.showModal());
 </script>
 
@@ -39,11 +38,11 @@
 	aria-labelledby="{uid}-title"
 	aria-describedby="{uid}-desc"
 	{onclose}
-	data-testid="reject-dialog"
+	data-testid="remove-dialog"
 >
 	<form
 		method="POST"
-		action={swapId ? '?/rejectSwap' : '?/reject'}
+		action="?/remove"
 		novalidate
 		use:enhance={() => {
 			submitting = true;
@@ -54,18 +53,10 @@
 			};
 		}}
 	>
-		{#if swapId}
-			<input type="hidden" name="swapId" value={swapId} />
-		{:else}
-			<input type="hidden" name="applicationId" value={applicationId} />
-		{/if}
+		<input type="hidden" name="applicationId" value={applicationId} />
 		<div class="dlg-h">
-			<h2 id="{uid}-title">{swapId ? `Recusar a troca de ${nick}?` : `Recusar ${nick}?`}</h2>
-			<p id="{uid}-desc">
-				{swapId
-					? 'O membro continua no grupo com o personagem atual.'
-					: 'A justificativa aparece só para você e para quem se candidatou.'}
-			</p>
+			<h2 id="{uid}-title">Remover {nick}?</h2>
+			<p id="{uid}-desc">A justificativa aparece só para você e para quem foi removido.</p>
 		</div>
 		<div class="dlg-b">
 			{#if message}<p class="form-error" role="alert">{message}</p>{/if}
@@ -83,17 +74,24 @@
 			{#if error}<span class="hint-err" id="{uid}-reason-err"
 					><Icon name="circle-x" size={14} />{error}</span
 				>{/if}
+			<label class="chk">
+				<input type="checkbox" name="block" checked={block} />
+				<span
+					><b>Bloquear neste lobby</b><br />{nick} não poderá se candidatar de novo a este lobby. Os seus
+					outros lobbies não mudam.</span
+				>
+			</label>
 		</div>
 		<footer class="dlg-f">
 			<Button variant="ghost" onclick={() => dialog?.close()}>Voltar</Button>
-			<Button type="submit" variant="outline" class="danger" disabled={submitting}>Recusar</Button>
+			<Button type="submit" variant="outline" class="danger" disabled={submitting}>Remover</Button>
 		</footer>
 	</form>
 </dialog>
 
 <style>
 	.dlg {
-		width: min(440px, calc(100vw - 32px));
+		width: min(460px, calc(100vw - 32px));
 		padding: 0;
 		border: 0;
 		border-radius: var(--radius-lg);
@@ -150,6 +148,25 @@
 		gap: 6px;
 		font: var(--type-caption);
 		color: var(--status-error);
+	}
+	.chk {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
+		margin-top: 8px;
+		padding: 10px 12px;
+		border-radius: var(--radius-sm);
+		background: var(--ink-2);
+		color: var(--fg-2);
+		font: 500 13px/1.4 var(--font-ui);
+		cursor: pointer;
+	}
+	.chk input {
+		margin: 2px 0 0;
+		accent-color: var(--gold-400);
+	}
+	.chk b {
+		color: var(--fg-1);
 	}
 	.form-error {
 		margin: 0 0 6px;

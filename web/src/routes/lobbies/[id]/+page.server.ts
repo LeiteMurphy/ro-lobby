@@ -1,11 +1,18 @@
 import { error, fail } from '@sveltejs/kit';
 import {
 	acceptApplication,
+	acceptSwap,
 	applyToLobby,
+	leaveLobby,
 	rejectApplication,
-	withdrawApplication
+	rejectSwap,
+	removeMember,
+	requestSwap,
+	swapOwnerCharacter,
+	withdrawApplication,
+	withdrawSwap
 } from '$lib/applications/api';
-import { applicationFieldMessages, ruleMessage } from '$lib/applications/messages';
+import { applicationFieldMessages, ruleMessage, swapRuleMessage } from '$lib/applications/messages';
 import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
 import { SESSION_COOKIE } from '$lib/auth/oauth';
@@ -18,8 +25,9 @@ import type { Result } from '$lib/api/request';
 import type { Actions, PageServerLoad } from './$types';
 
 // Detalhe do lobby conforme quem olha, cancelamento pelo dono e candidatura: candidatar,
-// aceitar, recusar e retirar (specs lobbies RN-15, RN-16, RN-19 e candidatura-lobby RN-01
-// a RN-13, RN-28, RN-31, RN-32).
+// aceitar, recusar e retirar; sair do grupo, remover membro e trocas de personagem (specs
+// lobbies RN-15, RN-16, RN-19 e candidatura-lobby RN-01 a RN-24, RN-27, RN-28, RN-31,
+// RN-32, RN-36).
 
 export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) => {
 	const { apiBaseUrl } = authConfig();
@@ -32,9 +40,10 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 	if (!lobby.ok) error(503, UNAVAILABLE_MESSAGE);
 	const isOwner = locals.user?.id === lobby.data.owner.userId;
 
-	// O diálogo de candidatura lista os personagens de quem pode se candidatar.
+	// Os diálogos de candidatura e de troca listam os personagens de quem olha; o dono
+	// também, para trocar o próprio (RN-19).
 	let characters: Character[] = [];
-	if (token && !isOwner && lobby.data.status === 'open') {
+	if (token && lobby.data.status === 'open') {
 		const list = await listCharacters({ fetchFn: fetch, apiBaseUrl, token });
 		if (list.ok) characters = list.data;
 	}
@@ -56,14 +65,23 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 
 type Failure = Exclude<Result<unknown>, { ok: true }>;
 
-/** 409 de candidatura, 404 e indisponível, comuns às ações de candidatura. */
-function applicationFailure<A extends string>(action: A, result: Failure, extra: object = {}) {
+/**
+ * 409 de candidatura, 404 e indisponível, comuns às ações de candidatura; `swap` fala do
+ * pedido de troca em vez da candidatura.
+ */
+function applicationFailure<A extends string>(
+	action: A,
+	result: Failure,
+	extra: object = {},
+	subject: 'application' | 'swap' = 'application'
+) {
+	const rules = subject === 'swap' ? swapRuleMessage : ruleMessage;
 	if (result.kind === 'conflict') {
 		return fail(409, {
 			action,
 			...extra,
 			errors: {} as Record<string, string>,
-			message: ruleMessage(result.rule) ?? lobbyConflictMessage(result.code) ?? UNAVAILABLE_MESSAGE
+			message: rules(result.rule) ?? lobbyConflictMessage(result.code) ?? UNAVAILABLE_MESSAGE
 		});
 	}
 	if (result.kind === 'not_found') {
@@ -71,7 +89,10 @@ function applicationFailure<A extends string>(action: A, result: Failure, extra:
 			action,
 			...extra,
 			errors: {} as Record<string, string>,
-			message: 'Essa candidatura ou esse lobby não existe mais.'
+			message:
+				subject === 'swap'
+					? 'Esse pedido de troca não existe mais.'
+					: 'Essa candidatura ou esse lobby não existe mais.'
 		});
 	}
 	return fail(503, {
@@ -182,5 +203,126 @@ export const actions: Actions = {
 		if (result.ok) return { done: 'withdraw' as const };
 		if (result.kind === 'no_session') return toLogin(cookies, path);
 		return applicationFailure('withdraw' as const, result, { applicationId });
+	},
+
+	// RN-14: o membro sai do grupo.
+	leave: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const applicationId = String((await request.formData()).get('applicationId') ?? '');
+		const result = await leaveLobby(call, applicationId);
+		if (result.ok) return { done: 'leave' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		return applicationFailure('leave' as const, result, { applicationId });
+	},
+
+	// RN-20, RN-36: o membro pede a troca do personagem, com motivo.
+	requestSwap: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const form = await request.formData();
+		const applicationId = String(form.get('applicationId') ?? '');
+		const characterId = String(form.get('characterId') ?? '');
+		const reason = String(form.get('reason') ?? '');
+		const result = await requestSwap(call, applicationId, characterId, reason);
+		if (result.ok) return { done: 'requestSwap' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		if (result.kind === 'invalid') {
+			return fail(422, {
+				action: 'requestSwap' as const,
+				characterId,
+				reason,
+				errors: applicationFieldMessages(result.fields),
+				message: null
+			});
+		}
+		return applicationFailure('requestSwap' as const, result, { characterId, reason });
+	},
+
+	// RN-15: o dono remove um membro, com justificativa e, se quiser, bloqueio.
+	remove: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const form = await request.formData();
+		const applicationId = String(form.get('applicationId') ?? '');
+		const reason = String(form.get('reason') ?? '');
+		const block = form.get('block') === 'on';
+		const result = await removeMember(call, applicationId, reason, block);
+		if (result.ok) return { done: 'remove' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		if (result.kind === 'invalid') {
+			return fail(422, {
+				action: 'remove' as const,
+				applicationId,
+				reason,
+				block,
+				errors: applicationFieldMessages(result.fields),
+				message: null
+			});
+		}
+		return applicationFailure('remove' as const, result, { applicationId, reason, block });
+	},
+
+	// RN-19, RN-36: o dono troca o próprio personagem, sem aprovação.
+	ownerSwap: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const characterId = String((await request.formData()).get('characterId') ?? '');
+		const result = await swapOwnerCharacter(call, params.id, characterId);
+		if (result.ok) return { done: 'ownerSwap' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		if (result.kind === 'invalid') {
+			return fail(422, {
+				action: 'ownerSwap' as const,
+				characterId,
+				errors: applicationFieldMessages(result.fields),
+				message: null
+			});
+		}
+		return applicationFailure('ownerSwap' as const, result, { characterId });
+	},
+
+	// RN-22, RN-23: o dono aceita o pedido de troca.
+	acceptSwap: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const swapId = String((await request.formData()).get('swapId') ?? '');
+		const result = await acceptSwap(call, swapId);
+		if (result.ok) return { done: 'acceptSwap' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		return applicationFailure('acceptSwap' as const, result, { swapId }, 'swap');
+	},
+
+	// RN-09, RN-22: o dono recusa o pedido de troca com justificativa.
+	rejectSwap: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const form = await request.formData();
+		const swapId = String(form.get('swapId') ?? '');
+		const reason = String(form.get('reason') ?? '');
+		const result = await rejectSwap(call, swapId, reason);
+		if (result.ok) return { done: 'rejectSwap' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		if (result.kind === 'invalid') {
+			return fail(422, {
+				action: 'rejectSwap' as const,
+				swapId,
+				reason,
+				errors: applicationFieldMessages(result.fields),
+				message: null
+			});
+		}
+		return applicationFailure('rejectSwap' as const, result, { swapId, reason }, 'swap');
+	},
+
+	// RN-27: o membro retira o próprio pedido de troca.
+	withdrawSwap: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const swapId = String((await request.formData()).get('swapId') ?? '');
+		const result = await withdrawSwap(call, swapId);
+		if (result.ok) return { done: 'withdrawSwap' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		return applicationFailure('withdrawSwap' as const, result, { swapId }, 'swap');
 	}
 };

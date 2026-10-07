@@ -169,6 +169,26 @@ transversais de personagem.
 - **RN-35** — Na Home, o botão "Candidatar" do card e do destaque leva ao detalhe do
   lobby, onde a candidatura acontece.
 
+### Parte 2 (revisão de 2026-10-06)
+- **RN-36** — O nível mínimo do lobby (RN-30) vale também nas trocas: o personagem novo
+  do dono (RN-19) e o do pedido do membro (RN-20, no pedido e no aceite) precisam ter o
+  nível mínimo.
+- **RN-37** — Quem saiu do grupo pode se candidatar de novo ao mesmo lobby enquanto
+  houver vaga (como quem retirou, RN-07).
+- **RN-38** — Tela da Parte 2, no detalhe do lobby:
+  - o membro tem "Sair do grupo" (com confirmação) e "Pedir troca" no aviso "Você está
+    no grupo"; "Sair do grupo" também fica em "Minhas candidaturas";
+  - o pedido de troca pendente aparece no aviso do membro ("Pedido de troca pendente
+    para X"), com "Retirar pedido";
+  - o dono, com um membro escolhido no painel, tem "Remover", que abre um diálogo com a
+    justificativa e a opção "Bloquear neste lobby";
+  - o dono, com o próprio card escolhido, tem "Trocar personagem";
+  - o dono vê os pedidos de troca num bloco "Pedidos de troca", junto das candidaturas
+    pendentes; clicar num pedido mostra no painel o personagem atual, o novo, o motivo e
+    os botões "Aceitar" e "Recusar";
+  - quem foi bloqueado vê "Você não pode se candidatar a este lobby" no lugar de
+    "Candidatar".
+
 ## 5. Critérios de aceite
 
 ### US-01 — Candidatar-se a um lobby
@@ -399,6 +419,17 @@ CA-05.3 — Saída cancela pedido de troca  [US-05, RN-24]
 Given um membro com pedido de troca pendente
 When ele sai do grupo
 Then o pedido de troca passa para cancelado
+
+CA-05.4 — Candidatura de novo depois de sair  [US-05, RN-37]
+Given um jogador que saiu do grupo
+  And o lobby continua aberto com vaga na função
+When ele se candidata de novo
+Then uma nova candidatura pendente é criada
+
+CA-05.5 — Sair pela tela  [US-05, RN-38]
+Given um membro aceito num lobby aberto
+When ele usa "Sair do grupo" no aviso do lobby e confirma
+Then ele sai da composição e o aviso some
 ```
 
 ### US-06 — Dono remove membro
@@ -443,6 +474,13 @@ Given um jogador removido com bloqueio do lobby A
   And o lobby B, do mesmo dono, está aberto com vaga na função
 When ele se candidata ao lobby B
 Then uma nova candidatura pendente é criada
+
+CA-06.8 — Remover pela tela, com bloqueio  [US-06, RN-15, RN-38]
+Given o dono com um membro escolhido no painel
+When ele usa "Remover", escreve a justificativa e marca "Bloquear neste lobby"
+Then o membro sai da composição
+  And o removido vê "Você não pode se candidatar a este lobby" no detalhe
+  And vê "Removida" com a justificativa em "Minhas candidaturas"
 ```
 
 ### US-07 — Dono troca o próprio personagem
@@ -477,6 +515,12 @@ CA-07.5 — Troca por quem não é dono  [US-07, RN-19]
 Given um membro aceito
 When ele tenta trocar de personagem diretamente, sem pedido
 Then a ação é rejeitada com o erro "apenas o dono pode decidir"
+
+CA-07.6 — Troca para personagem abaixo do nível mínimo  [US-07, RN-36]
+Given um lobby com nível mínimo 200
+When o dono tenta trocar para um personagem dele de nível 199
+Then a troca é rejeitada com o erro "personagem abaixo do nível mínimo"
+  And o dono continua com o personagem atual
 ```
 
 ### US-08 — Pedido de troca do membro
@@ -554,6 +598,18 @@ Given um pedido de troca pendente de outro membro
 When o usuário logado tenta retirá-lo
 Then a ação é rejeitada com o erro "pedido não pertence ao usuário"
   And o pedido continua pendente
+
+CA-08.13 — Pedido com personagem abaixo do nível mínimo  [US-08, RN-36]
+Given um lobby com nível mínimo 200
+When o membro pede a troca para um personagem dele de nível 199
+Then o pedido é rejeitado com o erro "personagem abaixo do nível mínimo"
+
+CA-08.14 — Pedido pela tela  [US-08, RN-38]
+Given um membro aceito e o dono do lobby
+When o membro usa "Pedir troca", escolhe o personagem e escreve o motivo
+Then o aviso do membro mostra "Pedido de troca pendente" com "Retirar pedido"
+  And o dono vê o pedido em "Pedidos de troca" e, ao clicar, o personagem atual, o
+    novo, o motivo e os botões "Aceitar" e "Recusar"
 ```
 
 ### Regras de personagem (transversais)
@@ -663,6 +719,7 @@ Then ele vai para o detalhe do lobby
 ## 9. Perguntas em aberto
 - Nenhuma. As premissas assumidas foram resolvidas na aprovação (ver seção 10).
 - Nenhuma da revisão de 2026-10-06.
+- Nenhuma da Parte 2: as lacunas foram resolvidas em 2026-10-06 (seção 10).
 
 ## 10. Decisões tomadas na entrevista
 - Mais de um personagem do mesmo usuário no mesmo lobby → não, uma candidatura ativa
@@ -710,3 +767,10 @@ Then ele vai para o detalhe do lobby
   continua no grupo; o mínimo novo vale para os próximos aceites (RN-30).
 - O botão "Candidatar" da Home vira um atalho para o detalhe do lobby (RN-35, CA-10.6).
 - O Discord do anfitrião segue a RN-32: visitantes e candidatos não o veem.
+
+### Parte 2, revisão de 2026-10-06
+- Nível mínimo vale nas trocas do dono e do membro (RN-36).
+- Quem saiu pode se candidatar de novo (RN-37).
+- Onde ficam as ações na tela: aviso do membro, painel do dono, bloco "Pedidos de
+  troca" e aviso para quem foi bloqueado (RN-38).
+- As telas novas são desenhadas no Claude Design antes do design técnico.

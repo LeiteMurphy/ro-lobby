@@ -437,6 +437,22 @@ func (s *Service) Cancel(ctx context.Context, userID, id, reason string) (Lobby,
 				return err
 			}
 		}
+		// RN-16 e D-12 da candidatura: os pedidos de troca pendentes também expiram.
+		expiredSwaps, err := q.ExpirePendingSwapsForLobby(ctx, db.ExpirePendingSwapsForLobbyParams{LobbyID: lid, Now: now})
+		if err != nil {
+			return err
+		}
+		for _, id := range expiredSwaps {
+			if err := q.InsertSwapRequestEvent(ctx, db.InsertSwapRequestEventParams{
+				SwapRequestID: id,
+				FromStatus:    pgtype.Text{String: "pending", Valid: true},
+				ToStatus:      "expired",
+				ActorID:       uid,
+				Now:           now,
+			}); err != nil {
+				return err
+			}
+		}
 		cancelled, err = s.get(ctx, q, lid)
 		return err
 	})

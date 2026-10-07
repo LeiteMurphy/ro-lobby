@@ -74,13 +74,23 @@ WHERE id = @id;
 UPDATE lobbies SET cancelled_at = @now::timestamptz, cancel_reason = @reason::text WHERE id = @id;
 
 -- name: CharacterInOpenLobby :one
--- RN-21 da lobbies e RN-25/RN-26 da candidatura: o personagem é dono de um lobby aberto
--- ou tem candidatura pendente ou aceita num lobby aberto.
+-- RN-21 da lobbies e RN-25/RN-26 da candidatura: o personagem é dono de um lobby aberto,
+-- tem candidatura pendente ou aceita num lobby aberto, ou é o personagem novo de um pedido
+-- de troca pendente num lobby aberto.
 SELECT EXISTS (
     SELECT 1 FROM lobbies l
     WHERE l.cancelled_at IS NULL AND l.starts_at > @now
       AND (l.owner_character_id = @character_id
            OR EXISTS (SELECT 1 FROM applications a
                       WHERE a.lobby_id = l.id AND a.character_id = @character_id
-                        AND a.status IN ('pending', 'accepted')))
+                        AND a.status IN ('pending', 'accepted'))
+           OR EXISTS (SELECT 1 FROM swap_requests r
+                      JOIN applications a ON a.id = r.application_id
+                      WHERE a.lobby_id = l.id AND r.to_character_id = @character_id
+                        AND r.status = 'pending'))
 );
+
+-- name: SetLobbyOwnerCharacter :exec
+-- RN-19 da candidatura: o dono troca o próprio personagem, e a vaga passa a ser da função
+-- do personagem novo.
+UPDATE lobbies SET owner_character_id = @character_id, owner_role = @role WHERE id = @id;

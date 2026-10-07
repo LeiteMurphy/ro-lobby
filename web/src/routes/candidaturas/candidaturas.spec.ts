@@ -28,6 +28,7 @@ const app = (
 		message: null,
 		status,
 		reason: null,
+		blocked: false,
 		createdAt: '2026-10-06T20:00:00Z',
 		decidedAt: null
 	},
@@ -160,5 +161,64 @@ describe('/candidaturas renderizada', () => {
 
 	it('vazio convida a escolher um grupo na Home', () => {
 		expect(page([])).toContain('Você ainda não se candidatou a nenhum grupo.');
+	});
+});
+
+describe('/candidaturas na Parte 2 (candidatura-lobby, T-14)', () => {
+	type Leave = Parameters<(typeof server.actions)['leave']>[0];
+	const leave = (f: typeof fetch) =>
+		server.actions.leave({
+			request: (() => {
+				const d = new FormData();
+				d.set('applicationId', 'a2');
+				return new Request('http://web/candidaturas', { method: 'POST', body: d });
+			})(),
+			cookies: fakeCookies('t'),
+			fetch: f
+		} as unknown as Leave);
+	const page = (applications: MyApplication[]) =>
+		render(Page, {
+			props: {
+				data: { user: BIA, applications, classNames: {} },
+				form: null,
+				params: {}
+			} as never
+		}).body;
+
+	it('CA-05.1 / RN-38: sair do grupo também daqui; quem não é mais membro volta com o aviso', async () => {
+		const ok = fakeFetch({ 'POST /applications/a2/leave': json(200, {}) });
+		expect(await leave(ok.fn)).toEqual({ done: 'leave' });
+		expect(ok.calls).toEqual(['POST /applications/a2/leave']);
+		const gone = fakeFetch({
+			'POST /applications/a2/leave': json(409, { error: 'application_rule', code: 'not_member' })
+		});
+		expect(await leave(gone.fn)).toMatchObject({
+			status: 409,
+			data: { message: 'Você não está mais no grupo.' }
+		});
+	});
+
+	it('RN-38 (Candidatura 2k): a aceita de lobby aberto tem Ver grupo e Sair do grupo; a de lobby iniciado não', () => {
+		const html = page([
+			app('a2', 'accepted'),
+			app('a5', 'accepted', {
+				lobby: { instanceName: 'Ilha Bios', startsAt: '2026-10-04T23:00:00Z', status: 'started' }
+			})
+		]);
+		expect(html.match(/Sair do grupo/g)).toHaveLength(1);
+		expect(html).toMatch(/href="\/lobbies\/l-a2"[^>]*>[\s\S]*?Ver grupo[\s\S]*?Sair do grupo/);
+	});
+
+	it('CA-06.8 / RN-15: removida mostra a justificativa; quem saiu aparece como "Saiu"', () => {
+		const html = page([
+			app('a6', 'removed', {
+				application: { ...app('a6', 'removed').application, reason: 'Mudamos o horário da run' }
+			}),
+			app('a7', 'left')
+		]);
+		expect(html).toContain('Removida');
+		expect(html).toContain('Justificativa:</b> Mudamos o horário da run');
+		expect(html).toContain('Saiu');
+		expect(html).not.toContain('Sair do grupo');
 	});
 });

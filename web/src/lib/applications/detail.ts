@@ -93,6 +93,41 @@ export interface Eligibility {
 	why: string;
 }
 
+/**
+ * RN-19 / RN-20 / RN-36 / D-11: para qual personagem dá para trocar. A vaga que sai conta
+ * como livre; o atual não entra. O pedido do membro pode esperar a vaga abrir (Candidatura
+ * 2i), a troca do dono não (2h).
+ */
+export function swapEligibility(
+	lobby: ApiLobby,
+	characters: Character[],
+	current: { characterId: string | null; role: Role },
+	mode: 'owner' | 'request'
+): Eligibility[] {
+	return characters
+		.filter((c) => c.id !== current.characterId)
+		.map((character) => {
+			const label = ROLE_LABELS[character.role];
+			if (character.level < lobby.minLevel) {
+				return { character, ok: false, why: `abaixo do nível ${lobby.minLevel}` };
+			}
+			if (character.role === current.role) {
+				return { character, ok: true, why: `mesma vaga de ${label}` };
+			}
+			const free = lobby.slots[character.role] - lobby.occupied[character.role];
+			if (free < 1) {
+				return mode === 'owner'
+					? { character, ok: false, why: `${label} sem vaga` }
+					: { character, ok: true, why: `${label} sem vaga agora` };
+			}
+			return {
+				character,
+				ok: true,
+				why: free === 1 ? `1 vaga de ${label}` : `${free} vagas de ${label}`
+			};
+		});
+}
+
 /** RN-05 / RN-30: quais personagens podem se candidatar e por quê. */
 export function eligibility(lobby: ApiLobby, characters: Character[]): Eligibility[] {
 	return characters.map((character) => {
@@ -111,16 +146,19 @@ export function eligibility(lobby: ApiLobby, characters: Character[]): Eligibili
 }
 
 /**
- * O que quem olha pode fazer quanto à candidatura (RN-02, RN-03, RN-07, RN-13):
+ * O que quem olha pode fazer quanto à candidatura (RN-02, RN-03, RN-07, RN-13, RN-15,
+ * RN-37):
  * - `login`: sem sessão;
  * - `owner`: é o anfitrião;
  * - `closed`: o lobby não está aberto;
- * - `apply`: pode se candidatar;
+ * - `apply`: pode se candidatar (também depois de sair ou de ser removido sem bloqueio);
  * - `pending`: tem pendente (pode retirar);
  * - `member`: foi aceito;
- * - `rejected`: foi recusado e não volta.
+ * - `rejected`: foi recusado e não volta;
+ * - `blocked`: foi removido com bloqueio e não volta.
  */
-export type ApplyState = 'login' | 'owner' | 'closed' | 'apply' | 'pending' | 'member' | 'rejected';
+export type ApplyState =
+	'login' | 'owner' | 'closed' | 'apply' | 'pending' | 'member' | 'rejected' | 'blocked';
 
 export function applyState(lobby: ApiLobby, userId: string | null): ApplyState {
 	if (!userId) return lobby.status === 'open' ? 'login' : 'closed';
@@ -130,5 +168,6 @@ export function applyState(lobby: ApiLobby, userId: string | null): ApplyState {
 	if (lobby.status !== 'open') return 'closed';
 	if (mine === 'pending') return 'pending';
 	if (mine === 'rejected') return 'rejected';
+	if (mine === 'removed' && lobby.myApplication?.blocked) return 'blocked';
 	return 'apply';
 }
