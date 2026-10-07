@@ -535,7 +535,7 @@ func TestOwnerOfOpenLobby_RN02_OtherUserStillNotFound(t *testing.T) {
 }
 
 // applyTo grava, direto no banco, uma candidatura do personagem ao lobby com o estado dado.
-func (e *env) applyTo(t *testing.T, lobbyID pgtype.UUID, userID, characterID, status string) {
+func (e *env) applyTo(t *testing.T, lobbyID pgtype.UUID, userID, characterID, status string) pgtype.UUID {
 	t.Helper()
 	q := db.New(e.pool)
 	var uid, cid pgtype.UUID
@@ -551,6 +551,95 @@ func (e *env) applyTo(t *testing.T, lobbyID pgtype.UUID, userID, characterID, st
 		if _, err := q.SetApplicationStatus(t.Context(), db.SetApplicationStatusParams{ID: a.ID, Status: status, Now: e.clock}); err != nil {
 			t.Fatal(err)
 		}
+	}
+	return a.ID
+}
+
+// swapTo grava, direto no banco, um pedido de troca da candidatura para o personagem, com
+// o estado dado.
+func (e *env) swapTo(t *testing.T, applicationID pgtype.UUID, characterID, status string) {
+	t.Helper()
+	q := db.New(e.pool)
+	var cid pgtype.UUID
+	_ = cid.Scan(characterID)
+	r, err := q.CreateSwapRequest(t.Context(), db.CreateSwapRequestParams{
+		ApplicationID: applicationID, ToCharacterID: cid, ToRole: "support",
+		Reason: "ninguém apareceu de suporte", Now: e.clock,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != "pending" {
+		p := db.SetSwapRequestStatusParams{ID: r.ID, Status: status, Now: e.clock}
+		if status == "rejected" {
+			p.DecisionReason = pgtype.Text{String: "já achamos um suporte", Valid: true}
+		}
+		if _, err := q.SetSwapRequestStatus(t.Context(), p); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// CA-09.1 / CA-09.3 / RN-25 / RN-26 (Parte 2): o personagem novo de um pedido de troca
+// pendente num lobby aberto também trava nível, função e exclusão.
+func TestSwapTarget_CA09_1_CA09_3_Locked(t *testing.T) {
+	e := setup(t)
+	ana, bia := e.user(t, "1"), e.user(t, "2")
+	host := e.create(t, bia, "Anfitria")
+	lobby := e.ownLobby(t, bia, host.ID, "support", e.clock.Add(48*time.Hour), false)
+	lirien := e.create(t, ana, "Lirien")
+	brasa := e.create(t, ana, "Brasa")
+	app := e.applyTo(t, lobby, ana, lirien.ID, "accepted")
+	e.swapTo(t, app, brasa.ID, "pending")
+
+	for name, in := range map[string]Input{
+		"nível":  {Nick: "Brasa", ClassID: "arcebispo", Level: 179, Role: "support"},
+		"função": {Nick: "Brasa", ClassID: "arcebispo", Level: 178, Role: "dps"},
+	} {
+		if _, err := e.svc.Update(t.Context(), ana, brasa.ID, in); !errors.Is(err, ErrInOpenLobby) {
+			t.Errorf("mudar %s: err = %v, quer ErrInOpenLobby", name, err)
+		}
+	}
+	if _, err := e.svc.Update(t.Context(), ana, brasa.ID, Input{Nick: "Brasa Nova", ClassID: "arcebispo", Level: 178, Role: "support"}); err != nil {
+		t.Errorf("outros campos: %v", err)
+	}
+	if err := e.svc.Delete(t.Context(), ana, brasa.ID); !errors.Is(err, ErrInOpenLobby) {
+		t.Errorf("excluir: err = %v, quer ErrInOpenLobby", err)
+	}
+}
+
+// CA-09.2 / CA-09.4 / RN-25 / RN-26 (Parte 2): depois do pedido recusado, retirado,
+// expirado ou cancelado, ou com o lobby iniciado, o personagem pedido fica livre.
+func TestSwapTarget_CA09_2_CA09_4_Free(t *testing.T) {
+	for _, c := range []struct {
+		name    string
+		status  string
+		startIn time.Duration
+	}{
+		{"recusado", "rejected", 48 * time.Hour},
+		{"retirado", "withdrawn", 48 * time.Hour},
+		{"expirado", "expired", 48 * time.Hour},
+		{"cancelado", "cancelled", 48 * time.Hour},
+		{"lobby iniciado", "pending", -time.Hour},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			e := setup(t)
+			ana, bia := e.user(t, "1"), e.user(t, "2")
+			host := e.create(t, bia, "Anfitria")
+			lobby := e.ownLobby(t, bia, host.ID, "support", e.clock.Add(c.startIn), false)
+			lirien := e.create(t, ana, "Lirien")
+			brasa := e.create(t, ana, "Brasa")
+			app := e.applyTo(t, lobby, ana, lirien.ID, "accepted")
+			e.swapTo(t, app, brasa.ID, c.status)
+
+			got, err := e.svc.Update(t.Context(), ana, brasa.ID, Input{Nick: "Brasa", ClassID: "arcebispo", Level: 200, Role: "dps"})
+			if err != nil || got.Level != 200 || got.Role != "dps" {
+				t.Errorf("mudar nível e função: %+v, %v", got, err)
+			}
+			if err := e.svc.Delete(t.Context(), ana, brasa.ID); err != nil {
+				t.Errorf("excluir: %v", err)
+			}
+		})
 	}
 }
 
