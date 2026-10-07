@@ -236,13 +236,26 @@ Os 44 critérios da Parte 1 estão cobertos.
 ### T-16 — Ponta a ponta da Parte 2 com dono, membro e removido  [x]
 - Cobre: CA-05.5, CA-06.8, CA-07.1, CA-08.14, CA-05.4, RN-31 (teclado)
 - Depende de: T-15
-- Arquivos: `web/test/e2e/candidatura.spec.ts`, `web/test/e2e/seed.ts`
+- Arquivos: `web/test/e2e/candidatura-parte2.spec.ts`, `web/test/e2e/pages.ts` (login e
+  páginas, tirados de `candidatura.spec.ts`)
 - Pronto quando: o Playwright prova sair do grupo e candidatar de novo; remover com
   bloqueio e o aviso do removido no detalhe e em "Minhas candidaturas"; o dono trocar o
   próprio personagem; o membro pedir troca, o dono ver e aceitar, e o membro retirar outro
   pedido.
 - Commit: 3b5d28b
 - Notion: https://app.notion.com/p/3f2d4a3a5eff81b39c98d42470aca832
+
+## Validação da Parte 2, ciclo 1 — ajustes
+
+### T-17 — Pedido de troca trava o lobby, sem passar junto com o cancelamento  [x]
+- Cobre: RN-16, RN-24, D-05, D-10
+- Depende de: T-16
+- Arquivos: `backend/internal/applications/swaps.go`
+- Pronto quando: o `RequestSwap` trava o lobby depois do Usuário; aceitar e retirar
+  recusam pedido de lobby que não está aberto; testes de integração cobrem o pedido junto
+  do cancelamento e o pedido pendente num lobby cancelado.
+- Commit: 11d99fe
+- Notion: https://app.notion.com/p/3f2d4a3a5eff81a08aabf25674ce7d13
 
 ## Matriz de cobertura (Parte 2)
 | Critério | Tasks |
