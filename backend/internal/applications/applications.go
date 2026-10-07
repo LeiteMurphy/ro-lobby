@@ -1,5 +1,5 @@
 // Package applications guarda as regras da candidatura a lobby (spec candidatura-lobby,
-// RN-01 a RN-18 e RN-30, design D-01 a D-05 e D-07).
+// RN-01 a RN-27, RN-30, RN-36 e RN-37, design D-01 a D-13).
 package applications
 
 import (
@@ -19,14 +19,17 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 )
 
-// Estados da candidatura (RN-17). Os da Parte 2 (left, removed, cancelled) ainda não
-// têm transição.
+// Estados da candidatura (RN-17) e do pedido de troca (RN-24, que não usa left nem
+// removed).
 const (
 	StatusPending   = "pending"
 	StatusAccepted  = "accepted"
 	StatusRejected  = "rejected"
 	StatusWithdrawn = "withdrawn"
 	StatusExpired   = "expired"
+	StatusLeft      = "left"
+	StatusRemoved   = "removed"
+	StatusCancelled = "cancelled"
 
 	// MaxMessageLength é o tamanho máximo da mensagem do candidato (RN-06).
 	MaxMessageLength = 250
@@ -46,6 +49,9 @@ const (
 	CodeNotPending       = "not_pending"
 	CodeNotOwner         = "not_owner"
 	CodeNotYours         = "not_yours"
+	CodeBlocked          = "blocked"      // RN-07, RN-15
+	CodeNotMember        = "not_member"   // RN-14, RN-15, RN-20: a candidatura não está aceita
+	CodeSwapPending      = "swap_pending" // RN-20
 )
 
 // ErrNotFound vale para lobby ou candidatura inexistente.
@@ -70,7 +76,9 @@ type Application struct {
 	Message     string
 	Status      string
 	Reason      string
-	CreatedAt   time.Time
+	// Blocked só é verdadeiro numa remoção com bloqueio (RN-15).
+	Blocked   bool
+	CreatedAt time.Time
 	// DecidedAt fica zerado enquanto a candidatura está pendente.
 	DecidedAt time.Time
 }
@@ -180,6 +188,13 @@ func (s *Service) Apply(ctx context.Context, userID, lobbyID string, in ApplyInp
 		if rejected {
 			return rule(CodeRejectedBefore) // RN-07
 		}
+		blocked, err := q.IsBlocked(ctx, db.IsBlockedParams{LobbyID: lid, UserID: uid})
+		if err != nil {
+			return err
+		}
+		if blocked {
+			return rule(CodeBlocked) // RN-07, RN-15
+		}
 		if character.Level < lobby.Lobby.MinLevel {
 			return rule(CodeBelowMinLevel) // RN-30
 		}
@@ -243,16 +258,26 @@ func (s *Service) Accept(ctx context.Context, ownerID, applicationID string) (Ap
 // Reject recusa a candidatura pendente com justificativa de 10 a 250 caracteres (RN-08,
 // RN-09).
 func (s *Service) Reject(ctx context.Context, ownerID, applicationID, reason string) (Application, error) {
+	reason, err := validReason(reason)
+	if err != nil {
+		return Application{}, err
+	}
+	return s.decide(ctx, ownerID, applicationID, nil, StatusRejected, reason)
+}
+
+// validReason confere a justificativa de 10 a 250 caracteres (RN-09) e a devolve sem os
+// espaços das pontas.
+func validReason(reason string) (string, error) {
 	reason = strings.TrimSpace(reason)
 	switch n := utf8.RuneCountInString(reason); {
 	case n == 0:
-		return Application{}, fieldError(lobbies.FieldReason, lobbies.CodeRequired)
+		return "", fieldError(lobbies.FieldReason, lobbies.CodeRequired)
 	case n < lobbies.MinReasonLength:
-		return Application{}, fieldError(lobbies.FieldReason, lobbies.CodeTooShort)
+		return "", fieldError(lobbies.FieldReason, lobbies.CodeTooShort)
 	case n > lobbies.MaxReasonLength:
-		return Application{}, fieldError(lobbies.FieldReason, lobbies.CodeTooLong)
+		return "", fieldError(lobbies.FieldReason, lobbies.CodeTooLong)
 	}
-	return s.decide(ctx, ownerID, applicationID, nil, StatusRejected, reason)
+	return reason, nil
 }
 
 // decide trava, na ordem do D-05, o Usuário do candidato, o lobby e a candidatura; confere
@@ -273,24 +298,7 @@ func (s *Service) decide(ctx context.Context, ownerID, applicationID string,
 	var decided db.Application
 	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.queries.WithTx(tx)
-		peek, err := q.GetApplication(ctx, aid)
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrNotFound
-		}
-		if err != nil {
-			return err
-		}
-		if err := lockUser(ctx, q, peek.UserID); err != nil {
-			return err
-		}
-		if _, err := q.LockLobby(ctx, peek.LobbyID); err != nil {
-			return err
-		}
-		app, err := q.GetApplicationForUpdate(ctx, aid)
-		if err != nil {
-			return err
-		}
-		lobby, err := q.GetLobby(ctx, app.LobbyID)
+		app, lobby, err := lockApplication(ctx, q, aid)
 		if err != nil {
 			return err
 		}
@@ -312,6 +320,113 @@ func (s *Service) decide(ctx context.Context, ownerID, applicationID string,
 		return Application{}, wrap(err, "decidir")
 	}
 	return toApplication(decided), nil
+}
+
+// lockApplication trava, na ordem do D-05 e do D-10, o Usuário do candidato, o lobby e a
+// candidatura, e devolve a candidatura e o lobby já travados.
+func lockApplication(ctx context.Context, q *db.Queries, aid pgtype.UUID) (db.Application, db.GetLobbyRow, error) {
+	peek, err := q.GetApplication(ctx, aid)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return db.Application{}, db.GetLobbyRow{}, ErrNotFound
+	}
+	if err != nil {
+		return db.Application{}, db.GetLobbyRow{}, err
+	}
+	if err := lockUser(ctx, q, peek.UserID); err != nil {
+		return db.Application{}, db.GetLobbyRow{}, err
+	}
+	if _, err := q.LockLobby(ctx, peek.LobbyID); err != nil {
+		return db.Application{}, db.GetLobbyRow{}, err
+	}
+	app, err := q.GetApplicationForUpdate(ctx, aid)
+	if err != nil {
+		return db.Application{}, db.GetLobbyRow{}, err
+	}
+	lobby, err := q.GetLobby(ctx, app.LobbyID)
+	return app, lobby, err
+}
+
+// Leave tira o membro do grupo enquanto o lobby está aberto; a vaga volta a ficar livre e
+// o pedido de troca pendente é cancelado (RN-14, RN-24, D-10).
+func (s *Service) Leave(ctx context.Context, userID, applicationID string) (Application, error) {
+	uid, err := parseUUID(userID)
+	if err != nil {
+		return Application{}, fmt.Errorf("applications: id de usuário inválido: %w", err)
+	}
+	return s.endMembership(ctx, applicationID, "sair", func(app db.Application, _ db.GetLobbyRow) error {
+		if app.UserID != uid {
+			return rule(CodeNotYours)
+		}
+		return nil
+	}, StatusLeft, uid, "", false)
+}
+
+// Remove tira um membro do grupo, a pedido do dono e com justificativa, enquanto o lobby
+// está aberto. Com block, o Usuário não se candidata de novo a este lobby (RN-07, RN-09,
+// RN-15, RN-24, D-09, D-10).
+func (s *Service) Remove(ctx context.Context, ownerID, applicationID, reason string, block bool) (Application, error) {
+	uid, err := parseUUID(ownerID)
+	if err != nil {
+		return Application{}, fmt.Errorf("applications: id de usuário inválido: %w", err)
+	}
+	reason, err = validReason(reason)
+	if err != nil {
+		return Application{}, err
+	}
+	return s.endMembership(ctx, applicationID, "remover", func(_ db.Application, lobby db.GetLobbyRow) error {
+		if lobby.Lobby.OwnerID != uid {
+			return rule(CodeNotOwner)
+		}
+		return nil
+	}, StatusRemoved, uid, reason, block)
+}
+
+// endMembership é a saída e a remoção: confere quem pede (who), o lobby aberto e o membro
+// aceito; grava o novo estado e cancela o pedido de troca pendente na mesma transação.
+func (s *Service) endMembership(ctx context.Context, applicationID, action string,
+	who func(db.Application, db.GetLobbyRow) error, to string, actor pgtype.UUID, reason string, block bool,
+) (Application, error) {
+	aid, err := parseUUID(applicationID)
+	if err != nil {
+		return Application{}, ErrNotFound
+	}
+	now := s.Now().UTC()
+
+	var ended db.Application
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.queries.WithTx(tx)
+		app, lobby, err := lockApplication(ctx, q, aid)
+		if err != nil {
+			return err
+		}
+		if err := who(app, lobby); err != nil {
+			return err
+		}
+		if !isOpen(lobby.Lobby, now) {
+			return rule(CodeNotOpen) // RN-14, RN-15
+		}
+		if app.Status != StatusAccepted {
+			return rule(CodeNotMember)
+		}
+		if err := cancelPendingSwap(ctx, q, app.ID, actor, now); err != nil {
+			return err
+		}
+		ended, err = transition(ctx, q, app, to, actor, reason, now)
+		if err != nil {
+			return err
+		}
+		if block {
+			if err := q.SetApplicationBlocked(ctx, app.ID); err != nil {
+				return err
+			}
+			ended.Blocked = true
+		}
+		return nil
+	})
+	if err != nil {
+		return Application{}, wrap(err, action)
+	}
+	return toApplication(ended), nil
 }
 
 // Withdraw retira a candidatura pendente do próprio Usuário (RN-13).
@@ -482,6 +597,7 @@ func toApplication(a db.Application) Application {
 		Message:   a.Message.String,
 		Status:    a.Status,
 		Reason:    a.Reason.String,
+		Blocked:   a.Blocked,
 		CreatedAt: a.CreatedAt.UTC(),
 	}
 	if a.CharacterID.Valid {
