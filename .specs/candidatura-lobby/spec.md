@@ -189,6 +189,12 @@ transversais de personagem.
   - quem foi bloqueado vê "Você não pode se candidatar a este lobby" no lugar de
     "Candidatar".
 
+### Revisão de 2026-10-07
+- **RN-39** — A justificativa da recusa de um pedido de troca (RN-22) aparece só para o
+  dono e para o membro que pediu. Enquanto o lobby está aberto e o pedido recusado é o mais
+  recente, o aviso do membro mostra "Seu pedido de troca foi recusado. Justificativa: …",
+  junto do "Pedir troca" (como a recusa da candidatura, RN-29).
+
 ## 5. Critérios de aceite
 
 ### US-01 — Candidatar-se a um lobby
@@ -610,6 +616,13 @@ When o membro usa "Pedir troca", escolhe o personagem e escreve o motivo
 Then o aviso do membro mostra "Pedido de troca pendente" com "Retirar pedido"
   And o dono vê o pedido em "Pedidos de troca" e, ao clicar, o personagem atual, o
     novo, o motivo e os botões "Aceitar" e "Recusar"
+
+CA-08.15 — Membro vê a recusa do pedido  [US-08, RN-22, RN-39]
+Given um membro com o pedido de troca recusado com a justificativa "já achamos um tank"
+  And o lobby continua aberto
+When ele abre o detalhe do lobby
+Then o aviso mostra "Seu pedido de troca foi recusado. Justificativa: já achamos um tank"
+  And ele continua com o personagem atual e pode pedir outra troca
 ```
 
 ### Regras de personagem (transversais)
