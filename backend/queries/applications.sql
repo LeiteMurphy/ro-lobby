@@ -76,3 +76,20 @@ SELECT id FROM lobbies WHERE id = @id FOR UPDATE;
 -- name: GetApplication :one
 -- Leitura sem trava, para descobrir o candidato antes de travar (D-05).
 SELECT * FROM applications WHERE id = @id;
+
+-- name: SetApplicationBlocked :exec
+-- RN-15: remoção com bloqueio.
+UPDATE applications SET blocked = true WHERE id = @id;
+
+-- name: IsBlocked :one
+-- RN-07, RN-15: removido com bloqueio não se candidata de novo ao mesmo lobby.
+SELECT EXISTS (
+    SELECT 1 FROM applications
+    WHERE lobby_id = @lobby_id AND user_id = @user_id AND status = 'removed' AND blocked
+);
+
+-- name: SetApplicationCharacter :one
+-- RN-23: o aceite da troca muda o personagem e a função de uma vez.
+UPDATE applications SET character_id = @character_id, role = @role
+WHERE id = @id
+RETURNING *;

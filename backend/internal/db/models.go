@@ -21,6 +21,7 @@ type Application struct {
 	Reason      pgtype.Text
 	CreatedAt   time.Time
 	DecidedAt   pgtype.Timestamptz
+	Blocked     bool
 }
 
 type ApplicationEvent struct {
@@ -71,6 +72,29 @@ type Session struct {
 	UserID     pgtype.UUID
 	CreatedAt  time.Time
 	LastUsedAt time.Time
+}
+
+type SwapRequest struct {
+	ID              pgtype.UUID
+	ApplicationID   pgtype.UUID
+	FromCharacterID pgtype.UUID
+	ToCharacterID   pgtype.UUID
+	ToRole          string
+	Reason          string
+	Status          string
+	DecisionReason  pgtype.Text
+	CreatedAt       time.Time
+	DecidedAt       pgtype.Timestamptz
+}
+
+type SwapRequestEvent struct {
+	ID            int64
+	SwapRequestID pgtype.UUID
+	FromStatus    pgtype.Text
+	ToStatus      string
+	ActorID       pgtype.UUID
+	Reason        pgtype.Text
+	At            time.Time
 }
 
 type User struct {
