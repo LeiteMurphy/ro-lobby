@@ -31,6 +31,9 @@ type fakeApps struct {
 	gotID     string
 	gotIn     applications.ApplyInput
 	gotReason string
+	gotBlock  bool
+	gotChar   string
+	gotSwap   applications.SwapInput
 	mine      []applications.Mine
 }
 
@@ -76,6 +79,13 @@ var applicationRoutes = []struct{ method, path, body string }{
 	{http.MethodPost, "/applications/" + appID + "/reject", `{"reason":"já temos suporte"}`},
 	{http.MethodPost, "/applications/" + appID + "/withdraw", ""},
 	{http.MethodGet, "/me/applications", ""},
+	{http.MethodPost, "/applications/" + appID + "/leave", ""},
+	{http.MethodPost, "/applications/" + appID + "/remove", `{"reason":"mudamos o horário da run"}`},
+	{http.MethodPut, "/lobbies/" + lobbyID + "/owner-character", `{"characterId":"` + charID + `"}`},
+	{http.MethodPost, "/applications/" + appID + "/swap-requests", `{"characterId":"` + charID + `","reason":"ninguém apareceu de tank"}`},
+	{http.MethodPost, "/swap-requests/" + swapID + "/accept", ""},
+	{http.MethodPost, "/swap-requests/" + swapID + "/reject", `{"reason":"já achamos um tank"}`},
+	{http.MethodPost, "/swap-requests/" + swapID + "/withdraw", ""},
 }
 
 // RNF-02: toda rota de candidatura exige sessão; o serviço nem é chamado.
@@ -98,7 +108,7 @@ func TestApply_CA01_1_Created(t *testing.T) {
 		`{"characterId":"`+charID+`","message":"tenho buff de ASPD"}`)
 	want := map[string]any{
 		"id": appID, "lobbyId": lobbyID, "characterId": charID, "role": "support",
-		"message": "tenho buff de ASPD", "status": "pending", "reason": nil,
+		"message": "tenho buff de ASPD", "status": "pending", "reason": nil, "blocked": false,
 		"createdAt": "2026-10-06T20:00:00Z", "decidedAt": nil,
 	}
 	if rec.Code != http.StatusCreated || !reflect.DeepEqual(body, want) {

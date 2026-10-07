@@ -272,6 +272,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lobbies/{id}/owner-character": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * O dono troca o próprio personagem no lobby
+         * @description Sem aprovação, com o lobby aberto, por um personagem do próprio dono com vaga na função (a vaga que ele deixa conta como livre), o nível mínimo e sem conflito de horário (RN-11, RN-19, RN-36). Quem não é dono recebe 409 not_owner (CA-07.5).
+         */
+        put: operations["swapOwnerCharacter"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lobbies/{id}/applications": {
         parameters: {
             query?: never;
@@ -358,6 +381,144 @@ export interface paths {
          * @description Só a própria candidatura, enquanto pendente (RN-13).
          */
         post: operations["withdrawApplication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O membro sai do grupo
+         * @description Só a própria candidatura aceita, com o lobby aberto. A vaga volta a ficar livre e o pedido de troca pendente é cancelado (RN-14, RN-24).
+         */
+        post: operations["leaveLobby"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O dono remove um membro
+         * @description Só o dono, com o lobby aberto e justificativa de 10 a 250 caracteres. Com block, o Usuário não se candidata de novo a este lobby (RN-07, RN-09, RN-15, RN-24).
+         */
+        post: operations["removeMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/swap-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O membro pede a troca do personagem
+         * @description Só a própria candidatura aceita, com o lobby aberto, um personagem do próprio membro com o nível mínimo e motivo de 10 a 250 caracteres; no máximo um pedido pendente. O membro continua no grupo com o personagem atual até o dono decidir (RN-20, RN-21, RN-36).
+         */
+        post: operations["requestSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/swap-requests/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do pedido de troca. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["SwapRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O dono aceita o pedido de troca
+         * @description Só o dono e só pedido pendente, com vaga na função do personagem novo (a vaga que sai conta como livre), o nível mínimo e sem conflito de horário (RN-22, RN-23, RN-36).
+         */
+        post: operations["acceptSwapRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/swap-requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do pedido de troca. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["SwapRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O dono recusa o pedido de troca
+         * @description Só o dono e só pedido pendente, com justificativa de 10 a 250 caracteres (RN-09, RN-22).
+         */
+        post: operations["rejectSwapRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/swap-requests/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do pedido de troca. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["SwapRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O membro retira o próprio pedido de troca
+         * @description Só o próprio pedido, enquanto pendente (RN-27).
+         */
+        post: operations["withdrawSwapRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -585,6 +746,8 @@ export interface components {
             members?: components["schemas"]["LobbyParticipant"][];
             /** @description Candidaturas pendentes. Só no detalhe e só para o dono (RN-28). */
             pending?: components["schemas"]["LobbyParticipant"][];
+            /** @description Pedidos de troca pendentes. Só no detalhe e só para o dono (D-12). */
+            swapRequests?: components["schemas"]["LobbySwapRequest"][];
             myApplication?: components["schemas"]["ViewerApplication"];
             minLevel: number;
             note: string | null;
@@ -612,7 +775,7 @@ export interface components {
             /** @enum {string} */
             error: "application_rule";
             /** @enum {string} */
-            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours";
+            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending";
         };
         Application: {
             /** Format: uuid */
@@ -627,14 +790,16 @@ export interface components {
             role: components["schemas"]["Role"];
             message: string | null;
             status: components["schemas"]["ApplicationStatus"];
-            /** @description Justificativa da recusa (RN-29). */
+            /** @description Justificativa da recusa ou da remoção (RN-29, RN-15). */
             reason: string | null;
+            /** @description Removido com bloqueio neste lobby (RN-15). */
+            blocked: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             decidedAt: string | null;
         };
-        /** @description A candidatura mais recente de quem olha o lobby (RN-29, D-06). */
+        /** @description A candidatura mais recente de quem olha o lobby (RN-29, D-06, D-12). */
         ViewerApplication: {
             /** Format: uuid */
             id: string;
@@ -644,10 +809,14 @@ export interface components {
             message: string | null;
             status: components["schemas"]["ApplicationStatus"];
             reason: string | null;
+            /** @description Removido com bloqueio; não se candidata de novo a este lobby (RN-15). */
+            blocked: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             decidedAt: string | null;
+            /** @description O pedido de troca mais recente desta candidatura (D-12). */
+            swapRequest: components["schemas"]["SwapRequest"] | null;
         };
         /** @description Membro aceito ou candidato pendente, como quem olha pode ver (RN-31, RN-32). */
         LobbyParticipant: {
@@ -668,6 +837,73 @@ export interface components {
             role: components["schemas"]["Role"];
             /** @description Mensagem da candidatura, só para o dono (RN-28). */
             message: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        RemoveInput: {
+            /** @description De 10 a 250 caracteres (RN-09). */
+            reason: string;
+            /** @description Bloquear neste lobby (RN-15). Padrão false. */
+            block?: boolean;
+        };
+        OwnerCharacterInput: {
+            /** @description Um dos personagens do dono (RN-19). */
+            characterId: string;
+        };
+        SwapRequestInput: {
+            /** @description Um dos personagens do membro, diferente do atual (RN-20). */
+            characterId: string;
+            /** @description Motivo de 10 a 250 caracteres (RN-20). */
+            reason: string;
+        };
+        /**
+         * @description Estado do pedido de troca (RN-24); pendente de lobby iniciado vem como expired (D-12).
+         * @enum {string}
+         */
+        SwapRequestStatus: "pending" | "accepted" | "rejected" | "withdrawn" | "expired" | "cancelled";
+        SwapRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            applicationId: string;
+            /** Format: uuid */
+            fromCharacterId: string | null;
+            /** Format: uuid */
+            toCharacterId: string | null;
+            toRole: components["schemas"]["Role"];
+            /** @description Motivo do membro (RN-20). */
+            reason: string;
+            status: components["schemas"]["SwapRequestStatus"];
+            /** @description Justificativa da recusa (RN-22). */
+            decisionReason: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: string | null;
+        };
+        /** @description Personagem de um pedido de troca; os dados ficam nulos se ele foi excluído. */
+        SwapCharacter: {
+            /** Format: uuid */
+            characterId: string | null;
+            nick: string | null;
+            classId: string | null;
+            level: number | null;
+            /** @enum {string|null} */
+            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | null;
+            role: components["schemas"]["Role"];
+        };
+        /** @description Pedido de troca pendente, como o dono vê (D-12). */
+        LobbySwapRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            applicationId: string;
+            /** Format: uuid */
+            userId: string;
+            discordName: string | null;
+            from: components["schemas"]["SwapCharacter"];
+            to: components["schemas"]["SwapCharacter"];
+            reason: string;
             /** Format: date-time */
             createdAt: string;
         };
@@ -718,6 +954,20 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["ApplicationRuleError"];
+            };
+        };
+        /** @description O pedido de troca não existe. */
+        SwapRequestNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "error": "not_found"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
             };
         };
         /** @description O lobby não existe ou, nas escritas, é de outro Usuário (RN-20). */
@@ -802,6 +1052,8 @@ export interface components {
         LobbyId: string;
         /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
         ApplicationId: string;
+        /** @description ID do pedido de troca. Desconhecido ou malformado responde 404. */
+        SwapRequestId: string;
         /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
         CharacterId: string;
     };
@@ -1324,6 +1576,37 @@ export interface operations {
             422: components["responses"]["Invalid"];
         };
     };
+    swapOwnerCharacter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnerCharacterInput"];
+            };
+        };
+        responses: {
+            /** @description O lobby com o personagem novo do dono, como no detalhe. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lobby"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["LobbyNotFound"];
+            409: components["responses"]["ApplicationRule"];
+            422: components["responses"]["Invalid"];
+        };
+    };
     applyToLobby: {
         parameters: {
             query?: never;
@@ -1435,6 +1718,177 @@ export interface operations {
             };
             401: components["responses"]["NoSession"];
             404: components["responses"]["ApplicationNotFound"];
+            409: components["responses"]["ApplicationRule"];
+        };
+    };
+    leaveLobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O membro saiu. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["ApplicationNotFound"];
+            409: components["responses"]["ApplicationRule"];
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveInput"];
+            };
+        };
+        responses: {
+            /** @description Membro removido. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["ApplicationNotFound"];
+            409: components["responses"]["ApplicationRule"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    requestSwap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da candidatura. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwapRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Pedido de troca pendente criado. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapRequest"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["ApplicationNotFound"];
+            409: components["responses"]["ApplicationRule"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    acceptSwapRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do pedido de troca. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["SwapRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido aceito; o membro já ocupa a vaga com o personagem novo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapRequest"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["SwapRequestNotFound"];
+            409: components["responses"]["ApplicationRule"];
+        };
+    };
+    rejectSwapRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do pedido de troca. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["SwapRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectInput"];
+            };
+        };
+        responses: {
+            /** @description Pedido recusado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapRequest"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["SwapRequestNotFound"];
+            409: components["responses"]["ApplicationRule"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    withdrawSwapRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do pedido de troca. Desconhecido ou malformado responde 404. */
+                id: components["parameters"]["SwapRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido retirado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapRequest"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["SwapRequestNotFound"];
             409: components["responses"]["ApplicationRule"];
         };
     };

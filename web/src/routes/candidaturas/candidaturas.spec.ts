@@ -28,6 +28,7 @@ const app = (
 		message: null,
 		status,
 		reason: null,
+		blocked: false,
 		createdAt: '2026-10-06T20:00:00Z',
 		decidedAt: null
 	},

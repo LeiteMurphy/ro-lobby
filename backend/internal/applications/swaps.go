@@ -14,21 +14,9 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 )
 
-// SwapRequest é um pedido de troca de personagem do membro, com o estado efetivo (D-08,
-// D-12).
-type SwapRequest struct {
-	ID              string
-	ApplicationID   string
-	FromCharacterID string
-	ToCharacterID   string
-	ToRole          string
-	Reason          string
-	Status          string
-	DecisionReason  string
-	CreatedAt       time.Time
-	// DecidedAt fica zerado enquanto o pedido está pendente.
-	DecidedAt time.Time
-}
+// SwapRequest é um pedido de troca de personagem do membro (D-08); o tipo é o mesmo do
+// detalhe do lobby.
+type SwapRequest = lobbies.SwapRequest
 
 // SwapInput é o que o membro informa no pedido de troca.
 type SwapInput struct {
@@ -408,23 +396,5 @@ func wrapSwap(err error, action string) error {
 }
 
 func toSwapRequest(r db.SwapRequest) SwapRequest {
-	out := SwapRequest{
-		ID:             r.ID.String(),
-		ApplicationID:  r.ApplicationID.String(),
-		ToRole:         r.ToRole,
-		Reason:         r.Reason,
-		Status:         r.Status,
-		DecisionReason: r.DecisionReason.String,
-		CreatedAt:      r.CreatedAt.UTC(),
-	}
-	if r.FromCharacterID.Valid {
-		out.FromCharacterID = r.FromCharacterID.String()
-	}
-	if r.ToCharacterID.Valid {
-		out.ToCharacterID = r.ToCharacterID.String()
-	}
-	if r.DecidedAt.Valid {
-		out.DecidedAt = r.DecidedAt.Time.UTC()
-	}
-	return out
+	return lobbies.NewSwapRequest(r)
 }

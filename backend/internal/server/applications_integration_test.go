@@ -25,7 +25,14 @@ import (
 // Fluxo da candidatura pelas rotas, com o PostgreSQL real e quatro sessões: dono,
 // candidato, outro candidato e visitante (spec candidatura-lobby, T-04 e T-08: CA-03.1,
 // CA-03.7, CA-03.8, CA-10.2, CA-10.3, RN-28, RN-29, RN-32, D-06, D-07).
-func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
+// flow é a API inteira sobre um banco descartável, com sessões criadas direto no banco.
+type flow struct {
+	h http.Handler
+	q *db.Queries
+}
+
+func newFlow(t *testing.T) flow {
+	t.Helper()
 	url := testdb.New(t)
 	sqlDB, err := migrate.OpenDB(url)
 	if err != nil {
@@ -44,46 +51,59 @@ func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-
-	q := db.New(pool)
-	session := func(discordID, name string) string {
-		u, err := q.UpsertUserByDiscordID(t.Context(), db.UpsertUserByDiscordIDParams{
-			DiscordID: discordID, Username: "u" + discordID, GlobalName: pgtype.Text{String: name, Valid: true}, Now: time.Now(),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		raw := make([]byte, 32)
-		_, _ = rand.Read(raw)
-		token := base64.RawURLEncoding.EncodeToString(raw)
-		if err := q.CreateSession(t.Context(), db.CreateSessionParams{TokenHash: auth.HashToken(token), UserID: u.ID, Now: time.Now()}); err != nil {
-			t.Fatal(err)
-		}
-		return token
-	}
-	ana, bia, caio, duda := session("1", "Ana"), session("2", "Bia"), session("3", "Caio"), session("4", "Duda")
 	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), lobbies.NewService(pool), applications.NewService(pool))
+	return flow{h: h, q: db.New(pool)}
+}
 
-	character := func(token, body string) string {
-		t.Helper()
-		rec, got := call(t, h, http.MethodPost, "/characters", token, body)
-		if rec.Code != http.StatusCreated {
-			t.Fatalf("personagem: %d %v", rec.Code, got)
-		}
-		return got["id"].(string)
+// session cria o Usuário com o nome do Discord e devolve o token de uma sessão dele.
+func (f flow) session(t *testing.T, discordID, name string) string {
+	t.Helper()
+	u, err := f.q.UpsertUserByDiscordID(t.Context(), db.UpsertUserByDiscordIDParams{
+		DiscordID: discordID, Username: "u" + discordID, GlobalName: pgtype.Text{String: name, Valid: true}, Now: time.Now(),
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-	host := character(ana, `{"nick":"Anfitria","classId":"arcebispo","level":200,"role":"support"}`)
-	brasa := character(bia, `{"nick":"Brasa","classId":"guardiao-real","level":200,"role":"tank","link":"https://ragnaplace.com/brasa"}`)
-	fogo := character(caio, `{"nick":"Fogo","classId":"arquimago","level":200,"role":"dps"}`)
+	raw := make([]byte, 32)
+	_, _ = rand.Read(raw)
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	if err := f.q.CreateSession(t.Context(), db.CreateSessionParams{TokenHash: auth.HashToken(token), UserID: u.ID, Now: time.Now()}); err != nil {
+		t.Fatal(err)
+	}
+	return token
+}
 
+func (f flow) character(t *testing.T, token, body string) string {
+	t.Helper()
+	rec, got := call(t, f.h, http.MethodPost, "/characters", token, body)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("personagem: %d %v", rec.Code, got)
+	}
+	return got["id"].(string)
+}
+
+// lobby cria o lobby do Templo amanhã às 20:00 (1 Tank, 2 Suportes, 3 Danos) e devolve o
+// caminho dele e o dia em São Paulo.
+func (f flow) lobby(t *testing.T, token, characterID string) (string, string) {
+	t.Helper()
 	tomorrow := time.Now().In(lobbies.Location).AddDate(0, 0, 1)
 	start := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 20, 0, 0, 0, lobbies.Location).UTC().Format(time.RFC3339)
-	rec, lobby := call(t, h, http.MethodPost, "/lobbies", ana,
-		fmt.Sprintf(`{"instanceId":"templo-do-demonio-rei","startsAt":%q,"slots":{"tank":1,"support":2,"dps":3},"minLevel":160,"characterId":%q}`, start, host))
+	rec, lobby := call(t, f.h, http.MethodPost, "/lobbies", token,
+		fmt.Sprintf(`{"instanceId":"templo-do-demonio-rei","startsAt":%q,"slots":{"tank":1,"support":2,"dps":3},"minLevel":160,"characterId":%q}`, start, characterID))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("lobby: %d %v", rec.Code, lobby)
 	}
-	path := "/lobbies/" + lobby["id"].(string)
+	return "/lobbies/" + lobby["id"].(string), tomorrow.Format(time.DateOnly)
+}
+
+func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
+	f := newFlow(t)
+	h := f.h
+	ana, bia, caio, duda := f.session(t, "1", "Ana"), f.session(t, "2", "Bia"), f.session(t, "3", "Caio"), f.session(t, "4", "Duda")
+	host := f.character(t, ana, `{"nick":"Anfitria","classId":"arcebispo","level":200,"role":"support"}`)
+	brasa := f.character(t, bia, `{"nick":"Brasa","classId":"guardiao-real","level":200,"role":"tank","link":"https://ragnaplace.com/brasa"}`)
+	fogo := f.character(t, caio, `{"nick":"Fogo","classId":"arquimago","level":200,"role":"dps"}`)
+	path, day := f.lobby(t, ana, host)
 
 	// Candidaturas de Bia (com mensagem) e Caio.
 	rec, app := call(t, h, http.MethodPost, path+"/applications", bia, fmt.Sprintf(`{"characterId":%q,"message":"tenho buff de ASPD"}`, brasa))
@@ -169,7 +189,6 @@ func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
 			t.Errorf("%s vê o Discord do anfitrião %v, quer %v", name, d, c.want)
 		}
 	}
-	day := tomorrow.Format(time.DateOnly)
 	rec, _ = call(t, h, http.MethodGet, "/lobbies?from="+day+"&to="+day, ana, "")
 	var public []map[string]any
 	decode(t, rec.Body.Bytes(), &public)

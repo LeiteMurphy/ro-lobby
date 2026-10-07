@@ -13,7 +13,10 @@ const RULES: Record<ApplicationRuleCode, string> = {
 	schedule_conflict: 'O personagem já está em outro grupo a menos de 2 h deste horário.',
 	not_pending: 'Essa candidatura não está mais pendente.',
 	not_owner: 'Só o anfitrião decide as candidaturas.',
-	not_yours: 'Essa candidatura não é sua.'
+	not_yours: 'Essa candidatura não é sua.',
+	blocked: 'Você não pode se candidatar a este lobby.',
+	not_member: 'Você não está mais no grupo.',
+	swap_pending: 'Você já tem um pedido de troca pendente neste lobby.'
 };
 
 export function ruleMessage(code: ApplicationRuleCode | undefined): string | null {

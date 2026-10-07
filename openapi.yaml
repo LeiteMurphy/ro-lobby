@@ -414,6 +414,39 @@ paths:
           $ref: "#/components/responses/LobbyNotOpen"
         "422":
           $ref: "#/components/responses/Invalid"
+  /lobbies/{id}/owner-character:
+    parameters:
+      - $ref: "#/components/parameters/LobbyId"
+    put:
+      operationId: swapOwnerCharacter
+      summary: O dono troca o próprio personagem no lobby
+      description: >
+        Sem aprovação, com o lobby aberto, por um personagem do próprio dono com vaga na
+        função (a vaga que ele deixa conta como livre), o nível mínimo e sem conflito de
+        horário (RN-11, RN-19, RN-36). Quem não é dono recebe 409 not_owner (CA-07.5).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerCharacterInput"
+      responses:
+        "200":
+          description: O lobby com o personagem novo do dono, como no detalhe.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lobby"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/LobbyNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+        "422":
+          $ref: "#/components/responses/Invalid"
   /lobbies/{id}/applications:
     parameters:
       - $ref: "#/components/parameters/LobbyId"
@@ -522,6 +555,173 @@ paths:
           $ref: "#/components/responses/ApplicationNotFound"
         "409":
           $ref: "#/components/responses/ApplicationRule"
+  /applications/{id}/leave:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      operationId: leaveLobby
+      summary: O membro sai do grupo
+      description: >
+        Só a própria candidatura aceita, com o lobby aberto. A vaga volta a ficar livre e o
+        pedido de troca pendente é cancelado (RN-14, RN-24).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: O membro saiu.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/ApplicationNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+  /applications/{id}/remove:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      operationId: removeMember
+      summary: O dono remove um membro
+      description: >
+        Só o dono, com o lobby aberto e justificativa de 10 a 250 caracteres. Com block,
+        o Usuário não se candidata de novo a este lobby (RN-07, RN-09, RN-15, RN-24).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveInput"
+      responses:
+        "200":
+          description: Membro removido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/ApplicationNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /applications/{id}/swap-requests:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      operationId: requestSwap
+      summary: O membro pede a troca do personagem
+      description: >
+        Só a própria candidatura aceita, com o lobby aberto, um personagem do próprio
+        membro com o nível mínimo e motivo de 10 a 250 caracteres; no máximo um pedido
+        pendente. O membro continua no grupo com o personagem atual até o dono decidir
+        (RN-20, RN-21, RN-36).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwapRequestInput"
+      responses:
+        "201":
+          description: Pedido de troca pendente criado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapRequest"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/ApplicationNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /swap-requests/{id}/accept:
+    parameters:
+      - $ref: "#/components/parameters/SwapRequestId"
+    post:
+      operationId: acceptSwapRequest
+      summary: O dono aceita o pedido de troca
+      description: >
+        Só o dono e só pedido pendente, com vaga na função do personagem novo (a vaga que
+        sai conta como livre), o nível mínimo e sem conflito de horário (RN-22, RN-23,
+        RN-36).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Pedido aceito; o membro já ocupa a vaga com o personagem novo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapRequest"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/SwapRequestNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+  /swap-requests/{id}/reject:
+    parameters:
+      - $ref: "#/components/parameters/SwapRequestId"
+    post:
+      operationId: rejectSwapRequest
+      summary: O dono recusa o pedido de troca
+      description: Só o dono e só pedido pendente, com justificativa de 10 a 250 caracteres (RN-09, RN-22).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: Pedido recusado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapRequest"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/SwapRequestNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /swap-requests/{id}/withdraw:
+    parameters:
+      - $ref: "#/components/parameters/SwapRequestId"
+    post:
+      operationId: withdrawSwapRequest
+      summary: O membro retira o próprio pedido de troca
+      description: Só o próprio pedido, enquanto pendente (RN-27).
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Pedido retirado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapRequest"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/SwapRequestNotFound"
+        "409":
+          $ref: "#/components/responses/ApplicationRule"
   /me/applications:
     get:
       operationId: listMyApplications
@@ -558,6 +758,13 @@ components:
       description: ID da candidatura. Desconhecido ou malformado responde 404.
       schema:
         type: string
+    SwapRequestId:
+      name: id
+      in: path
+      required: true
+      description: ID do pedido de troca. Desconhecido ou malformado responde 404.
+      schema:
+        type: string
     CharacterId:
       name: id
       in: path
@@ -585,6 +792,14 @@ components:
           example:
             error: application_rule
             code: role_full
+    SwapRequestNotFound:
+      description: O pedido de troca não existe.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: not_found
     LobbyNotFound:
       description: O lobby não existe ou, nas escritas, é de outro Usuário (RN-20).
       content:
@@ -960,6 +1175,11 @@ components:
           description: Candidaturas pendentes. Só no detalhe e só para o dono (RN-28).
           items:
             $ref: "#/components/schemas/LobbyParticipant"
+        swapRequests:
+          type: array
+          description: Pedidos de troca pendentes. Só no detalhe e só para o dono (D-12).
+          items:
+            $ref: "#/components/schemas/LobbySwapRequest"
         myApplication:
           $ref: "#/components/schemas/ViewerApplication"
         minLevel:
@@ -1006,11 +1226,11 @@ components:
           enum: [application_rule]
         code:
           type: string
-          enum: [not_open, own_lobby, already_active, role_full, rejected_before, below_min_level, schedule_conflict, not_pending, not_owner, not_yours]
+          enum: [not_open, own_lobby, already_active, role_full, rejected_before, below_min_level, schedule_conflict, not_pending, not_owner, not_yours, blocked, not_member, swap_pending]
     Application:
       type: object
       additionalProperties: false
-      required: [id, lobbyId, characterId, role, message, status, reason, createdAt, decidedAt]
+      required: [id, lobbyId, characterId, role, message, status, reason, blocked, createdAt, decidedAt]
       properties:
         id:
           type: string
@@ -1033,7 +1253,10 @@ components:
         reason:
           type: string
           nullable: true
-          description: Justificativa da recusa (RN-29).
+          description: Justificativa da recusa ou da remoção (RN-29, RN-15).
+        blocked:
+          type: boolean
+          description: Removido com bloqueio neste lobby (RN-15).
         createdAt:
           type: string
           format: date-time
@@ -1044,8 +1267,8 @@ components:
     ViewerApplication:
       type: object
       additionalProperties: false
-      required: [id, characterId, role, message, status, reason, createdAt, decidedAt]
-      description: A candidatura mais recente de quem olha o lobby (RN-29, D-06).
+      required: [id, characterId, role, message, status, reason, blocked, createdAt, decidedAt, swapRequest]
+      description: A candidatura mais recente de quem olha o lobby (RN-29, D-06, D-12).
       properties:
         id:
           type: string
@@ -1064,6 +1287,9 @@ components:
         reason:
           type: string
           nullable: true
+        blocked:
+          type: boolean
+          description: Removido com bloqueio; não se candidata de novo a este lobby (RN-15).
         createdAt:
           type: string
           format: date-time
@@ -1071,6 +1297,11 @@ components:
           type: string
           format: date-time
           nullable: true
+        swapRequest:
+          allOf:
+            - $ref: "#/components/schemas/SwapRequest"
+          nullable: true
+          description: O pedido de troca mais recente desta candidatura (D-12).
     LobbyParticipant:
       type: object
       additionalProperties: false
@@ -1113,6 +1344,126 @@ components:
           type: string
           nullable: true
           description: Mensagem da candidatura, só para o dono (RN-28).
+        createdAt:
+          type: string
+          format: date-time
+    RemoveInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: De 10 a 250 caracteres (RN-09).
+        block:
+          type: boolean
+          description: Bloquear neste lobby (RN-15). Padrão false.
+    OwnerCharacterInput:
+      type: object
+      required: [characterId]
+      properties:
+        characterId:
+          type: string
+          description: Um dos personagens do dono (RN-19).
+    SwapRequestInput:
+      type: object
+      required: [characterId, reason]
+      properties:
+        characterId:
+          type: string
+          description: Um dos personagens do membro, diferente do atual (RN-20).
+        reason:
+          type: string
+          description: Motivo de 10 a 250 caracteres (RN-20).
+    SwapRequestStatus:
+      type: string
+      enum: [pending, accepted, rejected, withdrawn, expired, cancelled]
+      description: Estado do pedido de troca (RN-24); pendente de lobby iniciado vem como expired (D-12).
+    SwapRequest:
+      type: object
+      additionalProperties: false
+      required: [id, applicationId, fromCharacterId, toCharacterId, toRole, reason, status, decisionReason, createdAt, decidedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        fromCharacterId:
+          type: string
+          format: uuid
+          nullable: true
+        toCharacterId:
+          type: string
+          format: uuid
+          nullable: true
+        toRole:
+          $ref: "#/components/schemas/Role"
+        reason:
+          type: string
+          description: Motivo do membro (RN-20).
+        status:
+          $ref: "#/components/schemas/SwapRequestStatus"
+        decisionReason:
+          type: string
+          nullable: true
+          description: Justificativa da recusa (RN-22).
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+    SwapCharacter:
+      type: object
+      additionalProperties: false
+      required: [characterId, nick, classId, level, portrait, role]
+      description: Personagem de um pedido de troca; os dados ficam nulos se ele foi excluído.
+      properties:
+        characterId:
+          type: string
+          format: uuid
+          nullable: true
+        nick:
+          type: string
+          nullable: true
+        classId:
+          type: string
+          nullable: true
+        level:
+          type: integer
+          nullable: true
+        portrait:
+          type: string
+          enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+          nullable: true
+        role:
+          $ref: "#/components/schemas/Role"
+    LobbySwapRequest:
+      type: object
+      additionalProperties: false
+      required: [id, applicationId, userId, discordName, from, to, reason, createdAt]
+      description: Pedido de troca pendente, como o dono vê (D-12).
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        discordName:
+          type: string
+          nullable: true
+        from:
+          $ref: "#/components/schemas/SwapCharacter"
+        to:
+          $ref: "#/components/schemas/SwapCharacter"
+        reason:
+          type: string
         createdAt:
           type: string
           format: date-time

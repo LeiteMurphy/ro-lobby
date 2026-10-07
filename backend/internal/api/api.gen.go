@@ -22,6 +22,8 @@ import (
 const (
 	ApplicationRuleErrorCodeAlreadyActive    ApplicationRuleErrorCode = "already_active"
 	ApplicationRuleErrorCodeBelowMinLevel    ApplicationRuleErrorCode = "below_min_level"
+	ApplicationRuleErrorCodeBlocked          ApplicationRuleErrorCode = "blocked"
+	ApplicationRuleErrorCodeNotMember        ApplicationRuleErrorCode = "not_member"
 	ApplicationRuleErrorCodeNotOpen          ApplicationRuleErrorCode = "not_open"
 	ApplicationRuleErrorCodeNotOwner         ApplicationRuleErrorCode = "not_owner"
 	ApplicationRuleErrorCodeNotPending       ApplicationRuleErrorCode = "not_pending"
@@ -30,6 +32,7 @@ const (
 	ApplicationRuleErrorCodeRejectedBefore   ApplicationRuleErrorCode = "rejected_before"
 	ApplicationRuleErrorCodeRoleFull         ApplicationRuleErrorCode = "role_full"
 	ApplicationRuleErrorCodeScheduleConflict ApplicationRuleErrorCode = "schedule_conflict"
+	ApplicationRuleErrorCodeSwapPending      ApplicationRuleErrorCode = "swap_pending"
 )
 
 // Valid indicates whether the value is a known member of the ApplicationRuleErrorCode enum.
@@ -38,6 +41,10 @@ func (e ApplicationRuleErrorCode) Valid() bool {
 	case ApplicationRuleErrorCodeAlreadyActive:
 		return true
 	case ApplicationRuleErrorCodeBelowMinLevel:
+		return true
+	case ApplicationRuleErrorCodeBlocked:
+		return true
+	case ApplicationRuleErrorCodeNotMember:
 		return true
 	case ApplicationRuleErrorCodeNotOpen:
 		return true
@@ -54,6 +61,8 @@ func (e ApplicationRuleErrorCode) Valid() bool {
 	case ApplicationRuleErrorCodeRoleFull:
 		return true
 	case ApplicationRuleErrorCodeScheduleConflict:
+		return true
+	case ApplicationRuleErrorCodeSwapPending:
 		return true
 	default:
 		return false
@@ -498,6 +507,60 @@ func (e Role) Valid() bool {
 	}
 }
 
+// Defines values for SwapCharacterPortrait.
+const (
+	SwapCharacterPortraitRetrato1 SwapCharacterPortrait = "retrato-1"
+	SwapCharacterPortraitRetrato2 SwapCharacterPortrait = "retrato-2"
+	SwapCharacterPortraitRetrato3 SwapCharacterPortrait = "retrato-3"
+	SwapCharacterPortraitRetrato4 SwapCharacterPortrait = "retrato-4"
+)
+
+// Valid indicates whether the value is a known member of the SwapCharacterPortrait enum.
+func (e SwapCharacterPortrait) Valid() bool {
+	switch e {
+	case SwapCharacterPortraitRetrato1:
+		return true
+	case SwapCharacterPortraitRetrato2:
+		return true
+	case SwapCharacterPortraitRetrato3:
+		return true
+	case SwapCharacterPortraitRetrato4:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SwapRequestStatus.
+const (
+	SwapRequestStatusAccepted  SwapRequestStatus = "accepted"
+	SwapRequestStatusCancelled SwapRequestStatus = "cancelled"
+	SwapRequestStatusExpired   SwapRequestStatus = "expired"
+	SwapRequestStatusPending   SwapRequestStatus = "pending"
+	SwapRequestStatusRejected  SwapRequestStatus = "rejected"
+	SwapRequestStatusWithdrawn SwapRequestStatus = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the SwapRequestStatus enum.
+func (e SwapRequestStatus) Valid() bool {
+	switch e {
+	case SwapRequestStatusAccepted:
+		return true
+	case SwapRequestStatusCancelled:
+		return true
+	case SwapRequestStatusExpired:
+		return true
+	case SwapRequestStatusPending:
+		return true
+	case SwapRequestStatusRejected:
+		return true
+	case SwapRequestStatusWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ValidationErrorError.
 const (
 	ValidationErrorErrorValidation ValidationErrorError = "validation"
@@ -515,6 +578,9 @@ func (e ValidationErrorError) Valid() bool {
 
 // Application defines model for Application.
 type Application struct {
+	// Blocked Removido com bloqueio neste lobby (RN-15).
+	Blocked bool `json:"blocked"`
+
 	// CharacterId Nulo se o personagem foi excluído depois do lobby (RN-26).
 	CharacterId *openapi_types.UUID `json:"characterId"`
 	CreatedAt   time.Time           `json:"createdAt"`
@@ -523,7 +589,7 @@ type Application struct {
 	LobbyId     openapi_types.UUID  `json:"lobbyId"`
 	Message     *string             `json:"message"`
 
-	// Reason Justificativa da recusa (RN-29).
+	// Reason Justificativa da recusa ou da remoção (RN-29, RN-15).
 	Reason *string `json:"reason"`
 
 	// Role Função do personagem (RN-08).
@@ -697,7 +763,7 @@ type Lobby struct {
 	Members  *[]LobbyParticipant `json:"members,omitempty"`
 	MinLevel int                 `json:"minLevel"`
 
-	// MyApplication A candidatura mais recente de quem olha o lobby (RN-29, D-06).
+	// MyApplication A candidatura mais recente de quem olha o lobby (RN-29, D-06, D-12).
 	MyApplication *ViewerApplication `json:"myApplication,omitempty"`
 	Note          *string            `json:"note"`
 	Occupied      Slots              `json:"occupied"`
@@ -711,6 +777,9 @@ type Lobby struct {
 	Slots        Slots       `json:"slots"`
 	StartsAt     time.Time   `json:"startsAt"`
 	Status       LobbyStatus `json:"status"`
+
+	// SwapRequests Pedidos de troca pendentes. Só no detalhe e só para o dono (D-12).
+	SwapRequests *[]LobbySwapRequest `json:"swapRequests,omitempty"`
 }
 
 // LobbyInput defines model for LobbyInput.
@@ -798,6 +867,22 @@ type LobbyParticipantPortrait string
 // LobbyStatus defines model for LobbyStatus.
 type LobbyStatus string
 
+// LobbySwapRequest Pedido de troca pendente, como o dono vê (D-12).
+type LobbySwapRequest struct {
+	ApplicationId openapi_types.UUID `json:"applicationId"`
+	CreatedAt     time.Time          `json:"createdAt"`
+	DiscordName   *string            `json:"discordName"`
+
+	// From Personagem de um pedido de troca; os dados ficam nulos se ele foi excluído.
+	From   SwapCharacter      `json:"from"`
+	Id     openapi_types.UUID `json:"id"`
+	Reason string             `json:"reason"`
+
+	// To Personagem de um pedido de troca; os dados ficam nulos se ele foi excluído.
+	To     SwapCharacter      `json:"to"`
+	UserId openapi_types.UUID `json:"userId"`
+}
+
 // LobbyUpdate defines model for LobbyUpdate.
 type LobbyUpdate struct {
 	MinLevel int       `json:"minLevel"`
@@ -827,11 +912,26 @@ type MyApplication struct {
 // MyApplicationCharacterPortrait defines model for MyApplication.Character.Portrait.
 type MyApplicationCharacterPortrait string
 
+// OwnerCharacterInput defines model for OwnerCharacterInput.
+type OwnerCharacterInput struct {
+	// CharacterId Um dos personagens do dono (RN-19).
+	CharacterId string `json:"characterId"`
+}
+
 // Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
 type Portrait string
 
 // RejectInput defines model for RejectInput.
 type RejectInput struct {
+	// Reason De 10 a 250 caracteres (RN-09).
+	Reason string `json:"reason"`
+}
+
+// RemoveInput defines model for RemoveInput.
+type RemoveInput struct {
+	// Block Bloquear neste lobby (RN-15). Padrão false.
+	Block *bool `json:"block,omitempty"`
+
 	// Reason De 10 a 250 caracteres (RN-09).
 	Reason string `json:"reason"`
 }
@@ -853,6 +953,55 @@ type Slots struct {
 	Tank    int `json:"tank"`
 }
 
+// SwapCharacter Personagem de um pedido de troca; os dados ficam nulos se ele foi excluído.
+type SwapCharacter struct {
+	CharacterId *openapi_types.UUID    `json:"characterId"`
+	ClassId     *string                `json:"classId"`
+	Level       *int                   `json:"level"`
+	Nick        *string                `json:"nick"`
+	Portrait    *SwapCharacterPortrait `json:"portrait"`
+
+	// Role Função do personagem (RN-08).
+	Role Role `json:"role"`
+}
+
+// SwapCharacterPortrait defines model for SwapCharacter.Portrait.
+type SwapCharacterPortrait string
+
+// SwapRequest defines model for SwapRequest.
+type SwapRequest struct {
+	ApplicationId openapi_types.UUID `json:"applicationId"`
+	CreatedAt     time.Time          `json:"createdAt"`
+	DecidedAt     *time.Time         `json:"decidedAt"`
+
+	// DecisionReason Justificativa da recusa (RN-22).
+	DecisionReason  *string             `json:"decisionReason"`
+	FromCharacterId *openapi_types.UUID `json:"fromCharacterId"`
+	Id              openapi_types.UUID  `json:"id"`
+
+	// Reason Motivo do membro (RN-20).
+	Reason string `json:"reason"`
+
+	// Status Estado do pedido de troca (RN-24); pendente de lobby iniciado vem como expired (D-12).
+	Status        SwapRequestStatus   `json:"status"`
+	ToCharacterId *openapi_types.UUID `json:"toCharacterId"`
+
+	// ToRole Função do personagem (RN-08).
+	ToRole Role `json:"toRole"`
+}
+
+// SwapRequestInput defines model for SwapRequestInput.
+type SwapRequestInput struct {
+	// CharacterId Um dos personagens do membro, diferente do atual (RN-20).
+	CharacterId string `json:"characterId"`
+
+	// Reason Motivo de 10 a 250 caracteres (RN-20).
+	Reason string `json:"reason"`
+}
+
+// SwapRequestStatus Estado do pedido de troca (RN-24); pendente de lobby iniciado vem como expired (D-12).
+type SwapRequestStatus string
+
 // User defines model for User.
 type User struct {
 	// GlobalName Nome de exibição no Discord; nulo quando a pessoa não definiu.
@@ -870,8 +1019,10 @@ type ValidationError struct {
 // ValidationErrorError defines model for ValidationError.Error.
 type ValidationErrorError string
 
-// ViewerApplication A candidatura mais recente de quem olha o lobby (RN-29, D-06).
+// ViewerApplication A candidatura mais recente de quem olha o lobby (RN-29, D-06, D-12).
 type ViewerApplication struct {
+	// Blocked Removido com bloqueio; não se candidata de novo a este lobby (RN-15).
+	Blocked     bool                `json:"blocked"`
 	CharacterId *openapi_types.UUID `json:"characterId"`
 	CreatedAt   time.Time           `json:"createdAt"`
 	DecidedAt   *time.Time          `json:"decidedAt"`
@@ -884,6 +1035,9 @@ type ViewerApplication struct {
 
 	// Status Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
 	Status ApplicationStatus `json:"status"`
+
+	// SwapRequest O pedido de troca mais recente desta candidatura (D-12).
+	SwapRequest *SwapRequest `json:"swapRequest"`
 }
 
 // ApplicationId defines model for ApplicationId.
@@ -894,6 +1048,9 @@ type CharacterId = string
 
 // LobbyId defines model for LobbyId.
 type LobbyId = string
+
+// SwapRequestId defines model for SwapRequestId.
+type SwapRequestId = string
 
 // ApplicationNotFound defines model for ApplicationNotFound.
 type ApplicationNotFound = Error
@@ -916,6 +1073,9 @@ type NoSession = Error
 // NotFound defines model for NotFound.
 type NotFound = Error
 
+// SwapRequestNotFound defines model for SwapRequestNotFound.
+type SwapRequestNotFound = Error
+
 // ListLobbiesParams defines parameters for ListLobbies.
 type ListLobbiesParams struct {
 	From openapi_types.Date `form:"from" json:"from"`
@@ -924,6 +1084,12 @@ type ListLobbiesParams struct {
 
 // RejectApplicationJSONRequestBody defines body for RejectApplication for application/json ContentType.
 type RejectApplicationJSONRequestBody = RejectInput
+
+// RemoveMemberJSONRequestBody defines body for RemoveMember for application/json ContentType.
+type RemoveMemberJSONRequestBody = RemoveInput
+
+// RequestSwapJSONRequestBody defines body for RequestSwap for application/json ContentType.
+type RequestSwapJSONRequestBody = SwapRequestInput
 
 // CreateSessionFromDiscordJSONRequestBody defines body for CreateSessionFromDiscord for application/json ContentType.
 type CreateSessionFromDiscordJSONRequestBody = DiscordLogin
@@ -946,14 +1112,29 @@ type ApplyToLobbyJSONRequestBody = ApplyInput
 // CancelLobbyJSONRequestBody defines body for CancelLobby for application/json ContentType.
 type CancelLobbyJSONRequestBody = CancelLobby
 
+// SwapOwnerCharacterJSONRequestBody defines body for SwapOwnerCharacter for application/json ContentType.
+type SwapOwnerCharacterJSONRequestBody = OwnerCharacterInput
+
+// RejectSwapRequestJSONRequestBody defines body for RejectSwapRequest for application/json ContentType.
+type RejectSwapRequestJSONRequestBody = RejectInput
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// AcceptApplication O dono aceita a candidatura
 	// (POST /applications/{id}/accept)
 	AcceptApplication(w http.ResponseWriter, r *http.Request, id ApplicationId)
+	// LeaveLobby O membro sai do grupo
+	// (POST /applications/{id}/leave)
+	LeaveLobby(w http.ResponseWriter, r *http.Request, id ApplicationId)
 	// RejectApplication O dono recusa a candidatura
 	// (POST /applications/{id}/reject)
 	RejectApplication(w http.ResponseWriter, r *http.Request, id ApplicationId)
+	// RemoveMember O dono remove um membro
+	// (POST /applications/{id}/remove)
+	RemoveMember(w http.ResponseWriter, r *http.Request, id ApplicationId)
+	// RequestSwap O membro pede a troca do personagem
+	// (POST /applications/{id}/swap-requests)
+	RequestSwap(w http.ResponseWriter, r *http.Request, id ApplicationId)
 	// WithdrawApplication O candidato retira a candidatura pendente
 	// (POST /applications/{id}/withdraw)
 	WithdrawApplication(w http.ResponseWriter, r *http.Request, id ApplicationId)
@@ -1002,6 +1183,9 @@ type ServerInterface interface {
 	// CancelLobby Cancela o lobby
 	// (POST /lobbies/{id}/cancel)
 	CancelLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
+	// SwapOwnerCharacter O dono troca o próprio personagem no lobby
+	// (PUT /lobbies/{id}/owner-character)
+	SwapOwnerCharacter(w http.ResponseWriter, r *http.Request, id LobbyId)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
@@ -1011,6 +1195,15 @@ type ServerInterface interface {
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request)
+	// AcceptSwapRequest O dono aceita o pedido de troca
+	// (POST /swap-requests/{id}/accept)
+	AcceptSwapRequest(w http.ResponseWriter, r *http.Request, id SwapRequestId)
+	// RejectSwapRequest O dono recusa o pedido de troca
+	// (POST /swap-requests/{id}/reject)
+	RejectSwapRequest(w http.ResponseWriter, r *http.Request, id SwapRequestId)
+	// WithdrawSwapRequest O membro retira o próprio pedido de troca
+	// (POST /swap-requests/{id}/withdraw)
+	WithdrawSwapRequest(w http.ResponseWriter, r *http.Request, id SwapRequestId)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1048,6 +1241,32 @@ func (siw *ServerInterfaceWrapper) AcceptApplication(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// LeaveLobby operation middleware
+func (siw *ServerInterfaceWrapper) LeaveLobby(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ApplicationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LeaveLobby(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RejectApplication operation middleware
 func (siw *ServerInterfaceWrapper) RejectApplication(w http.ResponseWriter, r *http.Request) {
 
@@ -1065,6 +1284,58 @@ func (siw *ServerInterfaceWrapper) RejectApplication(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RejectApplication(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveMember operation middleware
+func (siw *ServerInterfaceWrapper) RemoveMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ApplicationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveMember(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RequestSwap operation middleware
+func (siw *ServerInterfaceWrapper) RequestSwap(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ApplicationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestSwap(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1426,6 +1697,32 @@ func (siw *ServerInterfaceWrapper) CancelLobby(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// SwapOwnerCharacter operation middleware
+func (siw *ServerInterfaceWrapper) SwapOwnerCharacter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SwapOwnerCharacter(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetMe operation middleware
 func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request) {
 
@@ -1459,6 +1756,84 @@ func (siw *ServerInterfaceWrapper) DeleteSession(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteSession(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptSwapRequest operation middleware
+func (siw *ServerInterfaceWrapper) AcceptSwapRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id SwapRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptSwapRequest(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RejectSwapRequest operation middleware
+func (siw *ServerInterfaceWrapper) RejectSwapRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id SwapRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RejectSwapRequest(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// WithdrawSwapRequest operation middleware
+func (siw *ServerInterfaceWrapper) WithdrawSwapRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id SwapRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.WithdrawSwapRequest(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1604,10 +1979,17 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}", wrapper.GetLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}", wrapper.UpdateLobby)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/cancel", wrapper.CancelLobby)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}/owner-character", wrapper.SwapOwnerCharacter)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/applications", wrapper.ApplyToLobby)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/accept", wrapper.AcceptApplication)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/reject", wrapper.RejectApplication)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/withdraw", wrapper.WithdrawApplication)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/leave", wrapper.LeaveLobby)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/remove", wrapper.RemoveMember)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/applications/{id}/swap-requests", wrapper.RequestSwap)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/swap-requests/{id}/accept", wrapper.AcceptSwapRequest)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/swap-requests/{id}/reject", wrapper.RejectSwapRequest)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/swap-requests/{id}/withdraw", wrapper.WithdrawSwapRequest)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me/applications", wrapper.ListMyApplications)
 
 	return m
@@ -1626,6 +2008,8 @@ type LobbyNotOpenJSONResponse Error
 type NoSessionJSONResponse Error
 
 type NotFoundJSONResponse Error
+
+type SwapRequestNotFoundJSONResponse Error
 
 type AcceptApplicationRequestObject struct {
 	Id ApplicationId `json:"id"`
@@ -1682,6 +2066,72 @@ func (response AcceptApplication404JSONResponse) VisitAcceptApplicationResponse(
 type AcceptApplication409JSONResponse struct{ ApplicationRuleJSONResponse }
 
 func (response AcceptApplication409JSONResponse) VisitAcceptApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LeaveLobbyRequestObject struct {
+	Id ApplicationId `json:"id"`
+}
+
+type LeaveLobbyResponseObject interface {
+	VisitLeaveLobbyResponse(w http.ResponseWriter) error
+}
+
+type LeaveLobby200JSONResponse Application
+
+func (response LeaveLobby200JSONResponse) VisitLeaveLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LeaveLobby401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response LeaveLobby401JSONResponse) VisitLeaveLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LeaveLobby404JSONResponse struct {
+	ApplicationNotFoundJSONResponse
+}
+
+func (response LeaveLobby404JSONResponse) VisitLeaveLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LeaveLobby409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response LeaveLobby409JSONResponse) VisitLeaveLobbyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1763,6 +2213,168 @@ func (response RejectApplication409JSONResponse) VisitRejectApplicationResponse(
 type RejectApplication422JSONResponse struct{ InvalidJSONResponse }
 
 func (response RejectApplication422JSONResponse) VisitRejectApplicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMemberRequestObject struct {
+	Id   ApplicationId `json:"id"`
+	Body *RemoveMemberJSONRequestBody
+}
+
+type RemoveMemberResponseObject interface {
+	VisitRemoveMemberResponse(w http.ResponseWriter) error
+}
+
+type RemoveMember200JSONResponse Application
+
+func (response RemoveMember200JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMember401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response RemoveMember401JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMember404JSONResponse struct {
+	ApplicationNotFoundJSONResponse
+}
+
+func (response RemoveMember404JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMember409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response RemoveMember409JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveMember422JSONResponse struct{ InvalidJSONResponse }
+
+func (response RemoveMember422JSONResponse) VisitRemoveMemberResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestSwapRequestObject struct {
+	Id   ApplicationId `json:"id"`
+	Body *RequestSwapJSONRequestBody
+}
+
+type RequestSwapResponseObject interface {
+	VisitRequestSwapResponse(w http.ResponseWriter) error
+}
+
+type RequestSwap201JSONResponse SwapRequest
+
+func (response RequestSwap201JSONResponse) VisitRequestSwapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestSwap401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response RequestSwap401JSONResponse) VisitRequestSwapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestSwap404JSONResponse struct {
+	ApplicationNotFoundJSONResponse
+}
+
+func (response RequestSwap404JSONResponse) VisitRequestSwapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestSwap409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response RequestSwap409JSONResponse) VisitRequestSwapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestSwap422JSONResponse struct{ InvalidJSONResponse }
+
+func (response RequestSwap422JSONResponse) VisitRequestSwapResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2620,6 +3232,85 @@ func (response CancelLobby422JSONResponse) VisitCancelLobbyResponse(w http.Respo
 	return err
 }
 
+type SwapOwnerCharacterRequestObject struct {
+	Id   LobbyId `json:"id"`
+	Body *SwapOwnerCharacterJSONRequestBody
+}
+
+type SwapOwnerCharacterResponseObject interface {
+	VisitSwapOwnerCharacterResponse(w http.ResponseWriter) error
+}
+
+type SwapOwnerCharacter200JSONResponse Lobby
+
+func (response SwapOwnerCharacter200JSONResponse) VisitSwapOwnerCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SwapOwnerCharacter401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response SwapOwnerCharacter401JSONResponse) VisitSwapOwnerCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SwapOwnerCharacter404JSONResponse struct{ LobbyNotFoundJSONResponse }
+
+func (response SwapOwnerCharacter404JSONResponse) VisitSwapOwnerCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SwapOwnerCharacter409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response SwapOwnerCharacter409JSONResponse) VisitSwapOwnerCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SwapOwnerCharacter422JSONResponse struct{ InvalidJSONResponse }
+
+func (response SwapOwnerCharacter422JSONResponse) VisitSwapOwnerCharacterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetMeRequestObject struct {
 }
 
@@ -2705,14 +3396,236 @@ func (response DeleteSession204Response) VisitDeleteSessionResponse(w http.Respo
 	return nil
 }
 
+type AcceptSwapRequestRequestObject struct {
+	Id SwapRequestId `json:"id"`
+}
+
+type AcceptSwapRequestResponseObject interface {
+	VisitAcceptSwapRequestResponse(w http.ResponseWriter) error
+}
+
+type AcceptSwapRequest200JSONResponse SwapRequest
+
+func (response AcceptSwapRequest200JSONResponse) VisitAcceptSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptSwapRequest401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response AcceptSwapRequest401JSONResponse) VisitAcceptSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptSwapRequest404JSONResponse struct {
+	SwapRequestNotFoundJSONResponse
+}
+
+func (response AcceptSwapRequest404JSONResponse) VisitAcceptSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptSwapRequest409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response AcceptSwapRequest409JSONResponse) VisitAcceptSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectSwapRequestRequestObject struct {
+	Id   SwapRequestId `json:"id"`
+	Body *RejectSwapRequestJSONRequestBody
+}
+
+type RejectSwapRequestResponseObject interface {
+	VisitRejectSwapRequestResponse(w http.ResponseWriter) error
+}
+
+type RejectSwapRequest200JSONResponse SwapRequest
+
+func (response RejectSwapRequest200JSONResponse) VisitRejectSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectSwapRequest401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response RejectSwapRequest401JSONResponse) VisitRejectSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectSwapRequest404JSONResponse struct {
+	SwapRequestNotFoundJSONResponse
+}
+
+func (response RejectSwapRequest404JSONResponse) VisitRejectSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectSwapRequest409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response RejectSwapRequest409JSONResponse) VisitRejectSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectSwapRequest422JSONResponse struct{ InvalidJSONResponse }
+
+func (response RejectSwapRequest422JSONResponse) VisitRejectSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawSwapRequestRequestObject struct {
+	Id SwapRequestId `json:"id"`
+}
+
+type WithdrawSwapRequestResponseObject interface {
+	VisitWithdrawSwapRequestResponse(w http.ResponseWriter) error
+}
+
+type WithdrawSwapRequest200JSONResponse SwapRequest
+
+func (response WithdrawSwapRequest200JSONResponse) VisitWithdrawSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawSwapRequest401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response WithdrawSwapRequest401JSONResponse) VisitWithdrawSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawSwapRequest404JSONResponse struct {
+	SwapRequestNotFoundJSONResponse
+}
+
+func (response WithdrawSwapRequest404JSONResponse) VisitWithdrawSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawSwapRequest409JSONResponse struct{ ApplicationRuleJSONResponse }
+
+func (response WithdrawSwapRequest409JSONResponse) VisitWithdrawSwapRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// AcceptApplication O dono aceita a candidatura
 	// (POST /applications/{id}/accept)
 	AcceptApplication(ctx context.Context, request AcceptApplicationRequestObject) (AcceptApplicationResponseObject, error)
+	// LeaveLobby O membro sai do grupo
+	// (POST /applications/{id}/leave)
+	LeaveLobby(ctx context.Context, request LeaveLobbyRequestObject) (LeaveLobbyResponseObject, error)
 	// RejectApplication O dono recusa a candidatura
 	// (POST /applications/{id}/reject)
 	RejectApplication(ctx context.Context, request RejectApplicationRequestObject) (RejectApplicationResponseObject, error)
+	// RemoveMember O dono remove um membro
+	// (POST /applications/{id}/remove)
+	RemoveMember(ctx context.Context, request RemoveMemberRequestObject) (RemoveMemberResponseObject, error)
+	// RequestSwap O membro pede a troca do personagem
+	// (POST /applications/{id}/swap-requests)
+	RequestSwap(ctx context.Context, request RequestSwapRequestObject) (RequestSwapResponseObject, error)
 	// WithdrawApplication O candidato retira a candidatura pendente
 	// (POST /applications/{id}/withdraw)
 	WithdrawApplication(ctx context.Context, request WithdrawApplicationRequestObject) (WithdrawApplicationResponseObject, error)
@@ -2761,6 +3674,9 @@ type StrictServerInterface interface {
 	// CancelLobby Cancela o lobby
 	// (POST /lobbies/{id}/cancel)
 	CancelLobby(ctx context.Context, request CancelLobbyRequestObject) (CancelLobbyResponseObject, error)
+	// SwapOwnerCharacter O dono troca o próprio personagem no lobby
+	// (PUT /lobbies/{id}/owner-character)
+	SwapOwnerCharacter(ctx context.Context, request SwapOwnerCharacterRequestObject) (SwapOwnerCharacterResponseObject, error)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
@@ -2770,6 +3686,15 @@ type StrictServerInterface interface {
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
+	// AcceptSwapRequest O dono aceita o pedido de troca
+	// (POST /swap-requests/{id}/accept)
+	AcceptSwapRequest(ctx context.Context, request AcceptSwapRequestRequestObject) (AcceptSwapRequestResponseObject, error)
+	// RejectSwapRequest O dono recusa o pedido de troca
+	// (POST /swap-requests/{id}/reject)
+	RejectSwapRequest(ctx context.Context, request RejectSwapRequestRequestObject) (RejectSwapRequestResponseObject, error)
+	// WithdrawSwapRequest O membro retira o próprio pedido de troca
+	// (POST /swap-requests/{id}/withdraw)
+	WithdrawSwapRequest(ctx context.Context, request WithdrawSwapRequestRequestObject) (WithdrawSwapRequestResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -2837,6 +3762,32 @@ func (sh *strictHandler) AcceptApplication(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// LeaveLobby operation middleware
+func (sh *strictHandler) LeaveLobby(w http.ResponseWriter, r *http.Request, id ApplicationId) {
+	var request LeaveLobbyRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LeaveLobby(ctx, request.(LeaveLobbyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LeaveLobby")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LeaveLobbyResponseObject); ok {
+		if err := validResponse.VisitLeaveLobbyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RejectApplication operation middleware
 func (sh *strictHandler) RejectApplication(w http.ResponseWriter, r *http.Request, id ApplicationId) {
 	var request RejectApplicationRequestObject
@@ -2863,6 +3814,72 @@ func (sh *strictHandler) RejectApplication(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RejectApplicationResponseObject); ok {
 		if err := validResponse.VisitRejectApplicationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveMember operation middleware
+func (sh *strictHandler) RemoveMember(w http.ResponseWriter, r *http.Request, id ApplicationId) {
+	var request RemoveMemberRequestObject
+
+	request.Id = id
+
+	var body RemoveMemberJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveMember(ctx, request.(RemoveMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveMember")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveMemberResponseObject); ok {
+		if err := validResponse.VisitRemoveMemberResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RequestSwap operation middleware
+func (sh *strictHandler) RequestSwap(w http.ResponseWriter, r *http.Request, id ApplicationId) {
+	var request RequestSwapRequestObject
+
+	request.Id = id
+
+	var body RequestSwapJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestSwap(ctx, request.(RequestSwapRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestSwap")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestSwapResponseObject); ok {
+		if err := validResponse.VisitRequestSwapResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3321,6 +4338,39 @@ func (sh *strictHandler) CancelLobby(w http.ResponseWriter, r *http.Request, id 
 	}
 }
 
+// SwapOwnerCharacter operation middleware
+func (sh *strictHandler) SwapOwnerCharacter(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request SwapOwnerCharacterRequestObject
+
+	request.Id = id
+
+	var body SwapOwnerCharacterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SwapOwnerCharacter(ctx, request.(SwapOwnerCharacterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SwapOwnerCharacter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SwapOwnerCharacterResponseObject); ok {
+		if err := validResponse.VisitSwapOwnerCharacterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetMe operation middleware
 func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	var request GetMeRequestObject
@@ -3386,6 +4436,91 @@ func (sh *strictHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteSessionResponseObject); ok {
 		if err := validResponse.VisitDeleteSessionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptSwapRequest operation middleware
+func (sh *strictHandler) AcceptSwapRequest(w http.ResponseWriter, r *http.Request, id SwapRequestId) {
+	var request AcceptSwapRequestRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptSwapRequest(ctx, request.(AcceptSwapRequestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptSwapRequest")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptSwapRequestResponseObject); ok {
+		if err := validResponse.VisitAcceptSwapRequestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RejectSwapRequest operation middleware
+func (sh *strictHandler) RejectSwapRequest(w http.ResponseWriter, r *http.Request, id SwapRequestId) {
+	var request RejectSwapRequestRequestObject
+
+	request.Id = id
+
+	var body RejectSwapRequestJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RejectSwapRequest(ctx, request.(RejectSwapRequestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RejectSwapRequest")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RejectSwapRequestResponseObject); ok {
+		if err := validResponse.VisitRejectSwapRequestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// WithdrawSwapRequest operation middleware
+func (sh *strictHandler) WithdrawSwapRequest(w http.ResponseWriter, r *http.Request, id SwapRequestId) {
+	var request WithdrawSwapRequestRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.WithdrawSwapRequest(ctx, request.(WithdrawSwapRequestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "WithdrawSwapRequest")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(WithdrawSwapRequestResponseObject); ok {
+		if err := validResponse.VisitWithdrawSwapRequestResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

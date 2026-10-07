@@ -20,11 +20,20 @@ type ApplicationService interface {
 	Reject(ctx context.Context, ownerID, applicationID, reason string) (applications.Application, error)
 	Withdraw(ctx context.Context, userID, applicationID string) (applications.Application, error)
 	ListMine(ctx context.Context, userID string) ([]applications.Mine, error)
+	Leave(ctx context.Context, userID, applicationID string) (applications.Application, error)
+	Remove(ctx context.Context, ownerID, applicationID, reason string, block bool) (applications.Application, error)
+	SwapOwnerCharacter(ctx context.Context, ownerID, lobbyID, characterID string) error
+	RequestSwap(ctx context.Context, userID, applicationID string, in applications.SwapInput) (applications.SwapRequest, error)
+	AcceptSwap(ctx context.Context, ownerID, swapID string) (applications.SwapRequest, error)
+	RejectSwap(ctx context.Context, ownerID, swapID, reason string) (applications.SwapRequest, error)
+	WithdrawSwap(ctx context.Context, userID, swapID string) (applications.SwapRequest, error)
 }
 
 type applicationsHandler struct {
 	session charactersHandler // reaproveita o currentUser (RN-04 da personagens)
 	apps    ApplicationService
+	// lobbies monta o detalhe que a troca de personagem do dono devolve.
+	lobbies LobbyService
 }
 
 var applicationNotFound = api.ApplicationNotFoundJSONResponse(api.Error{Error: api.ErrorErrorNotFound})
@@ -203,6 +212,7 @@ func toAPIApplication(a applications.Application) (api.Application, error) {
 		Message:     optional(a.Message),
 		Status:      api.ApplicationStatus(a.Status),
 		Reason:      optional(a.Reason),
+		Blocked:     a.Blocked,
 		CreatedAt:   a.CreatedAt,
 		DecidedAt:   optionalTime(a.DecidedAt),
 	}, nil
@@ -253,16 +263,25 @@ func toAPIViewerApplication(v *lobbies.ViewerApplication) (*api.ViewerApplicatio
 	if err != nil {
 		return nil, err
 	}
-	return &api.ViewerApplication{
+	out := &api.ViewerApplication{
 		Id:          id,
 		CharacterId: characterID,
 		Role:        api.Role(v.Role),
 		Message:     optional(v.Message),
 		Status:      api.ApplicationStatus(v.Status),
 		Reason:      optional(v.Reason),
+		Blocked:     v.Blocked,
 		CreatedAt:   v.CreatedAt,
 		DecidedAt:   optionalTime(v.DecidedAt),
-	}, nil
+	}
+	if v.SwapRequest != nil {
+		swap, err := toAPISwapRequest(*v.SwapRequest)
+		if err != nil {
+			return nil, err
+		}
+		out.SwapRequest = &swap
+	}
+	return out, nil
 }
 
 // toAPIDetail monta o lobby do detalhe com o que quem olha pode ver (D-06).
@@ -286,6 +305,15 @@ func toAPIDetail(d lobbies.Detail) (api.Lobby, error) {
 			}
 		}
 		body.Pending = &pending
+	}
+	if d.SwapRequests != nil {
+		swaps := make([]api.LobbySwapRequest, len(d.SwapRequests))
+		for i, r := range d.SwapRequests {
+			if swaps[i], err = toAPILobbySwapRequest(r); err != nil {
+				return api.Lobby{}, err
+			}
+		}
+		body.SwapRequests = &swaps
 	}
 	body.MyApplication, err = toAPIViewerApplication(d.MyApplication)
 	return body, err
