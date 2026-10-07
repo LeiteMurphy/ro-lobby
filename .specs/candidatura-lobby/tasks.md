@@ -257,6 +257,27 @@ Os 44 critérios da Parte 1 estão cobertos.
 - Commit: 11d99fe
 - Notion: https://app.notion.com/p/3f2d4a3a5eff81a08aabf25674ce7d13
 
+## Ajustes depois do merge da Parte 2 (2026-10-07)
+
+### T-18 — Membro vê a recusa do pedido de troca  [x]
+- Cobre: RN-39, CA-08.15
+- Depende de: —
+- Arquivos: `web/src/routes/lobbies/[id]/+page.svelte`, `web/test/e2e/candidatura-parte2.spec.ts`
+- Pronto quando: o aviso do membro mostra "Seu pedido de troca foi recusado. Justificativa:
+  …" quando o pedido mais recente foi recusado e o lobby está aberto; teste Vitest e passo
+  no Playwright.
+- Commit: fe8a878
+- Notion: https://app.notion.com/p/3f2d4a3a5eff8118894ceeaafa777ad8
+
+### T-19 — Espaço antes de "pendente desde" no painel do candidato  [x]
+- Cobre: RN-31, CA-10.3 (Parte 1)
+- Depende de: —
+- Arquivos: `web/src/lib/applications/components/PlayerPanel.svelte`
+- Pronto quando: o painel mostra "Suporte · pendente desde 17:10", e o teste confere o texto
+  exato (a regex antiga aceitava o texto sem o espaço).
+- Commit: 59d252b
+- Notion: https://app.notion.com/p/3f2d4a3a5eff81abafceea2b22a74747
+
 ## Matriz de cobertura (Parte 2)
 | Critério | Tasks |
 |---|---|
@@ -281,9 +302,9 @@ Os 33 critérios da Parte 2 estão cobertos, mais a extensão da CA-09 ao pedido
   Parte 1, acima).
 - T-15 (2026-10-07): a spec não diz quem vê a justificativa da recusa de um pedido de troca
   (RN-22). Hoje ela fica gravada e sai na API (`myApplication.swapRequest.decisionReason`),
-  mas a tela do membro não mostra. Pergunta ao usuário: mostrar no aviso do membro, como a
-  recusa da candidatura (RN-29)?
+  mas a tela do membro não mostra. Decidido com o usuário em 2026-10-07: mostrar no aviso
+  do membro (RN-39, CA-08.15, T-18).
 - T-15 (2026-10-07): o Svelte descarta o espaço no começo de um `{#if}` quebrado em linha;
   na Parte 2 isso foi corrigido com expressões. O painel do jogador da Parte 1 tem o mesmo
-  padrão em "· pendente desde" (provável "Suporte· pendente desde 17:10"). Fora do escopo;
-  pergunta ao usuário se corrige.
+  padrão em "· pendente desde" ("Suporte· pendente desde 17:10", confirmado). Decidido com o
+  usuário em 2026-10-07: corrigir (T-19).

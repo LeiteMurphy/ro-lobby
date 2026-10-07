@@ -402,6 +402,34 @@ describe('/lobbies/[id] do lado do membro (candidatura-lobby, T-14)', () => {
 		expect(decided).not.toContain('Retirar pedido');
 	});
 
+	it('CA-08.15 / RN-39: o membro vê a justificativa da recusa do pedido e pode pedir outra troca', () => {
+		const swap = {
+			id: 's1',
+			applicationId: 'm1',
+			fromCharacterId: 'c-fogo',
+			toCharacterId: 'c-brisa',
+			toRole: 'tank',
+			reason: 'ninguém apareceu de tank',
+			status: 'rejected',
+			decisionReason: 'já achamos um tank',
+			createdAt: '',
+			decidedAt: ''
+		};
+		const html = renderAs(mine('accepted', { swapRequest: swap }));
+		expect(html).toMatch(
+			/data-testid="swap-rejected"[^>]*>\s*Seu pedido de troca foi recusado\. Justificativa: já achamos um tank/
+		);
+		expect(html).toMatch(/Você está no grupo<\/b>\s*com Fogo \(Dano\)/);
+		expect(html).toContain('Pedir troca');
+		// Pedido retirado ou lobby iniciado não mostram a recusa.
+		expect(
+			renderAs(mine('accepted', { swapRequest: { ...swap, status: 'withdrawn' } }))
+		).not.toContain('swap-rejected');
+		expect(renderAs(mine('accepted', { swapRequest: swap }), { status: 'started' })).not.toContain(
+			'swap-rejected'
+		);
+	});
+
 	it('CA-06.8 / RN-15 / RN-38: removido com bloqueio vê a justificativa e não tem Candidatar', () => {
 		const html = renderAs(
 			mine('removed', { reason: 'mudamos o horário da run', blocked: true }),

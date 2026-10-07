@@ -49,8 +49,9 @@
 		<span class="who">
 			<span class="nm" id="player-title">{person.nick}</span>
 			<span class="sub"
-				>{ROLE_LABELS[person.role]}{#if person.kind === 'candidate' && since}
-					· pendente desde {since}{/if}</span
+				>{ROLE_LABELS[person.role]}{person.kind === 'candidate' && since
+					? ` · pendente desde ${since}`
+					: ''}</span
 			>
 		</span>
 	</div>
