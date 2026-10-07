@@ -115,10 +115,19 @@ func (s *Service) RequestSwap(ctx context.Context, userID, applicationID string,
 		if err := lockUser(ctx, q, uid); err != nil {
 			return err
 		}
-		app, err := q.GetApplicationForUpdate(ctx, aid)
+		peek, err := q.GetApplication(ctx, aid)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotFound
 		}
+		if err != nil {
+			return err
+		}
+		// D-05 / D-10: trava o lobby depois do Usuário, para o pedido não passar junto com o
+		// cancelamento e ficar pendente num lobby cancelado (RN-16).
+		if _, err := q.LockLobby(ctx, peek.LobbyID); err != nil {
+			return err
+		}
+		app, err := q.GetApplicationForUpdate(ctx, aid)
 		if err != nil {
 			return err
 		}
@@ -239,8 +248,11 @@ func (s *Service) decideSwap(ctx context.Context, ownerID, swapID string,
 		if lobby.Lobby.OwnerID != uid {
 			return rule(CodeNotOwner) // RN-22
 		}
-		if effectiveStatus(req.Status, lobby.Lobby, now) != StatusPending {
-			return rule(CodeNotPending) // RN-24, D-12
+		if effectiveStatus(req.Status, lobby.Lobby, now) != StatusPending || !isOpen(lobby.Lobby, now) {
+			return rule(CodeNotPending) // RN-16, RN-24, D-12
+		}
+		if app.Status != StatusAccepted {
+			return rule(CodeNotPending) // sair e remover cancelam o pedido; só por segurança
 		}
 		if check != nil {
 			if err := check(q, req, app, lobby); err != nil {
@@ -293,8 +305,8 @@ func (s *Service) WithdrawSwap(ctx context.Context, userID, swapID string) (Swap
 		if err != nil {
 			return err
 		}
-		if effectiveStatus(req.Status, lobby.Lobby, now) != StatusPending {
-			return rule(CodeNotPending)
+		if effectiveStatus(req.Status, lobby.Lobby, now) != StatusPending || !isOpen(lobby.Lobby, now) {
+			return rule(CodeNotPending) // RN-16, RN-27
 		}
 		withdrawn, err = transitionSwap(ctx, q, req, StatusWithdrawn, uid, "", now)
 		return err

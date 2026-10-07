@@ -427,3 +427,48 @@ func TestAcceptSwap_D10_ConcurrentLastSlot(t *testing.T) {
 		}
 	}
 }
+
+// RN-16 e D-10 (validação, ciclo 1): pedir troca e cancelar o lobby ao mesmo tempo não deixa
+// pedido pendente num lobby cancelado.
+func TestRequestSwap_RN16_ConcurrentWithCancel(t *testing.T) {
+	for range 5 {
+		e, owner, player, lid, a := swapBasic(t)
+		var wg sync.WaitGroup
+		var reqErr, cancelErr error
+		wg.Go(func() {
+			_, reqErr = e.svc.RequestSwap(t.Context(), player.id, a.ID, SwapInput{
+				CharacterID: player.chars["Escudo"], Reason: "ninguém apareceu de tank",
+			})
+		})
+		wg.Go(func() { _, cancelErr = e.lobbies.Cancel(t.Context(), owner.id, lid, "imprevisto no trabalho") })
+		wg.Wait()
+		if cancelErr != nil {
+			t.Fatalf("cancelar: %v", cancelErr)
+		}
+		if reqErr != nil {
+			wantRule(t, reqErr, CodeNotOpen)
+			continue
+		}
+		r, err := e.q.GetLatestSwapRequest(t.Context(), uuid(a.ID))
+		if err != nil || r.Status != StatusExpired {
+			t.Errorf("pedido depois do cancelamento: %+v, %v", r, err)
+		}
+	}
+}
+
+// RN-16: pedido que ficou pendente num lobby cancelado (dado antigo) não é aceito nem
+// retirado.
+func TestSwap_RN16_CancelledLobbyGuards(t *testing.T) {
+	e, owner, player, lid, a := swapBasic(t)
+	if _, err := e.lobbies.Cancel(t.Context(), owner.id, lid, "imprevisto no trabalho"); err != nil {
+		t.Fatal(err)
+	}
+	r := e.pendingSwap(t, a, player.chars["Escudo"], "tank")
+	_, err := e.svc.AcceptSwap(t.Context(), owner.id, r.ID.String())
+	wantRule(t, err, CodeNotPending)
+	_, err = e.svc.WithdrawSwap(t.Context(), player.id, r.ID.String())
+	wantRule(t, err, CodeNotPending)
+	if app := e.application(t, a.ID); app.CharacterID != player.chars["Fogo"] {
+		t.Errorf("candidatura = %+v", app)
+	}
+}
