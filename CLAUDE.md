@@ -5,10 +5,13 @@ Lobby para jogadores de Ragnarok Online montarem grupos para instâncias difíce
 
 ## Estado atual
 Prontos: fundação (backend Go com `GET /healthz`, PostgreSQL, migrações, OpenAPI e CI), a
-Home do Claude Design em `/` (ainda com dados fictícios), login com Discord e o perfil com
-os personagens em `/perfil`. A pilha completa roda com `docker compose --profile app up`
-(ADR-06). Em andamento: lobbies (`.specs/lobbies/`). O setup local e os comandos estão no
-`README.md`. As decisões de arquitetura ficam em `docs/adr/`.
+Home do Claude Design em `/` com os lobbies reais, login com Discord, o perfil com os
+personagens em `/perfil`, lobbies (criar, detalhe, editar, cancelar) e a candidatura
+completa (candidatar, decidir, sair, remover com bloqueio e trocas de personagem, com
+"Minhas candidaturas" em `/candidaturas`). A pilha completa roda com
+`docker compose --profile app up` (ADR-06). Nada em andamento; os próximos passos ficam no
+Notion. O setup local e os comandos estão no `README.md`. As decisões de arquitetura ficam
+em `docs/adr/`.
 
 ## Produto
 - Problema: é difícil montar grupos para instâncias difíceis. Um grupo tem até 12
