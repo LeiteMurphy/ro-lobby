@@ -10,12 +10,17 @@
 		person: Person;
 		/** Nome de cada classe pelo id do catálogo. */
 		classNames: Record<string, string>;
-		/** Aceitar e Recusar aparecem para o dono, com o lobby aberto (RN-08). */
+		/**
+		 * As ações do dono, com o lobby aberto: Aceitar e Recusar o candidato (RN-08), Remover o
+		 * membro (RN-15) e Trocar o próprio personagem (RN-19).
+		 */
 		canDecide: boolean;
 		onreject: (person: Person) => void;
+		onremove?: (person: Person) => void;
+		onswap?: () => void;
 	}
 
-	let { person, classNames, canDecide, onreject }: Props = $props();
+	let { person, classNames, canDecide, onreject, onremove, onswap }: Props = $props();
 
 	const OVER = { host: 'Anfitrião', member: 'Membro', candidate: 'Candidato' } as const;
 	const className = $derived(
@@ -30,7 +35,9 @@
 
 <!-- RN-31: detalhes da pessoa escolhida na composição ou nos pendentes. -->
 <section class="panel" aria-labelledby="player-title" aria-live="polite" data-testid="player-panel">
-	<span class="over">{OVER[person.kind]}</span>
+	<span class="over"
+		>{OVER[person.kind]}{#if canDecide && person.kind === 'host'}&nbsp;(você){/if}</span
+	>
 	<div class="head">
 		{#if person.portrait}<img
 				class="portrait"
@@ -87,6 +94,19 @@
 				>Recusar</Button
 			>
 		</div>
+	{/if}
+	{#if canDecide && person.kind === 'member' && onremove}
+		<!-- RN-15 / RN-38: o dono remove o membro escolhido (Candidatura 2c). -->
+		<Button variant="outline" class="danger" block onclick={() => onremove(person)}
+			>Remover do grupo</Button
+		>
+	{/if}
+	{#if canDecide && person.kind === 'host' && onswap}
+		<!-- RN-19 / RN-38: o dono troca o próprio personagem, sem aprovação (Candidatura 2e). -->
+		<Button variant="secondary" block onclick={onswap}>Trocar personagem</Button>
+		<span class="sub"
+			>Troque sem aprovação, para um personagem seu com o nível mínimo e vaga na função.</span
+		>
 	{/if}
 </section>
 
@@ -183,7 +203,7 @@
 		margin: 0;
 		display: flex;
 	}
-	.acts :global(.danger) {
+	.panel :global(.danger) {
 		color: var(--status-error);
 		border-color: rgba(240, 100, 140, 0.4);
 	}

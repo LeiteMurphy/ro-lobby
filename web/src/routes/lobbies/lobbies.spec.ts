@@ -423,3 +423,85 @@ describe('/lobbies/[id] do lado do membro (candidatura-lobby, T-14)', () => {
 		expect(left).toMatch(candidate);
 	});
 });
+
+describe('/lobbies/[id] do lado do dono (candidatura-lobby, T-15)', () => {
+	const FAISCA = {
+		applicationId: 'a1',
+		userId: 'u-bia',
+		discordName: 'faisca.ro',
+		characterId: 'c-faisca',
+		nick: 'Faísca',
+		classId: 'elementalista',
+		level: 255,
+		portrait: 'retrato-1',
+		link: null,
+		role: 'dps',
+		message: null,
+		createdAt: '2026-10-06T17:30:00Z'
+	};
+	const SWAP = {
+		id: 's1',
+		applicationId: 'a1',
+		userId: 'u-bia',
+		discordName: 'faisca.ro',
+		from: { ...FAISCA, characterId: 'c-faisca' },
+		to: {
+			characterId: 'c-brisa',
+			nick: 'Brisa',
+			classId: 'guardiao-real',
+			level: 246,
+			portrait: 'retrato-3',
+			role: 'tank'
+		},
+		reason: 'posso cobrir de tank',
+		createdAt: '2026-10-06T18:00:00Z'
+	};
+	const renderOwner = (lobby: Record<string, unknown>) =>
+		render(Detalhe, {
+			props: {
+				data: {
+					user: { id: TEMPLE.owner.userId, username: 'ana', globalName: 'Ana' },
+					lobby: {
+						...TEMPLE,
+						occupied: { tank: 0, support: 1, dps: 1 },
+						members: [FAISCA],
+						pending: [],
+						pendingCount: 0,
+						swapRequests: [],
+						...lobby
+					},
+					ownerClass: 'Arcebispo',
+					classNames: {},
+					characters: [],
+					isOwner: true,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body.replace(/<!--[\s\S]*?-->/g, '');
+
+	it('CA-08.14 / RN-38 / D-12: o dono vê os pedidos de troca num bloco próprio, com o selo', () => {
+		const html = renderOwner({ swapRequests: [SWAP], pendingCount: 1 });
+		expect(html).toMatch(/data-testid="pending-badge"[^>]*>\s*1 pendente · 1 troca/);
+		expect(html).toMatch(
+			/data-testid="swap-list"[\s\S]*?Pedidos de troca[\s\S]*?só você vê[\s\S]*?data-testid="swap-request"[\s\S]*?Faísca → Brisa[\s\S]*?Dano → Tank · Nv 246/
+		);
+	});
+
+	it('RN-38: sem pedidos, o bloco diz que não há nenhum', () => {
+		expect(renderOwner({})).toContain('Nenhum pedido de troca.');
+	});
+
+	it('CA-07.1 / RN-19 / RN-38: o painel começa no anfitrião, com Trocar personagem para o dono', () => {
+		const html = renderOwner({});
+		expect(html).toMatch(/data-testid="player-panel"[\s\S]*?Trocar personagem/);
+	});
+
+	it('RN-16 / RN-38: com o lobby iniciado, o dono não tem os pedidos nem as ações', () => {
+		const html = renderOwner({ status: 'started', swapRequests: [] });
+		expect(html).not.toContain('data-testid="swap-list"');
+		expect(html).not.toContain('Trocar personagem');
+	});
+});
