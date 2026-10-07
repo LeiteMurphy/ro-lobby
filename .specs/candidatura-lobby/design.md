@@ -158,7 +158,7 @@ Migração `00005_applications.sql`:
 # Parte 2 — Sair, remover e trocas de personagem
 
 - Spec: US-05 a US-08, RN-14, RN-15, RN-19 a RN-24, RN-27, RN-36 a RN-38 (revisão de
-  2026-10-06) · Status: Em aprovação
+  2026-10-06) · Status: Aprovado em 2026-10-06
 - Tela: Claude Design, `Candidatura Parte 2.dc.html` (2a a 2k), aprovada em 2026-10-06
 - Base: a Parte 1 (branch `feature/candidatura`); esta parte vai em
   `feature/candidatura-parte2`, rebaseada no `main` depois do merge da Parte 1.
@@ -264,14 +264,15 @@ sem estar aceito), `swap_pending` (segundo pedido pendente), além dos que já e
 |---|---|---|---|---|
 | POST | `/applications/{id}/leave` | membro | 200 `Application` | 401, 404, 409 (`not_yours`, `not_member`, `not_open`) |
 | POST | `/applications/{id}/remove` `{reason, block}` | dono | 200 `Application` | 401, 404, 409 (`not_owner`, `not_member`, `not_open`), 422 |
-| PUT | `/lobbies/{id}/owner-character` `{characterId}` | dono | 200 `Lobby` | 401, 404, 409 (`role_full`, `below_min_level`, `schedule_conflict`, `not_open`), 422 |
+| PUT | `/lobbies/{id}/owner-character` `{characterId}` | dono | 200 `Lobby` | 401, 404, 409 (`not_owner`, `role_full`, `below_min_level`, `schedule_conflict`, `not_open`), 422 |
 | POST | `/applications/{id}/swap-requests` `{characterId, reason}` | membro | 201 `SwapRequest` | 401, 404, 409 (`not_yours`, `not_member`, `swap_pending`, `below_min_level`, `not_open`), 422 |
 | POST | `/swap-requests/{id}/accept` | dono | 200 `SwapRequest` | 401, 404, 409 (`not_owner`, `not_pending`, `role_full`, `below_min_level`, `schedule_conflict`) |
 | POST | `/swap-requests/{id}/reject` `{reason}` | dono | 200 `SwapRequest` | 401, 404, 409, 422 |
 | POST | `/swap-requests/{id}/withdraw` | membro | 200 `SwapRequest` | 401, 404, 409 (`not_yours`, `not_pending`) |
 
-`PUT /lobbies/{id}/owner-character` de outro Usuário responde 404, como a edição do lobby
-(RN-20 da `lobbies`).
+`PUT /lobbies/{id}/owner-character` de outro Usuário responde 409 `not_owner`, como pede a
+CA-07.5 ("apenas o dono pode decidir"); lobby inexistente responde 404. (Revisto na T-11: a
+primeira versão dizia 404, como a edição do lobby.)
 
 ## P2.6 Web
 - **Aviso do membro** (2a, 2b): "Pedir troca" (abre `SwapDialog` no modo pedido) e "Sair

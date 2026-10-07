@@ -126,6 +126,9 @@ Os 44 critérios da Parte 1 estão cobertos.
   em 2026-10-06: vira atalho para o detalhe (RN-35, CA-10.6, T-08).
 - Validação, ciclo 1: o Discord do anfitrião aparecia para todos, contra a RN-32. Corrigido
   na T-08.
+- T-11 (2026-10-07): o P2.5 do design dizia 404 para a troca de personagem do dono pedida
+  por outro Usuário, mas a CA-07.5 pede "apenas o dono pode decidir". Vale a spec:
+  `not_owner` (409); o design foi corrigido.
 
 ---
 
