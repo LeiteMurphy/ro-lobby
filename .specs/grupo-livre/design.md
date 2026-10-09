@@ -1,6 +1,6 @@
 # Design — Grupo livre
 
-- Spec: `./spec.md` · Status: Rascunho
+- Spec: `./spec.md` · Status: Aprovado (2026-10-09)
 
 ## 1. Visão geral
 O lobby ganha a coluna `formation` (`roles` ou `free`) e, no grupo livre, o total de vagas
@@ -83,7 +83,8 @@ flowchart LR
 | | (CHECK trocado) | — | `roles`: soma das funções 1..12 e `free_slots` nulo; `free`: soma 0 e `free_slots` preenchido | RN-01, RN-02 |
 
 Migração: `00008_lobby_formation.sql`. Ela tira o CHECK antigo da soma e cria o novo. Os
-lobbies existentes ficam com `formation = 'roles'`.
+lobbies existentes ficam com `formation = 'roles'`. A volta da migração apaga os grupos livres,
+porque o CHECK antigo da soma não aceita lobby sem vaga por função.
 
 ## 5. Decisões técnicas (ADR)
 

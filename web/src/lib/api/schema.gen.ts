@@ -276,7 +276,7 @@ export interface paths {
         put?: never;
         /**
          * Cria um lobby
-         * @description O dono escolhe um dos próprios personagens, que ocupa a vaga da função dele (RN-08). Cada Usuário tem até 5 lobbies abertos (RN-11), e o personagem não pode estar em outro lobby a menos de 2 h (RN-10).
+         * @description O dono escolhe um dos próprios personagens, que ocupa a vaga da função dele (RN-08), ou uma das vagas no grupo livre (spec grupo-livre, RN-02). Cada Usuário tem até 5 lobbies abertos (RN-11), e o personagem não pode estar em outro lobby a menos de 2 h (RN-10).
          */
         post: operations["createLobby"];
         delete?: never;
@@ -394,7 +394,7 @@ export interface paths {
         get?: never;
         /**
          * O dono troca o próprio personagem no lobby
-         * @description Sem aprovação, com o lobby aberto, por um personagem do próprio dono com vaga na função (a vaga que ele deixa conta como livre), o nível mínimo e sem conflito de horário (RN-11, RN-19, RN-36). Quem não é dono recebe 409 not_owner (CA-07.5).
+         * @description Sem aprovação, com o lobby aberto, por um personagem do próprio dono com vaga na função (a vaga que ele deixa conta como livre), o nível mínimo e sem conflito de horário (RN-11, RN-19, RN-36); no grupo livre, sem depender de vaga (spec grupo-livre, RN-05). Quem não é dono recebe 409 not_owner (CA-07.5).
          */
         put: operations["swapOwnerCharacter"];
         post?: never;
@@ -418,7 +418,7 @@ export interface paths {
         put?: never;
         /**
          * Candidata-se ao lobby
-         * @description Com um dos próprios personagens, na função dele, se houver vaga e nível (RN-01 a RN-07, RN-30). A candidatura fica pendente até o dono decidir.
+         * @description Com um dos próprios personagens, na função dele, se houver vaga e nível (RN-01 a RN-07, RN-30); no grupo livre, basta vaga no total (spec grupo-livre, RN-04, group_full). A candidatura fica pendente até o dono decidir.
          */
         post: operations["applyToLobby"];
         delete?: never;
@@ -579,7 +579,7 @@ export interface paths {
         put?: never;
         /**
          * O dono aceita o pedido de troca
-         * @description Só o dono e só pedido pendente, com vaga na função do personagem novo (a vaga que sai conta como livre), o nível mínimo e sem conflito de horário (RN-22, RN-23, RN-36).
+         * @description Só o dono e só pedido pendente, com vaga na função do personagem novo (a vaga que sai conta como livre), o nível mínimo e sem conflito de horário (RN-22, RN-23, RN-36). No grupo livre, a troca não depende de vaga (spec grupo-livre, RN-05).
          */
         post: operations["acceptSwapRequest"];
         delete?: never;
