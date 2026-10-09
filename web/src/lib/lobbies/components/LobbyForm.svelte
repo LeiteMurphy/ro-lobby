@@ -123,10 +123,11 @@
 			instanceId,
 			startsAt: start,
 			minLevel: String(Number(minLevel) || instance.level),
-			tank: String(slots.tank),
-			support: String(slots.support),
-			dps: String(slots.dps),
-			characterId
+			characterId,
+			// RN-13 da grupo-livre: no grupo livre, o total de vagas.
+			...(formation === 'free'
+				? { formation: 'free', freeSlots: String(freeSlots) }
+				: { tank: String(slots.tank), support: String(slots.support), dps: String(slots.dps) })
 		}).toString();
 	});
 	$effect(() => {

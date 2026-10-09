@@ -71,3 +71,25 @@ describe('preview do lobby (Open Graph)', () => {
 		);
 	});
 });
+
+describe('convite do grupo livre (spec grupo-livre, RN-12)', () => {
+	const FREE: ApiLobby = {
+		...GLAST,
+		formation: 'free',
+		freeSlots: 12,
+		slots: { tank: 0, support: 0, dps: 0 },
+		occupied: { tank: 1, support: 2, dps: 1 }
+	};
+
+	it('CA-05.1 / RN-12: "Vagas: 8 livres" no convite e no preview', () => {
+		expect(inviteText(FREE, origin).split('\n')[1]).toBe('Vagas: 8 livres · Nível mínimo 160');
+		expect(shareMeta(FREE, origin).description).toBe(
+			'Vagas: 8 livres · Nível mínimo 160 · Anfitrião Brasa'
+		);
+	});
+
+	it('RN-12: uma vaga é "1 livre"; sem vaga, "Grupo lotado"', () => {
+		expect(openSlotsLabel({ ...FREE, freeSlots: 5 })).toBe('Vagas: 1 livre');
+		expect(openSlotsLabel({ ...FREE, freeSlots: 4 })).toBe('Grupo lotado');
+	});
+});

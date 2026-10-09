@@ -3,6 +3,7 @@
 import type { ApiLobby } from './api';
 import { fromUtcIso } from './time';
 import { ROLE_LABELS } from '$lib/home/types';
+import { isFree, openSeats } from './seats';
 import { DELETED_CHARACTER } from './toHome';
 
 const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
@@ -15,8 +16,18 @@ export function whenLabel(startsAt: string): string {
 	return `${weekday}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')} às ${time}`;
 }
 
-/** RN-03: "Vagas: 1 Tank, 2 Dano", só as funções com vaga, ou "Grupo lotado". */
-export function openSlotsLabel(lobby: Pick<ApiLobby, 'slots' | 'occupied'>): string {
+/**
+ * RN-03: "Vagas: 1 Tank, 2 Dano", só as funções com vaga, ou "Grupo lotado". No grupo
+ * livre (RN-12 da grupo-livre): "Vagas: 8 livres" ou "Vagas: 1 livre".
+ */
+export function openSlotsLabel(
+	lobby: Pick<ApiLobby, 'slots' | 'occupied'> & Partial<Pick<ApiLobby, 'formation' | 'freeSlots'>>
+): string {
+	if (lobby.formation && isFree({ formation: lobby.formation })) {
+		const n = openSeats({ ...lobby, formation: lobby.formation, freeSlots: lobby.freeSlots ?? 0 });
+		if (n < 1) return 'Grupo lotado';
+		return `Vagas: ${n} ${n === 1 ? 'livre' : 'livres'}`;
+	}
 	const open = (['tank', 'support', 'dps'] as const)
 		.map((role) => ({ role, n: lobby.slots[role] - lobby.occupied[role] }))
 		.filter(({ n }) => n > 0)
