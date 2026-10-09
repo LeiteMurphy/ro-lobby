@@ -7,8 +7,8 @@
 		applicationId: string;
 		/** Instância, dia e hora, para o cabeçalho. */
 		title: string;
-		/** Nome da função da vaga que fica livre. */
-		roleLabel: string;
+		/** Nome da função da vaga que fica livre; nulo no grupo livre (spec grupo-livre, RN-04). */
+		roleLabel: string | null;
 		message?: string | null;
 		onclose: () => void;
 	}
@@ -50,8 +50,8 @@
 		<div class="dlg-b">
 			{#if message}<p class="form-error" role="alert">{message}</p>{/if}
 			<p class="desc" id="{uid}-desc">
-				Sua vaga de {roleLabel} fica livre para outro jogador. Você pode se candidatar de novo enquanto
-				houver vaga.
+				{roleLabel ? `Sua vaga de ${roleLabel}` : 'Sua vaga'} fica livre para outro jogador. Você pode
+				se candidatar de novo enquanto houver vaga.
 			</p>
 		</div>
 		<footer class="dlg-f">

@@ -4,7 +4,7 @@ import "testing"
 
 // Vaga por formação (spec grupo-livre, RN-03, RN-04, design seção 3).
 
-func TestHasRoom_RN03_RN04(t *testing.T) {
+func TestHasRoom_CA02_1_CA02_2(t *testing.T) {
 	roles := Lobby{Formation: FormationRoles, Slots: Slots{Tank: 1, Support: 2}, Occupied: Slots{Tank: 1, Support: 1}}
 	free := Lobby{Formation: FormationFree, FreeSlots: 3, Occupied: Slots{Support: 2}}
 	full := Lobby{Formation: FormationFree, FreeSlots: 3, Occupied: Slots{Support: 2, Dps: 1}}

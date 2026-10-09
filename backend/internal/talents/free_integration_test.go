@@ -46,9 +46,9 @@ func TestForLobby_CA05_2_Free(t *testing.T) {
 	}
 }
 
-// RN-13: na criação de um grupo livre, as vagas livres são as do formulário menos a do
+// CA-05.2 / RN-13: na criação de um grupo livre, as vagas livres são as do formulário menos a do
 // dono, para qualquer função.
-func TestCount_RN13_Free(t *testing.T) {
+func TestCount_CA05_2_Free(t *testing.T) {
 	e := setup(t)
 	trio(t, e) // Brasa (Tank), Fogo (Dano), Cura (Suporte), quarta 19–23
 	ana := e.user(t, "ana", "Lirien:arcebispo:178:support")

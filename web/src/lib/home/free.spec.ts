@@ -57,7 +57,7 @@ describe('grupo livre na Home', () => {
 		expect(toHomeLobby(TEMPLE, new Map()).free).toBeUndefined();
 	});
 
-	it('RN-04 / RN-08: vaga no total, lotado e ocupação', () => {
+	it('CA-03.1 / CA-03.2 / RN-08: vaga no total, lotado e ocupação', () => {
 		expect(roomFor(free(4, 12), 'tank')).toBe(8);
 		expect(roomFor(free(12, 12), 'dps')).toBe(0);
 		expect(lobbyIsFull(free(12, 12))).toBe(true);
@@ -72,7 +72,7 @@ describe('grupo livre na Home', () => {
 		expect(roleCounts(day)).toEqual({ tank: 1, support: 2, dps: 2 });
 	});
 
-	it('RN-16: o destaque pula o grupo livre lotado', () => {
+	it('CA-03.1 / RN-16: o destaque pula o grupo livre lotado', () => {
 		const now = { date: '2026-10-06', minutes: 0 };
 		expect(featuredLobby([free(12, 12), free(3, 6)], now)?.id).toBe('f3');
 	});

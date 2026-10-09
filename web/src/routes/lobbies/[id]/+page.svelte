@@ -603,7 +603,7 @@
 		<LeaveDialog
 			applicationId={mine.id}
 			title={lobbyTitle}
-			roleLabel={ROLE_LABELS[mine.role]}
+			roleLabel={free ? null : ROLE_LABELS[mine.role]}
 			message={leaveForm?.message ?? null}
 			onclose={() => (leaveOpen = false)}
 		/>

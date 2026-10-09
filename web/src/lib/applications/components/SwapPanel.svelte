@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { ROLE_LABELS } from '$lib/home/types';
 	import type { ApiLobby } from '$lib/lobbies/api';
+	import { isFree } from '$lib/lobbies/seats';
 	import { DELETED_CHARACTER } from '$lib/lobbies/toHome';
 	import Button from '$lib/ui/Button.svelte';
 	import type { LobbySwapRequest } from '../api';
@@ -15,7 +16,9 @@
 	let { swap, lobby, onreject }: Props = $props();
 
 	// D-11: a vaga que sai conta como livre; para outra função, precisa de 1 vaga livre nela.
-	const sameRole = $derived(swap.from.role === swap.to.role);
+	// spec grupo-livre, RN-05: no grupo livre, a troca fica com a mesma vaga, sem função.
+	const freeGroup = $derived(isFree(lobby));
+	const sameRole = $derived(freeGroup || swap.from.role === swap.to.role);
 	const free = $derived(lobby.slots[swap.to.role] - lobby.occupied[swap.to.role]);
 	const toLabel = $derived(ROLE_LABELS[swap.to.role]);
 	let accepting = $state(false);
@@ -48,7 +51,7 @@
 	</div>
 	{#if swap.discordName}<div class="kv"><span>Membro</span><b>{swap.discordName}</b></div>{/if}
 	<div class="kv">
-		<span>Vaga de {toLabel}</span>
+		<span>{freeGroup ? 'Vaga' : `Vaga de ${toLabel}`}</span>
 		<b>{sameRole ? 'a mesma do membro' : free === 1 ? '1 livre' : `${Math.max(free, 0)} livres`}</b>
 	</div>
 	<span class="over">Motivo</span>

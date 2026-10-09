@@ -88,7 +88,7 @@ describe('convite do grupo livre (spec grupo-livre, RN-12)', () => {
 		);
 	});
 
-	it('RN-12: uma vaga é "1 livre"; sem vaga, "Grupo lotado"', () => {
+	it('CA-05.1 / RN-12: uma vaga é "1 livre"; sem vaga, "Grupo lotado"', () => {
 		expect(openSlotsLabel({ ...FREE, freeSlots: 5 })).toBe('Vagas: 1 livre');
 		expect(openSlotsLabel({ ...FREE, freeSlots: 4 })).toBe('Grupo lotado');
 	});

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { eligibility, freeComposition, people, swapEligibility } from '$lib/applications/detail';
 import { ruleMessage } from '$lib/applications/messages';
 import type { Character } from '$lib/characters/api';
+import LeaveDialog from '$lib/applications/components/LeaveDialog.svelte';
+import SwapPanel from '$lib/applications/components/SwapPanel.svelte';
 import LobbyForm from './components/LobbyForm.svelte';
 import { TEMPLE } from './fixtures';
 import { readLobbyForm, toLobbyInput, type LobbyFormValues } from './form';
@@ -46,7 +48,7 @@ const VALUES: LobbyFormValues = {
 };
 
 describe('vagas do grupo livre', () => {
-	it('RN-03 / RN-04: vaga no total para qualquer função', () => {
+	it('CA-02.1 / CA-02.2 / RN-03 / RN-04: vaga no total para qualquer função', () => {
 		expect(isFree(FREE)).toBe(true);
 		expect(totalSeats(FREE)).toBe(3);
 		expect(openSeats(FREE)).toBe(1);
@@ -137,7 +139,7 @@ describe('detalhe e diálogos do grupo livre', () => {
 		});
 	});
 
-	it('RN-05: a troca no grupo livre fica com a mesma vaga', () => {
+	it('CA-02.4 / RN-05: a troca no grupo livre fica com a mesma vaga', () => {
 		const full = { ...FREE, occupied: { tank: 0, support: 3, dps: 0 } };
 		const got = swapEligibility(
 			full,
@@ -148,10 +150,62 @@ describe('detalhe e diálogos do grupo livre', () => {
 		expect(got[0]).toMatchObject({ ok: true, why: 'mesma vaga' });
 	});
 
-	it('RN-10: os lugares do grupo livre são o anfitrião e as vagas abertas', () => {
+	it('CA-01.1 / RN-10: os lugares do grupo livre são o anfitrião e as vagas abertas', () => {
 		const places = freeComposition({ ...FREE, members: [] }, people({ ...FREE, members: [] }));
 		expect(places).toHaveLength(3);
 		expect(places[0]?.kind).toBe('host');
 		expect(places.slice(1)).toEqual([null, null]);
+	});
+});
+
+describe('painéis do grupo livre', () => {
+	const SWAP = {
+		id: 's1',
+		applicationId: 'a1',
+		discordName: 'caio',
+		reason: 'o grupo precisa de tank',
+		createdAt: '',
+		from: {
+			characterId: 'f',
+			nick: 'Fogo',
+			classId: 'arquimago',
+			level: 200,
+			portrait: 'retrato-1',
+			role: 'dps'
+		},
+		to: {
+			characterId: 'e',
+			nick: 'Escudo',
+			classId: 'guardiao-real',
+			level: 200,
+			portrait: 'retrato-2',
+			role: 'tank'
+		}
+	};
+
+	it('CA-02.4 / RN-05: no grupo livre cheio, o painel da troca não fala de vaga de função', () => {
+		const full = { ...FREE, occupied: { tank: 0, support: 3, dps: 0 } };
+		const html = render(SwapPanel, {
+			props: { swap: SWAP, lobby: full, onreject: () => {} } as never
+		}).body;
+		expect(html).toContain('a mesma do membro');
+		expect(html).not.toContain('Vaga de Tank');
+		expect(html).not.toContain('o aceite falha');
+		const roles = render(SwapPanel, {
+			props: {
+				swap: SWAP,
+				lobby: { ...TEMPLE, occupied: { tank: 1, support: 1, dps: 0 } },
+				onreject: () => {}
+			} as never
+		}).body;
+		expect(roles).toContain('Vaga de Tank');
+	});
+
+	it('CA-02.1 / RN-04: sair do grupo livre libera "Sua vaga", sem função', () => {
+		const html = render(LeaveDialog, {
+			props: { applicationId: 'a1', title: 'Templo', roleLabel: null, onclose: () => {} }
+		}).body;
+		expect(html).toContain('Sua vaga fica livre');
+		expect(html).not.toContain('Sua vaga de');
 	});
 });

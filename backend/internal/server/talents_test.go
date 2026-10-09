@@ -177,8 +177,8 @@ func TestCountTalents_CA03_1(t *testing.T) {
 	}
 }
 
-// RN-13 da grupo-livre: a contagem repassa a formação e o total de vagas.
-func TestCountTalents_RN13_Free(t *testing.T) {
+// CA-05.2 / RN-13 da grupo-livre: a contagem repassa a formação e o total de vagas.
+func TestCountTalents_CA05_2_Free(t *testing.T) {
 	q := "/talents/count?instanceId=templo-do-demonio-rei&startsAt=2026-10-07T23:00:00Z&minLevel=160&formation=free&freeSlots=12&characterId=" + charID
 	f := &fakeTalents{count: 3}
 	rec, _ := call(t, newTalentsServer(f), http.MethodGet, q, "token-valido", "")
