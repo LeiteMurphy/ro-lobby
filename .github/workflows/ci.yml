@@ -74,7 +74,7 @@ jobs:
         working-directory: backend
     services:
       postgres:
-        image: postgres:18-alpine
+        image: mirror.gcr.io/library/postgres:18-alpine
         env:
           # O contexto `env` não vale aqui; os valores repetem os do topo.
           POSTGRES_USER: ro_lobby
@@ -251,7 +251,7 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: postgres:18-alpine
+        image: mirror.gcr.io/library/postgres:18-alpine
         env:
           # O contexto `env` não vale aqui; os valores repetem os do topo.
           POSTGRES_USER: ro_lobby
