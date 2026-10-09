@@ -46,6 +46,13 @@ export function listLobbyTalents(call: Call, lobbyId: string) {
 	return request<Talent[]>(call, 'GET', `/lobbies/${encodeURIComponent(lobbyId)}/talents`);
 }
 
+/** RN-15 da candidatura-lobby / CA-06.9: o dono desbloqueia a pessoa do personagem. */
+export function unblockInLobby(call: Call, lobbyId: string, characterId: string) {
+	return request<void>(call, 'POST', `/lobbies/${encodeURIComponent(lobbyId)}/unblock`, {
+		characterId
+	});
+}
+
 export interface CountInput {
 	instanceId: string;
 	startsAt: string;

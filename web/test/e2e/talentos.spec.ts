@@ -1,5 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiLogin, createCharacter, createLobby, rand, setAvailability, spDay } from './seed';
+import {
+	acceptApplication,
+	apiLogin,
+	applyTo,
+	createCharacter,
+	createLobby,
+	rand,
+	setAvailability,
+	spDay
+} from './seed';
 
 // Ponta a ponta do banco de talentos (spec banco-de-talentos, T-05 a T-07), com o Discord
 // falso e o banco do ponta a ponta. Cada teste usa contas e nicks novos.
@@ -228,5 +237,71 @@ test.describe('banco de talentos', () => {
 		await expect(page.getByTestId('talent-card').filter({ hasText: tank.nick })).toContainText(
 			`@cat${s}`
 		);
+	});
+
+	test('CA-02.5 / CA-02.6 / CA-06.9: removido com bloqueio aparece com selo e o dono desbloqueia', async ({
+		page,
+		request
+	}) => {
+		const s = rand();
+		const api = `http://localhost:${process.env.API_PORT || '8080'}`;
+		const biaToken = await apiLogin(request, `rb${s}`);
+		const brasa = await createCharacter(request, biaToken, {
+			nick: `Brasa${s}`,
+			classId: 'guardiao-real',
+			level: 172,
+			role: 'tank'
+		});
+		const cinza = await createCharacter(request, biaToken, {
+			nick: `Cinza${s}`,
+			classId: 'arquimago',
+			level: 180,
+			role: 'dps'
+		});
+		for (const c of [brasa, cinza]) {
+			await setAvailability(request, biaToken, c.id, {
+				days: [0, 1, 2, 3, 4, 5, 6],
+				start: '07:00',
+				end: '09:00',
+				anyInstance: true
+			});
+		}
+		const owner = `ro${s}`;
+		const anaToken = await apiLogin(request, owner);
+		const lirien = await createCharacter(request, anaToken, {
+			nick: `Ro${s}`,
+			classId: 'arcebispo',
+			level: 178,
+			role: 'support'
+		});
+		const lobby = await createLobby(request, anaToken, {
+			instanceId: 'templo-do-demonio-rei',
+			day: 4,
+			time: '07:30',
+			characterId: lirien.id,
+			minLevel: 160
+		});
+		const app = await applyTo(request, biaToken, lobby.id, brasa.id);
+		await acceptApplication(request, anaToken, app.id);
+		const removed = await request.post(`${api}/applications/${app.id}/remove`, {
+			data: { reason: 'mudamos o horário da run', block: true },
+			headers: { authorization: `Bearer ${anaToken}` }
+		});
+		expect(removed.ok()).toBe(true);
+
+		await loginAs(page, owner, `/lobbies/${lobby.id}`);
+		const panel = page.getByTestId('talents-panel');
+		const cardOf = (nick: string) => panel.getByTestId('talent-card').filter({ hasText: nick });
+		await expect(cardOf(brasa.nick)).toContainText('Removido · bloqueado');
+		await expect(cardOf(cinza.nick)).toContainText('Removido · bloqueado');
+
+		await cardOf(cinza.nick).getByRole('button', { name: 'Desbloquear' }).click();
+		await expect(cardOf(brasa.nick)).toContainText('Removido deste grupo');
+		await expect(cardOf(cinza.nick)).toContainText('Removido deste grupo');
+		await expect(panel.getByRole('button', { name: 'Desbloquear' })).toHaveCount(0);
+
+		// CA-06.9: a pessoa volta a poder se candidatar.
+		const again = await applyTo(request, biaToken, lobby.id, cinza.id);
+		expect(again.id).toBeTruthy();
 	});
 });

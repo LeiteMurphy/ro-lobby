@@ -101,6 +101,7 @@
 	// Erros de aceitar e retirar aparecem num aviso na página.
 	const pageError = $derived(
 		formOf('accept')?.message ??
+			formOf('unblock')?.message ??
 			formOf('withdraw')?.message ??
 			formOf('withdrawSwap')?.message ??
 			formOf('acceptSwap')?.message ??
@@ -499,7 +500,11 @@
 							<ul class="talents">
 								{#each data.talents as t (t.characterId)}
 									<li>
-										<TalentCard talent={t} className={data.classNames[t.classId] ?? t.classId} />
+										<TalentCard
+											talent={t}
+											className={data.classNames[t.classId] ?? t.classId}
+											canUnblock
+										/>
 									</li>
 								{/each}
 							</ul>

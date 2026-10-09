@@ -666,3 +666,56 @@ describe('/lobbies/[id] com o banco de talentos (spec banco-de-talentos)', () =>
 		);
 	});
 });
+
+describe('/lobbies/[id] com removidos no banco de talentos (spec banco-de-talentos, RN-13)', () => {
+	const talent = (nick: string, removed: boolean, blocked: boolean) => ({
+		characterId: `id-${nick}`,
+		nick,
+		classId: 'arquimago',
+		level: 200,
+		role: 'dps',
+		portrait: 'retrato-3',
+		link: null,
+		days: [3],
+		start: '19:00',
+		end: '23:00',
+		anyInstance: true,
+		instances: [],
+		discordUsername: nick.toLowerCase(),
+		removed,
+		blocked
+	});
+	const renderOwner = (talents: unknown[]) =>
+		render(Detalhe, {
+			props: {
+				data: {
+					user: { id: TEMPLE.owner.userId, username: 'ana', globalName: null },
+					lobby: TEMPLE,
+					ownerClass: 'Arcebispo',
+					classNames: {},
+					characters: [],
+					isOwner: true,
+					talents,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/',
+					origin: 'https://rolobby.com.br'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body;
+
+	it('CA-02.5 / RN-13: removido sem bloqueio aparece com o selo, sem "Desbloquear"', () => {
+		const html = renderOwner([talent('Brasa', true, false), talent('Fogo', false, false)]);
+		expect(html.match(/Removido deste grupo/g)).toHaveLength(1);
+		expect(html).not.toContain('Desbloquear');
+	});
+
+	it('CA-02.6 / RN-13: removido com bloqueio mostra o selo e o botão que manda o personagem', () => {
+		const html = renderOwner([talent('Brasa', true, true)]);
+		expect(html).toContain('Removido · bloqueado');
+		expect(html).toMatch(
+			/<form[^>]*action="\?\/unblock"[\s\S]*name="characterId" value="id-Brasa"[\s\S]*Desbloquear/
+		);
+	});
+});

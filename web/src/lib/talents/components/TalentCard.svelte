@@ -2,6 +2,8 @@
 	import { portraitInfo } from '$lib/characters/portraits';
 	import { ROLE_ICONS } from '$lib/home/catalog';
 	import { ROLE_LABELS } from '$lib/home/types';
+	import { enhance } from '$app/forms';
+	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { Talent } from '../api';
 	import { daysLabel, instancesLabel, rangeLabel } from '../format';
@@ -12,9 +14,12 @@
 		className: string;
 		/** Link de login para quem não está logado ver o Discord (RN-12). */
 		loginHref?: string;
+		/** No painel do dono, o botão "Desbloquear" para quem foi removido com bloqueio (RN-13). */
+		canUnblock?: boolean;
 	}
 
-	let { talent, className, loginHref }: Props = $props();
+	let { talent, className, loginHref, canUnblock = false }: Props = $props();
+	let unblocking = $state(false);
 	const portrait = $derived(portraitInfo(talent.portrait));
 	const headingId = $props.id();
 </script>
@@ -29,6 +34,12 @@
 				><Icon name={ROLE_ICONS[talent.role]} size={14} />{ROLE_LABELS[talent.role]}</span
 			>
 		</div>
+		{#if talent.removed}
+			<!-- RN-13: já foi removido deste grupo; pode ter sido engano. -->
+			<span class="flag" class:blocked={talent.blocked} data-testid="talent-removed"
+				>{talent.blocked ? 'Removido · bloqueado' : 'Removido deste grupo'}</span
+			>
+		{/if}
 		<span class="sub">{className} · Nv {talent.level}</span>
 		<span class="sub"
 			>{daysLabel(talent.days)} · {rangeLabel(talent.start, talent.end)} (Brasília)</span
@@ -61,6 +72,25 @@
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{/if}
 		</div>
+		{#if canUnblock && talent.blocked}
+			<!-- RN-15 da candidatura-lobby / CA-06.9: o dono desfaz o bloqueio. -->
+			<form
+				method="POST"
+				action="?/unblock"
+				use:enhance={() => {
+					unblocking = true;
+					return async ({ update }) => {
+						unblocking = false;
+						await update();
+					};
+				}}
+			>
+				<input type="hidden" name="characterId" value={talent.characterId} />
+				<Button type="submit" variant="secondary" size="sm" disabled={unblocking}
+					>Desbloquear</Button
+				>
+			</form>
+		{/if}
 	</div>
 </article>
 
@@ -118,6 +148,24 @@
 		font: 500 12px/1.35 var(--font-ui);
 		color: var(--fg-3);
 		overflow-wrap: anywhere;
+	}
+	.flag {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		height: 20px;
+		padding: 0 7px;
+		border-radius: var(--radius-xs);
+		background: var(--ink-3);
+		color: var(--fg-2);
+		font: 600 11px/1 var(--font-ui);
+	}
+	.flag.blocked {
+		background: rgba(240, 100, 140, 0.16);
+		color: var(--status-error);
+	}
+	form {
+		margin: 4px 0 0;
 	}
 	.contact {
 		display: flex;
