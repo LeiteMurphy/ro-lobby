@@ -1,7 +1,7 @@
 # Spec — Grupo livre
 
-- Feature: `grupo-livre` · Nível: G · Status: Rascunho
-- Notion: (a criar na fase de Tasks)
+- Feature: `grupo-livre` · Nível: G · Status: Aprovada (2026-10-09)
+- Notion: https://app.notion.com/p/3f4d4a3a5eff81e4b026ec70d84af725
 - Última revisão: 2026-10-09 — primeira versão
 
 ## 1. Contexto
