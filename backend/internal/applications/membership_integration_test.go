@@ -304,3 +304,24 @@ func TestUpdate_CA04_5_InstanceKeepsMembers(t *testing.T) {
 		t.Errorf("ocupadas = %+v, pendentes = %d", occ, n)
 	}
 }
+
+// Borda da RN-17 / RN-18 da lobbies: o membro abaixo do nível de entrada da nova instância
+// continua no grupo; o nível mínimo novo vale para candidaturas novas.
+func TestUpdate_RN17_MemberBelowNewInstance(t *testing.T) {
+	e, owner, player, lid := basic(t)
+	low := e.apply(t, player, "Novato", lid) // nível 170
+	if _, err := e.svc.Accept(t.Context(), owner.id, low.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.lobbies.Update(t.Context(), owner.id, lid, lobbies.UpdateInput{
+		InstanceID: "memorias-de-thanatos", StartsAt: at(1, 20, 0), Slots: std, MinLevel: 180,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if s := e.status(t, low.ID); s != StatusAccepted {
+		t.Errorf("membro abaixo da nova instância = %q", s)
+	}
+	newcomer := e.user(t, "Raso:175:tank")
+	_, err := e.svc.Apply(t.Context(), newcomer.id, lid, ApplyInput{CharacterID: newcomer.chars["Raso"]})
+	wantRule(t, err, CodeBelowMinLevel)
+}

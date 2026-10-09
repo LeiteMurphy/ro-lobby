@@ -133,7 +133,8 @@
 				aria-invalid={errors.instanceId ? 'true' : undefined}
 				aria-describedby={describe('instanceId')}
 			>
-				<option value="">Escolha a instância</option>
+				<!-- Na edição já há uma instância; a opção vazia só existe na criação (RN-17). -->
+				{#if mode === 'create'}<option value="">Escolha a instância</option>{/if}
 				{#each groups as g (g.label)}
 					<optgroup label={g.label}>
 						{#each g.items as i (i.id)}

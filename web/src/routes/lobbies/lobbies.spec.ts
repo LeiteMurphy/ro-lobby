@@ -89,6 +89,7 @@ describe('formulário de lobby', () => {
 		const html = renderForm({ mode: 'update' });
 		expect(html).toMatch(/<select[^>]*name="instanceId"/);
 		expect(html).toMatch(/<option value="templo-do-demonio-rei"[^>]*selected/);
+		expect(html).not.toContain('<option value="">');
 		expect(html).toMatch(/name="characterId"[^>]*disabled|disabled[^>]*name="characterId"/);
 		expect(html).toContain('Salvar alterações');
 	});
