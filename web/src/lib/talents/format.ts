@@ -43,7 +43,11 @@ export function rangeLabel(start: string, end: string): string {
 	return end < start ? `${range} (até o dia seguinte)` : range;
 }
 
-/** RN-04: "Qualquer instância" ou os nomes. */
+/**
+ * RN-04: "Qualquer instância" ou os nomes. Se todas as escolhidas saíram do catálogo, a
+ * lista fica vazia e o personagem não entra na afinidade de nenhum lobby.
+ */
 export function instancesLabel(anyInstance: boolean, names: readonly string[]): string {
-	return anyInstance || names.length === 0 ? 'Qualquer instância' : names.join(', ');
+	if (anyInstance) return 'Qualquer instância';
+	return names.length ? names.join(', ') : 'Nenhuma instância do catálogo';
 }

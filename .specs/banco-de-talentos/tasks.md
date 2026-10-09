@@ -118,3 +118,9 @@
   à parte (705d258).
 - 2026-10-09 — Faixas de horário dinâmicas na Home (pedido do usuário): fora desta spec,
   fica para uma spec própria.
+- 2026-10-09 — Validação, ciclo 1: o card mostrava "Qualquer instância" para quem ficou sem
+  nenhuma instância do catálogo (RN-04). Corrigido, com testes da RN-04 e da virada de
+  sábado para domingo.
+- 2026-10-09 — Validação, ciclo 1 (observação): a afinidade não exclui quem foi removido
+  com bloqueio daquele lobby (RN-15 da `candidatura-lobby`). A spec não trata disso;
+  fica como pergunta ao usuário.

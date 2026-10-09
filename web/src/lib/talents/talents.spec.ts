@@ -43,8 +43,9 @@ describe('textos do banco de talentos', () => {
 		expect(rangeLabel('22:00', '02:00')).toBe('22:00–02:00 (até o dia seguinte)');
 	});
 
-	it('RN-04: "Qualquer instância" ou os nomes', () => {
+	it('RN-04: "Qualquer instância" ou os nomes; sem nenhuma no catálogo, diz isso', () => {
 		expect(instancesLabel(true, [])).toBe('Qualquer instância');
+		expect(instancesLabel(false, [])).toBe('Nenhuma instância do catálogo');
 		expect(instancesLabel(false, ['Templo do Demônio Rei', 'Sonho Sombrio'])).toBe(
 			'Templo do Demônio Rei, Sonho Sombrio'
 		);
