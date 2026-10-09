@@ -6,7 +6,7 @@
 
 ## US-01 — Pôr o personagem no banco  (P1)
 
-### T-01 — Tabela de disponibilidade e contrato da API  [ ]
+### T-01 — Tabela de disponibilidade e contrato da API  [x]
 - Cobre: RN-01 a RN-04, D-01, D-02, D-03, RNF-01
 - Depende de: —
 - Paralelizável: não
@@ -16,10 +16,10 @@
 - Pronto quando: a migração aplica e reverte; testes de integração provam os `CHECK`
   (dias 1..127, minutos de 30 em 30, início diferente do fim, instância ou "Qualquer") e o
   CASCADE na exclusão do personagem; o contrato tem as quatro rotas e os schemas do design.
-- Commit:
+- Commit: 10659d0, 705d258
 - Notion: https://app.notion.com/p/3f4d4a3a5eff81e8a9dfc4f1a2f80f02
 
-### T-02 — Serviço e rota de disponibilidade  [ ]
+### T-02 — Serviço e rota de disponibilidade  [x]
 - Cobre: RN-01 a RN-05, CA-01.3, CA-01.4, CA-01.5, D-06
 - Depende de: T-01
 - Paralelizável: não
@@ -27,12 +27,12 @@
   `backend/internal/characters/` (campo `availability` no `Character`)
 - Pronto quando: testes provam o upsert, os 422 por campo, o 404 para personagem de outro
   Usuário, que desligar guarda os dados e que `GET /characters` traz a disponibilidade.
-- Commit:
+- Commit: 09045e6
 - Notion: https://app.notion.com/p/3f4d4a3a5eff8156a2f2fc7f0b6776eb
 
 ## US-02 — Afinidade no detalhe do lobby  (P1)
 
-### T-03 — Consulta de afinidade e rota do lobby  [ ]
+### T-03 — Consulta de afinidade e rota do lobby  [x]
 - Cobre: RN-06, RN-07, RN-08, RN-09, CA-02.1, CA-02.2, CA-02.3, CA-02.4 (API), D-04
 - Depende de: T-02
 - Paralelizável: não
@@ -42,10 +42,10 @@
   "Qualquer", dia e faixa com virada da meia-noite e fim excluído, nível, função com vaga,
   livre na janela de 2 h, inclusive pendente), a exclusão dos personagens do dono, a ordem
   e as respostas 404 e 409 de `GET /lobbies/{id}/talents`.
-- Commit:
+- Commit: 7eeef43
 - Notion: https://app.notion.com/p/3f4d4a3a5eff8169aa5dc932e7b800b3
 
-### T-04 — Catálogo e contagem na API  [P] [ ]
+### T-04 — Catálogo e contagem na API  [P] [x]
 - Cobre: RN-10, RN-11, RN-12, CA-01.1, CA-01.2, CA-03.1 (API), CA-04.1, CA-04.2 (API),
   CA-04.3, D-05, RNF-05
 - Depende de: T-03
@@ -54,12 +54,12 @@
 - Pronto quando: testes provam os filtros de `GET /talents` (instância, função, dia, hora
   com virada), o limite de 100, o `discordUsername` só com sessão e a contagem de
   `GET /talents/count` com as vagas do formulário menos a do dono.
-- Commit:
+- Commit: cf2f44c
 - Notion: https://app.notion.com/p/3f4d4a3a5eff819cbc57eb0383e6d674
 
 ## Telas
 
-### T-05 — Disponibilidade no perfil  [P] [ ]
+### T-05 — Disponibilidade no perfil  [P] [x]
 - Cobre: US-01, CA-01.1, CA-01.3, CA-01.4, RNF-03
 - Depende de: T-02
 - Paralelizável: [P] com T-06 e T-07 (rotas diferentes)
@@ -67,10 +67,10 @@
   `web/test/e2e/talentos.spec.ts`
 - Pronto quando: testes de SSR e e2e provam ligar com dias, faixa e instâncias, os erros
   por campo, desligar e reabrir com os dados guardados, tudo pelo teclado.
-- Commit:
+- Commit: d90bbe9
 - Notion: https://app.notion.com/p/3f4d4a3a5eff8139b828f74e62de3055
 
-### T-06 — Painel "Jogadores disponíveis" e prévia da criação  [P] [ ]
+### T-06 — Painel "Jogadores disponíveis" e prévia da criação  [P] [x]
 - Cobre: US-02, US-03, CA-02.1, CA-02.4, CA-03.1
 - Depende de: T-03, T-04
 - Paralelizável: [P] com T-05 e T-07
@@ -79,10 +79,10 @@
   `web/src/lib/talents/`
 - Pronto quando: testes provam o painel só para o dono do lobby aberto, com a ordem da
   API e o aviso de lista vazia, e a contagem da prévia que muda com a hora.
-- Commit:
+- Commit: 2558320
 - Notion: https://app.notion.com/p/3f4d4a3a5eff81dc99bad7727d2e2d70
 
-### T-07 — Página /talentos  [P] [ ]
+### T-07 — Página /talentos  [P] [x]
 - Cobre: US-04, CA-01.2, CA-04.1, CA-04.2, CA-04.3, RNF-03, RNF-05
 - Depende de: T-04
 - Paralelizável: [P] com T-05 e T-06
@@ -91,7 +91,7 @@
 - Pronto quando: testes de SSR e e2e provam os filtros pela query string, o
   `@username` só para logado ("Entre para ver o Discord" para visitante, sem o nome no
   HTML), o aviso dos 100 primeiros e o link na TopBar.
-- Commit:
+- Commit: 1d865b1
 - Notion: https://app.notion.com/p/3f4d4a3a5eff816e88eff592a441a67c
 
 ## Matriz de cobertura
@@ -112,4 +112,9 @@
 | CA-04.3 | T-04, T-07 |
 
 ## Descobertas
-- (nenhuma)
+- 2026-10-09 — A T-01 entrou com as rotas novas do contrato respondendo erro interno até
+  as T-02 a T-04 (stubs em `server/talents.go`), para cada commit compilar sozinho. O
+  teste de contrato da lista de personagens precisou do campo `availability` num commit
+  à parte (705d258).
+- 2026-10-09 — Faixas de horário dinâmicas na Home (pedido do usuário): fora desta spec,
+  fica para uma spec própria.
