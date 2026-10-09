@@ -533,3 +533,68 @@ describe('/lobbies/[id] do lado do dono (candidatura-lobby, T-15)', () => {
 		expect(html).not.toContain('Trocar personagem');
 	});
 });
+
+describe('/lobbies/[id] compartilhável (spec compartilhar-lobby)', () => {
+	// O lobby do CA-01.3 e do CA-02.1: Glast Heim no sábado 10/10 às 20:00, nível mínimo 160,
+	// 1 vaga de Tank e 2 de Dano abertas, Suporte cheio e anfitrião "Brasa".
+	const GLAST = {
+		instance: { ...TEMPLE.instance, name: 'Glast Heim' },
+		startsAt: '2026-10-10T23:00:00Z',
+		slots: { tank: 1, support: 2, dps: 3 },
+		occupied: { tank: 0, support: 2, dps: 1 },
+		owner: { ...TEMPLE.owner, nick: 'Brasa' }
+	};
+	const renderShared = (lobby: Record<string, unknown>, userId: string | null) => {
+		const { head, body } = render(Detalhe, {
+			props: {
+				data: {
+					user: userId ? { id: userId, username: 'x', globalName: null } : null,
+					lobby: { ...TEMPLE, ...GLAST, ...lobby },
+					ownerClass: 'Arcebispo',
+					classNames: {},
+					characters: [],
+					isOwner: userId === TEMPLE.owner.userId,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/',
+					origin: 'https://rolobby.com.br'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		});
+		return { head, body };
+	};
+	const meta = (head: string, key: string) =>
+		head.match(new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)"`))?.[1];
+
+	it('CA-01.1: visitante, candidato e dono veem "Compartilhar" no lobby aberto', () => {
+		for (const userId of [null, 'outra-pessoa', TEMPLE.owner.userId]) {
+			expect(renderShared({}, userId).body).toContain('Compartilhar');
+		}
+	});
+
+	it('CA-01.2: lobby iniciado ou cancelado não mostra "Compartilhar"', () => {
+		for (const status of ['started', 'cancelled']) {
+			const { body } = renderShared({ status, cancelReason: 'Faltou tank' }, null);
+			expect(body).not.toContain('Compartilhar');
+		}
+	});
+
+	it('CA-02.1: o HTML sem sessão traz as meta tags Open Graph do lobby aberto', () => {
+		const { head } = renderShared({}, null);
+		expect(meta(head, 'og:title')).toBe('Glast Heim · sábado, 10/10 às 20:00');
+		expect(meta(head, 'og:description')).toBe(
+			'Vagas: 1 Tank, 2 Dano · Nível mínimo 160 · Anfitrião Brasa'
+		);
+		expect(meta(head, 'og:url')).toBe(`https://rolobby.com.br/lobbies/${TEMPLE.id}`);
+		expect(meta(head, 'og:site_name')).toBe('RO Lobby');
+		expect(meta(head, 'og:type')).toBe('website');
+		expect(meta(head, 'theme-color')).toBe('#f6bb45');
+		expect(head).not.toContain('og:image');
+	});
+
+	it('CA-02.2: lobby cancelado avisa o cancelamento no preview', () => {
+		const { head } = renderShared({ status: 'cancelled', cancelReason: 'Faltou tank' }, null);
+		expect(meta(head, 'og:description')).toBe('Esse grupo foi cancelado.');
+	});
+});

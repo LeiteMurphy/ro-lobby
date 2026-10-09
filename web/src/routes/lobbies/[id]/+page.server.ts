@@ -29,7 +29,7 @@ import type { Actions, PageServerLoad } from './$types';
 // lobbies RN-15, RN-16, RN-19 e candidatura-lobby RN-01 a RN-24, RN-27, RN-28, RN-31,
 // RN-32, RN-36).
 
-export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) => {
+export const load: PageServerLoad = async ({ params, locals, cookies, fetch, url }) => {
 	const { apiBaseUrl } = authConfig();
 	const token = locals.user ? (cookies.get(SESSION_COOKIE) ?? '') : '';
 	const [lobby, classes] = await Promise.all([
@@ -59,6 +59,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		// RN-16: as ações do dono aparecem só para ele.
 		isOwner,
 		now: new Date().toISOString(),
+		// Origem do web (ORIGIN no adapter-node) para o convite e o preview (compartilhar-lobby).
+		origin: url.origin,
 		loginHref: loginHref(new URL(`/lobbies/${params.id}`, 'http://web'))
 	};
 };

@@ -24,6 +24,8 @@
 	import { relativeLabel, zonedNow } from '$lib/home/time';
 	import { ROLE_LABELS } from '$lib/home/types';
 	import CancelDialog from '$lib/lobbies/components/CancelDialog.svelte';
+	import ShareButton from '$lib/lobbies/components/ShareButton.svelte';
+	import { inviteText, shareMeta, THEME_COLOR } from '$lib/lobbies/share';
 	import { fromUtcIso } from '$lib/lobbies/time';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -132,6 +134,9 @@
 				)
 			: []
 	);
+	// Convite e preview do link (spec compartilhar-lobby RN-02, RN-05).
+	const invite = $derived(inviteText(lobby, data.origin));
+	const og = $derived(shareMeta(lobby, data.origin));
 	const lobbyTitle = $derived(`${lobby.instance.name} · ${dayLabel} às ${when.time}`);
 	// RN-19 / RN-36: para qual personagem o dono pode trocar o dele (2h).
 	const ownerSwapOptions = $derived(
@@ -160,6 +165,13 @@
 
 <svelte:head>
 	<title>RO Lobby · {lobby.instance.name}</title>
+	<!-- compartilhar-lobby RN-05: preview do link, sem imagem. -->
+	<meta property="og:title" content={og.title} />
+	<meta property="og:description" content={og.description} />
+	<meta property="og:url" content={og.url} />
+	<meta property="og:site_name" content="RO Lobby" />
+	<meta property="og:type" content="website" />
+	<meta name="theme-color" content={THEME_COLOR} />
 </svelte:head>
 
 <div class="page">
@@ -192,6 +204,8 @@
 			</div>
 			{#if lobby.status === 'open'}
 				<div class="acts">
+					<!-- compartilhar-lobby RN-01: qualquer pessoa compartilha o lobby aberto. -->
+					<ShareButton {invite} />
 					{#if viewerState === 'owner'}
 						<Button
 							variant="secondary"
