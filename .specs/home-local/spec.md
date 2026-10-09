@@ -3,8 +3,8 @@
 - Feature: `home-local` · Nível: M · Status: Aprovada
 - Design: Claude Design, projeto "RO Lobby Home v2", arquivo `Home v2.dc.html`
 - ADR: [ADR-06](../../docs/adr/0006-hospedagem-local.md) (aceito)
-- Última revisão: 2026-10-09 — faixas de horário dinâmicas (RN-12, RN-13, CA-04.8,
-  CA-04.9), a pedido do usuário. Antes, 2026-10-01 — RN-22 revista a pedido do usuário: nomes de classe do bRO
+- Última revisão: 2026-10-09 — faixas de horário dinâmicas (RN-12, RN-13, CA-04.9,
+  CA-04.10), a pedido do usuário. Antes, 2026-10-01 — RN-22 revista a pedido do usuário: nomes de classe do bRO
   (bROWiki) passam a ser permitidos; logos, artes e sprites continuam proibidos
 
 ## 1. Contexto
@@ -238,14 +238,14 @@ Given lobbies às 19:30, 20:00 e 22:45
 When o visitante escolhe "20h–22h"
 Then a lista mostra só o lobby das 20:00
 
-CA-04.8 — Faixa extra aparece com grupo  [US-04, RN-12]
+CA-04.9 — Faixa extra aparece com grupo  [US-04, RN-12]
 Given um dia com lobbies às 08:30 e às 20:00
 When o visitante abre os filtros
 Then as faixas são, nesta ordem: "Qualquer horário", "08h–10h", "18h–20h", "20h–22h"
   e "22h–00h"
   And "08h–10h" mostra 1, e ao escolhê-la a lista mostra só o lobby das 08:30
 
-CA-04.9 — Faixa extra some sem grupo  [US-04, RN-12]
+CA-04.10 — Faixa extra some sem grupo  [US-04, RN-12]
 Given um dia sem lobby antes das 18:00
 When o visitante abre os filtros
 Then só aparecem "Qualquer horário", "18h–20h", "20h–22h" e "22h–00h", mesmo com 0
