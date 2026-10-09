@@ -3,6 +3,7 @@
 #                                               publicada; backend e web rodam na máquina
 #   docker compose --profile app up -d --wait   pilha app: PostgreSQL próprio, migrações, API e
 #                                               web com o build de produção; só o web é exposto
+# A pilha app pode ser publicada pelo Cloudflare Tunnel, com docker-compose.tunnel.yml (ADR-08).
 # O modo de desenvolvimento é o padrão porque o .env define COMPOSE_PROFILES=dev. O
 # --profile app substitui esse padrão.
 name: ro-lobby
@@ -85,8 +86,9 @@ services:
       # RN-03 (login-discord): o web recebe só o Client ID, nunca o Client Secret.
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?defina DISCORD_CLIENT_ID no .env}
       DISCORD_AUTHORIZE_URL: ${DISCORD_AUTHORIZE_URL:-https://discord.com/oauth2/authorize}
-      # O adapter-node confere a origem das actions (proteção CSRF).
-      ORIGIN: http://localhost:${APP_WEB_PORT:-3000}
+      # O adapter-node confere a origem das actions (proteção CSRF). RN-01
+      # (publicacao-tunel): APP_ORIGIN troca a origem pelo domínio público.
+      ORIGIN: ${APP_ORIGIN:-http://localhost:${APP_WEB_PORT:-3000}}
     ports:
       - "${APP_WEB_PORT:-3000}:3000"
     depends_on:
