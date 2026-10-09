@@ -1068,6 +1068,9 @@ components:
       type: object
       required: [startsAt, slots, minLevel]
       properties:
+        instanceId:
+          type: string
+          description: ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17).
         startsAt:
           type: string
           format: date-time

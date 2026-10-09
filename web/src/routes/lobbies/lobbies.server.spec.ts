@@ -241,11 +241,16 @@ describe('/lobbies/novo', () => {
 });
 
 describe('/lobbies/[id]/editar', () => {
+	const CATALOG = [
+		{ id: 'templo-do-demonio-rei', name: 'Templo do Demônio Rei', level: 160, reset: 'daily' },
+		{ id: 'sonho-sombrio', name: 'Sonho Sombrio', level: 120, reset: 'daily' }
+	];
 	const lobbyFetch = (lobby: unknown) =>
 		fakeFetch({
 			'GET /lobbies/4b1c2d3e-5f60-4a7b-8c9d-0e1f2a3b4c5d': json(200, lobby),
 			'GET /characters': json(200, [LIRIEN, BRASA]),
-			'GET /classes': json(200, [])
+			'GET /classes': json(200, []),
+			'GET /instances': json(200, CATALOG)
 		}).fn;
 
 	it('CA-04.1 / RN-17: o dono vê o formulário com os valores do lobby e só o personagem do dono', async () => {
@@ -262,6 +267,27 @@ describe('/lobbies/[id]/editar', () => {
 			minLevel: '160'
 		});
 		expect((data.characters as { id: string }[]).map((c) => c.id)).toEqual([LIRIEN.id]);
+	});
+
+	it('CA-04.5 / RN-17: a edição traz o catálogo para trocar a instância', async () => {
+		const data = (await editar.load(editLoad(ANA, fakeCookies('t'), lobbyFetch(TEMPLE)))) as {
+			instances: { id: string }[];
+			values: { instanceId: string };
+		};
+		expect(data.instances.map((i) => i.id)).toEqual(['templo-do-demonio-rei', 'sonho-sombrio']);
+		expect(data.values.instanceId).toBe('templo-do-demonio-rei');
+	});
+
+	it('RN-17: a instância atual que saiu do catálogo continua na lista', async () => {
+		const gone = { ...TEMPLE, instance: { ...TEMPLE.instance, id: 'instancia-removida' } };
+		const data = (await editar.load(editLoad(ANA, fakeCookies('t'), lobbyFetch(gone)))) as {
+			instances: { id: string; name: string }[];
+		};
+		expect(data.instances.map((i) => i.id)).toEqual([
+			'instancia-removida',
+			'templo-do-demonio-rei',
+			'sonho-sombrio'
+		]);
 	});
 
 	it('RN-20: outro Usuário vê não encontrado', async () => {
@@ -294,6 +320,7 @@ describe('/lobbies/[id]/editar', () => {
 			data: { errors: { slots: 'Essa função já tem ocupante' } }
 		});
 		expect(calls[0].body).toEqual({
+			instanceId: 'templo-do-demonio-rei',
 			startsAt: '2026-10-07T23:00:00Z',
 			slots: { tank: 1, support: 0, dps: 3 },
 			minLevel: 160

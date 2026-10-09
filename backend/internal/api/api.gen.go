@@ -885,10 +885,12 @@ type LobbySwapRequest struct {
 
 // LobbyUpdate defines model for LobbyUpdate.
 type LobbyUpdate struct {
-	MinLevel int       `json:"minLevel"`
-	Note     *string   `json:"note,omitempty"`
-	Slots    Slots     `json:"slots"`
-	StartsAt time.Time `json:"startsAt"`
+	// InstanceId ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17).
+	InstanceId *string   `json:"instanceId,omitempty"`
+	MinLevel   int       `json:"minLevel"`
+	Note       *string   `json:"note,omitempty"`
+	Slots      Slots     `json:"slots"`
+	StartsAt   time.Time `json:"startsAt"`
 }
 
 // MyApplication Uma candidatura do Usuário com o lobby e o personagem (RN-33).

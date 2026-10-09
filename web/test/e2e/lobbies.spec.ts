@@ -240,6 +240,20 @@ test.describe('lobbies', () => {
 		const edited = page.getByTestId('lobby-card').filter({ hasText: character.nick });
 		await expect(edited).toContainText('21:00');
 		await expect(edited).toContainText('1/8');
+
+		// CA-04.5: trocar a instância sugere o nível de entrada da nova.
+		await page.goto(`${url}/editar`);
+		await page.getByLabel('Instância').selectOption('sonho-sombrio');
+		await expect(page.getByLabel('Nível mínimo')).toHaveValue('120');
+		await page.getByRole('button', { name: 'Salvar alterações' }).click();
+		await expect(page).toHaveURL(url);
+		await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sonho Sombrio');
+		await expect(page.getByRole('main')).toContainText('Nível mínimo 120');
+		await page.goto('/');
+		await page.getByRole('tablist', { name: 'Dias' }).getByRole('tab').nth(5).click();
+		await expect(page.getByTestId('lobby-card').filter({ hasText: character.nick })).toContainText(
+			'Sonho Sombrio'
+		);
 		await page.goto(url);
 
 		// CA-05.1: cancelar com motivo curto, depois válido.

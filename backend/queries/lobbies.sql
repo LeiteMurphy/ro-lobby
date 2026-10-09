@@ -66,7 +66,8 @@ SELECT * FROM lobbies WHERE id = @id AND owner_id = @owner_id FOR UPDATE;
 
 -- name: UpdateLobby :exec
 UPDATE lobbies
-SET starts_at = @starts_at, slots_tank = @slots_tank, slots_support = @slots_support,
+SET instance_id = @instance_id, instance_name = @instance_name, instance_level = @instance_level,
+    starts_at = @starts_at, slots_tank = @slots_tank, slots_support = @slots_support,
     slots_dps = @slots_dps, min_level = @min_level, note = @note
 WHERE id = @id;
 

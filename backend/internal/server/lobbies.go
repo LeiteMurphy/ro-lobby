@@ -123,7 +123,7 @@ func (h lobbiesHandler) UpdateLobby(ctx context.Context, req api.UpdateLobbyRequ
 	}
 	in := lobbies.UpdateInput{}
 	if b := req.Body; b != nil {
-		in = lobbies.UpdateInput{StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel, Note: deref(b.Note)}
+		in = lobbies.UpdateInput{InstanceID: deref(b.InstanceId), StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel, Note: deref(b.Note)}
 	}
 	updated, err := h.lobbies.Update(ctx, userID, req.Id, in)
 	var invalid *lobbies.ValidationError

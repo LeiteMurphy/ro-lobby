@@ -3,7 +3,8 @@
 - Feature: `lobbies` · Nível: G · Status: Aprovada
 - Design: Claude Design, `Lobby.dc.html`: criação como página `/lobbies/novo` com prévia do
   card (1b), detalhe (1c) e cancelamento (1d)
-- Última revisão: 2026-10-06 — teste do usuário no localhost: card inteiro clicável; criar
+- Última revisão: 2026-10-09 — a edição passa a trocar a instância (RN-17, CA-04.5,
+  CA-04.6). Antes, 2026-10-06 — teste do usuário no localhost: card inteiro clicável; criar
   lobby a partir do dia escolhido na Home (RN-24)
   (RN-23), retrato do dono nas vagas (RN-15) e detalhe com o fundo da Home
 
@@ -84,9 +85,12 @@ por função, até 12), P-02 (o personagem do dono ocupa uma vaga desde a criaç
   aberto. "Candidatar" continua "Disponível em breve" para os outros.
 
 ### Edição e cancelamento
-- **RN-17** — Só o dono edita, e só com o lobby aberto. Ele muda início, vagas, nível
-  mínimo e observação, com as mesmas regras da criação (RN-05 a RN-10). A instância e o
-  personagem do dono não mudam.
+- **RN-17** — Só o dono edita, e só com o lobby aberto. Ele muda instância, início, vagas,
+  nível mínimo e observação, com as mesmas regras da criação (RN-05 a RN-10). O personagem
+  do dono não muda por aqui (RN-19 da `candidatura-lobby`). Ao trocar a instância, o
+  formulário sugere o nível de entrada da nova como nível mínimo, e o dono pode ajustar.
+  Membros aceitos e candidaturas pendentes continuam no lobby, como na mudança do nível
+  mínimo.
 - **RN-18** — As vagas de uma função não ficam abaixo dos ocupantes dela, e o nível mínimo
   não fica acima do nível do personagem do dono.
 - **RN-19** — Só o dono cancela, e só com o lobby aberto. Cancelar pede confirmação e um
@@ -257,6 +261,20 @@ Given um lobby de outro Usuário, ou um lobby já iniciado
 When alguém tenta editá-lo pela API
 Then a API responde 404 para o lobby de outro e 409 para o iniciado
   And o lobby continua igual
+
+CA-04.5 — Trocar a instância  [US-04, RN-17, RN-07]
+Given um lobby aberto do Usuário em "Templo do Demônio Rei", com um membro aceito e uma
+  candidatura pendente
+When o dono troca a instância para "Sonho Sombrio"
+Then o formulário sugere 120, o nível de entrada da nova instância, como nível mínimo
+  And depois de salvar, o detalhe e a Home mostram "Sonho Sombrio"
+  And o membro aceito e a candidatura pendente continuam no lobby
+
+CA-04.6 — Nova instância acima do personagem do dono  [US-04, RN-07, RN-18]
+Given um lobby com o personagem do dono no nível 178
+When o dono troca a instância para uma de nível de entrada 240
+Then a edição é recusada com o erro no nível mínimo
+  And o lobby continua com a instância antiga
 ```
 
 ### US-05 — Cancelar
@@ -318,6 +336,8 @@ Then só um é aceito
 - Personagem do dono que cai abaixo do nível mínimo editando o perfil: o lobby continua;
   só a edição do nível mínimo passa a respeitar o nível novo [RN-18]
 - Lobby que começa enquanto o dono está editando: a edição é recusada com 409 [RN-17]
+- Membro aceito com nível abaixo do de entrada da nova instância: continua no grupo; o
+  nível mínimo vale para candidaturas novas [RN-17, RN-18]
 
 ## 7. Requisitos não funcionais
 - **RNF-01** — Acessibilidade: formulário, detalhe e diálogo de cancelamento funcionam
@@ -349,5 +369,7 @@ Then só um é aceito
   instância), personagem do dono (padrão o principal), observação.
 - Criação → início no futuro e em até 14 dias; personagem com o nível; sem conflito;
   até 5 lobbies abertos.
-- Editar e cancelar → só o dono, só aberto; instância e personagem fixos; vagas não abaixo
+- Editar e cancelar → só o dono, só aberto; personagem fixo; vagas não abaixo
   dos ocupantes; cancelar com confirmação e motivo de 10 a 250.
+- Trocar a instância na edição (revisão de 2026-10-09) → permitido; sugere o nível de
+  entrada da nova; membros e pendentes continuam.

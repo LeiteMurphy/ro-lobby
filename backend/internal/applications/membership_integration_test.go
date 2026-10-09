@@ -278,3 +278,50 @@ func TestLeaveRemove_D10_Concurrent(t *testing.T) {
 		}
 	}
 }
+
+// CA-04.5 / RN-17 da lobbies: trocar a instância mantém o membro aceito e a candidatura
+// pendente.
+func TestUpdate_CA04_5_InstanceKeepsMembers(t *testing.T) {
+	e, owner, _, lid, member := member(t)
+	other := e.user(t, "Lamina:200:dps")
+	pending := e.apply(t, other, "Lamina", lid)
+	got, err := e.lobbies.Update(t.Context(), owner.id, lid, lobbies.UpdateInput{
+		InstanceID: "sonho-sombrio", StartsAt: at(1, 20, 0), Slots: std, MinLevel: 120,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.InstanceID != "sonho-sombrio" || got.InstanceName != "Sonho Sombrio" || got.MinLevel != 120 {
+		t.Errorf("editado = %+v", got)
+	}
+	if s := e.status(t, member.ID); s != StatusAccepted {
+		t.Errorf("membro = %q", s)
+	}
+	if s := e.status(t, pending.ID); s != StatusPending {
+		t.Errorf("pendente = %q", s)
+	}
+	if occ, n := e.occupied(t, lid); occ.Support != 1 || n != 1 {
+		t.Errorf("ocupadas = %+v, pendentes = %d", occ, n)
+	}
+}
+
+// Borda da RN-17 / RN-18 da lobbies: o membro abaixo do nível de entrada da nova instância
+// continua no grupo; o nível mínimo novo vale para candidaturas novas.
+func TestUpdate_RN17_MemberBelowNewInstance(t *testing.T) {
+	e, owner, player, lid := basic(t)
+	low := e.apply(t, player, "Novato", lid) // nível 170
+	if _, err := e.svc.Accept(t.Context(), owner.id, low.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.lobbies.Update(t.Context(), owner.id, lid, lobbies.UpdateInput{
+		InstanceID: "memorias-de-thanatos", StartsAt: at(1, 20, 0), Slots: std, MinLevel: 180,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if s := e.status(t, low.ID); s != StatusAccepted {
+		t.Errorf("membro abaixo da nova instância = %q", s)
+	}
+	newcomer := e.user(t, "Raso:175:tank")
+	_, err := e.svc.Apply(t.Context(), newcomer.id, lid, ApplyInput{CharacterID: newcomer.chars["Raso"]})
+	wantRule(t, err, CodeBelowMinLevel)
+}

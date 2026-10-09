@@ -364,23 +364,30 @@ func (q *Queries) SetLobbyOwnerCharacter(ctx context.Context, arg SetLobbyOwnerC
 
 const updateLobby = `-- name: UpdateLobby :exec
 UPDATE lobbies
-SET starts_at = $1, slots_tank = $2, slots_support = $3,
-    slots_dps = $4, min_level = $5, note = $6
-WHERE id = $7
+SET instance_id = $1, instance_name = $2, instance_level = $3,
+    starts_at = $4, slots_tank = $5, slots_support = $6,
+    slots_dps = $7, min_level = $8, note = $9
+WHERE id = $10
 `
 
 type UpdateLobbyParams struct {
-	StartsAt     time.Time
-	SlotsTank    int16
-	SlotsSupport int16
-	SlotsDps     int16
-	MinLevel     int16
-	Note         pgtype.Text
-	ID           pgtype.UUID
+	InstanceID    string
+	InstanceName  string
+	InstanceLevel int16
+	StartsAt      time.Time
+	SlotsTank     int16
+	SlotsSupport  int16
+	SlotsDps      int16
+	MinLevel      int16
+	Note          pgtype.Text
+	ID            pgtype.UUID
 }
 
 func (q *Queries) UpdateLobby(ctx context.Context, arg UpdateLobbyParams) error {
 	_, err := q.db.Exec(ctx, updateLobby,
+		arg.InstanceID,
+		arg.InstanceName,
+		arg.InstanceLevel,
 		arg.StartsAt,
 		arg.SlotsTank,
 		arg.SlotsSupport,
