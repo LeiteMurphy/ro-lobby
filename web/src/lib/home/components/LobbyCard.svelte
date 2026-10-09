@@ -4,9 +4,10 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import { instanceArt } from '../catalog';
-	import { edgeRole, headcount, isFull, pendingFor } from '../lobbies';
+	import { edgeRole, lobbyIsFull, pendingFor, seats } from '../lobbies';
 	import type { Lobby } from '../types';
 	import HostLine from './HostLine.svelte';
+	import FreeComposition from './FreeComposition.svelte';
 	import RoleComposition from './RoleComposition.svelte';
 
 	interface Props {
@@ -22,9 +23,13 @@
 	const pending = $derived(pendingFor(lobby, viewerId));
 
 	const art = $derived(instanceArt(lobby.instance));
-	const full = $derived(isFull(lobby.composition));
-	const edge = $derived(edgeRole(lobby.composition));
-	const count = $derived(headcount(lobby.composition));
+	const full = $derived(lobbyIsFull(lobby));
+	// RN-08 da grupo-livre: o grupo livre tem a borda neutra, sem função.
+	const edge = $derived(lobby.free ? 'free' : edgeRole(lobby.composition));
+	const edgeColor = $derived(
+		full ? 'var(--fg-4)' : edge === 'free' ? 'var(--fg-2)' : `var(--${edge}-400)`
+	);
+	const count = $derived(seats(lobby));
 </script>
 
 <article
@@ -34,7 +39,7 @@
 	data-edge={full ? 'full' : edge}
 	aria-label="{lobby.instance} às {lobby.time}"
 >
-	<span class="edge" style="background:{full ? 'var(--fg-4)' : `var(--${edge}-400)`}"></span>
+	<span class="edge" style="background:{edgeColor}"></span>
 	<div class="cover" style="background:{art.cover}">
 		<div class="when">
 			<span class="time">{lobby.time}</span>
@@ -63,7 +68,11 @@
 		</div>
 		<HostLine host={lobby.host} hostClass={lobby.hostClass} minLevel={lobby.minLevel} />
 		<div class="footer">
-			<RoleComposition composition={lobby.composition} />
+			{#if lobby.free}
+				<FreeComposition seats={lobby.free} />
+			{:else}
+				<RoleComposition composition={lobby.composition} />
+			{/if}
 			<div class="action">
 				{#if preview}
 					<!-- Prévia: sem ações. -->

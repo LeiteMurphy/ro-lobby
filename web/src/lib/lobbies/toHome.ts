@@ -28,6 +28,15 @@ export function toHomeLobby(lobby: ApiLobby, classNames: ReadonlyMap<string, str
 			tank: { filled: lobby.occupied.tank, total: lobby.slots.tank },
 			support: { filled: lobby.occupied.support, total: lobby.slots.support },
 			dps: { filled: lobby.occupied.dps, total: lobby.slots.dps }
-		}
+		},
+		// RN-08 da grupo-livre: ocupantes de qualquer função contra o total livre.
+		...(lobby.formation === 'free'
+			? {
+					free: {
+						filled: lobby.occupied.tank + lobby.occupied.support + lobby.occupied.dps,
+						total: lobby.freeSlots ?? 0
+					}
+				}
+			: {})
 	};
 }

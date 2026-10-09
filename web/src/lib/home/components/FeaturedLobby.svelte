@@ -5,6 +5,7 @@
 	import { pendingFor } from '../lobbies';
 	import type { Lobby } from '../types';
 	import HostLine from './HostLine.svelte';
+	import FreeComposition from './FreeComposition.svelte';
 	import RoleComposition from './RoleComposition.svelte';
 
 	interface Props {
@@ -34,7 +35,11 @@
 			</div>
 			<h2>{lobby.instance}</h2>
 			<HostLine host={lobby.host} hostClass={lobby.hostClass} minLevel={lobby.minLevel} size="lg" />
-			<RoleComposition composition={lobby.composition} showTotal showBar />
+			{#if lobby.free}
+				<FreeComposition seats={lobby.free} showBar />
+			{:else}
+				<RoleComposition composition={lobby.composition} showTotal showBar />
+			{/if}
 			<div class="actions">
 				<!-- RN-35 da candidatura-lobby: a candidatura acontece no detalhe do lobby. -->
 				<Button size="lg" iconLeft="user-plus" href={resolve('/lobbies/[id]', { id: lobby.id })}

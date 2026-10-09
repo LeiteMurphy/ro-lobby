@@ -1,4 +1,4 @@
-import { openSlots } from './lobbies';
+import { roomFor } from './lobbies';
 import { toMinutes } from './time';
 import { ROLES, type Lobby, type Role } from './types';
 
@@ -55,8 +55,7 @@ export function matches(
 ): boolean {
 	return (
 		(!filters.instance || lobby.instance === filters.instance) &&
-		(filters.roles.length === 0 ||
-			filters.roles.some((role) => openSlots(lobby.composition, role) > 0)) &&
+		(filters.roles.length === 0 || filters.roles.some((role) => roomFor(lobby, role) > 0)) &&
 		(filters.maxMinLevel === null || lobby.minLevel <= filters.maxMinLevel) &&
 		(options.skipTime === true || inRange(lobby, filters.timeRange))
 	);
@@ -69,7 +68,7 @@ export function applyFilters(lobbies: readonly Lobby[], filters: Filters): Lobby
 /** RN-13: quantos lobbies do dia têm vaga em cada função, sem considerar os filtros. */
 export function roleCounts(dayLobbies: readonly Lobby[]): Record<Role, number> {
 	return Object.fromEntries(
-		ROLES.map((role) => [role, dayLobbies.filter((l) => openSlots(l.composition, role) > 0).length])
+		ROLES.map((role) => [role, dayLobbies.filter((l) => roomFor(l, role) > 0).length])
 	) as Record<Role, number>;
 }
 

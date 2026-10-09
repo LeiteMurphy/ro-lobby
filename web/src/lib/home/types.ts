@@ -27,6 +27,11 @@ export interface Lobby {
 	hostClass: string;
 	minLevel: number;
 	composition: Composition;
+	/**
+	 * Grupo livre (spec grupo-livre, RN-08): ocupantes e total, sem função. Ausente no lobby
+	 * por função.
+	 */
+	free?: Slots;
 	/** Usuário dono do lobby, para o selo de pendentes (RN-34 da candidatura-lobby). */
 	ownerId?: string;
 	/** Candidaturas pendentes (RN-28 da candidatura-lobby). */
