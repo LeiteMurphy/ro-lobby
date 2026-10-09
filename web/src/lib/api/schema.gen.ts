@@ -178,6 +178,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/characters/{id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Liga, edita ou desliga o personagem no banco de talentos
+         * @description Ligado, grava dias, faixa e instâncias (spec banco-de-talentos, RN-01 a RN-04). Desligado, tira do banco e guarda os dados (RN-01); os outros campos são ignorados. Só o dono do personagem (RN-05).
+         */
+        put: operations["setAvailability"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/talents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catálogo do banco de talentos
+         * @description Os personagens no banco, com filtros opcionais combinados com "E" (spec banco-de-talentos, RN-11), por nível decrescente (RN-08), até 100. A sessão é opcional; o nome no Discord só vem com ela (RN-12, D-05).
+         */
+        get: operations["listTalents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/talents/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quantos personagens têm afinidade com um lobby em criação
+         * @description A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono.
+         */
+        get: operations["countTalents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instances": {
         parameters: {
             query?: never;
@@ -242,6 +305,29 @@ export interface paths {
          * @description Só o dono e só com o lobby aberto. Muda início, vagas, nível mínimo e observação; instância e personagem ficam (RN-17, RN-18).
          */
         put: operations["updateLobby"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lobbies/{id}/talents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Personagens do banco com afinidade com o lobby
+         * @description Só o dono, só com o lobby aberto (spec banco-de-talentos, RN-06 a RN-09). Lobby de outro Usuário responde 404.
+         */
+        get: operations["listLobbyTalents"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -636,12 +722,62 @@ export interface components {
             isMain: boolean;
             /** Format: date-time */
             createdAt: string;
+            /** @description Disponibilidade no banco de talentos; null se nunca entrou (spec banco-de-talentos, CA-01.4). */
+            availability: components["schemas"]["Availability"] | null;
+        };
+        AvailabilityInput: {
+            enabled: boolean;
+            /** @description Dias da semana, domingo = 0. */
+            days?: number[];
+            /** @description HH:MM de Brasília, de 30 em 30 minutos. */
+            start?: string;
+            /** @description HH:MM de Brasília; menor que o início passa da meia-noite (RN-03). */
+            end?: string;
+            anyInstance?: boolean;
+            instanceIds?: string[];
+        };
+        Availability: {
+            enabled: boolean;
+            /** @description Dias da semana, domingo = 0. */
+            days: number[];
+            start: string;
+            end: string;
+            anyInstance: boolean;
+            /** @description Só as que continuam no catálogo (RN-04). */
+            instanceIds: string[];
+        };
+        AvailabilityResult: {
+            availability: components["schemas"]["Availability"] | null;
+        };
+        TalentInstance: {
+            id: string;
+            name: string;
+        };
+        Talent: {
+            /** Format: uuid */
+            characterId: string;
+            nick: string;
+            classId: string;
+            level: number;
+            role: components["schemas"]["Role"];
+            portrait: components["schemas"]["Portrait"];
+            link: string | null;
+            days: number[];
+            start: string;
+            end: string;
+            anyInstance: boolean;
+            instances: components["schemas"]["TalentInstance"][];
+            /** @description Só com sessão (RN-12, D-05). */
+            discordUsername?: string;
+        };
+        TalentCount: {
+            count: number;
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time";
             /** @enum {string} */
-            code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low";
+            code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start";
         };
         ValidationError: {
             /** @enum {string} */
@@ -1395,6 +1531,94 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    setAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityInput"];
+            };
+        };
+        responses: {
+            /** @description Disponibilidade gravada; null se desligou sem nunca ter ligado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityResult"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Invalid"];
+        };
+    };
+    listTalents: {
+        parameters: {
+            query?: {
+                instanceId?: string;
+                role?: components["schemas"]["Role"];
+                /** @description Dia da semana, domingo = 0. */
+                day?: number;
+                /** @description Hora de Brasília, HH:MM de 30 em 30 minutos. */
+                time?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os personagens do banco que passam nos filtros. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Talent"][];
+                };
+            };
+            422: components["responses"]["Invalid"];
+        };
+    };
+    countTalents: {
+        parameters: {
+            query: {
+                instanceId: string;
+                startsAt: string;
+                minLevel: number;
+                tank: number;
+                support: number;
+                dps: number;
+                characterId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A contagem. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TalentCount"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            422: components["responses"]["Invalid"];
+        };
+    };
     listInstances: {
         parameters: {
             query?: never;
@@ -1545,6 +1769,32 @@ export interface operations {
             404: components["responses"]["LobbyNotFound"];
             409: components["responses"]["LobbyNotOpen"];
             422: components["responses"]["Invalid"];
+        };
+    };
+    listLobbyTalents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Os personagens com afinidade, por nível decrescente. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Talent"][];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["LobbyNotFound"];
+            409: components["responses"]["LobbyNotOpen"];
         };
     };
     cancelLobby: {

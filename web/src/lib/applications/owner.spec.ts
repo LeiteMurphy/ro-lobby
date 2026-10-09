@@ -165,6 +165,7 @@ describe('diálogos do dono', () => {
 			link: null,
 			isMain: false,
 			createdAt: '',
+			availability: null,
 			...over
 		});
 		const html = render(SwapDialog, {

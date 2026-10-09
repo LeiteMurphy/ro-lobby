@@ -16,6 +16,7 @@ type handlers struct {
 	charactersHandler
 	lobbiesHandler
 	applicationsHandler
+	talentsHandler
 }
 
 var _ api.StrictServerInterface = handlers{}

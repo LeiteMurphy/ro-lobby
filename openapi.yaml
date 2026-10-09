@@ -243,6 +243,135 @@ paths:
           $ref: "#/components/responses/NoSession"
         "404":
           $ref: "#/components/responses/NotFound"
+  /characters/{id}/availability:
+    parameters:
+      - $ref: "#/components/parameters/CharacterId"
+    put:
+      operationId: setAvailability
+      summary: Liga, edita ou desliga o personagem no banco de talentos
+      description: >
+        Ligado, grava dias, faixa e instâncias (spec banco-de-talentos, RN-01 a RN-04).
+        Desligado, tira do banco e guarda os dados (RN-01); os outros campos são ignorados.
+        Só o dono do personagem (RN-05).
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilityInput"
+      responses:
+        "200":
+          description: Disponibilidade gravada; null se desligou sem nunca ter ligado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityResult"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /talents:
+    get:
+      operationId: listTalents
+      summary: Catálogo do banco de talentos
+      description: >
+        Os personagens no banco, com filtros opcionais combinados com "E" (spec
+        banco-de-talentos, RN-11), por nível decrescente (RN-08), até 100. A sessão é
+        opcional; o nome no Discord só vem com ela (RN-12, D-05).
+      security:
+        - {}
+        - sessionToken: []
+      parameters:
+        - name: instanceId
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            $ref: "#/components/schemas/Role"
+        - name: day
+          in: query
+          description: Dia da semana, domingo = 0.
+          schema:
+            type: integer
+        - name: time
+          in: query
+          description: Hora de Brasília, HH:MM de 30 em 30 minutos.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Os personagens do banco que passam nos filtros.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Talent"
+        "422":
+          $ref: "#/components/responses/Invalid"
+  /talents/count:
+    get:
+      operationId: countTalents
+      summary: Quantos personagens têm afinidade com um lobby em criação
+      description: >
+        A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação
+        (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono.
+      security:
+        - sessionToken: []
+      parameters:
+        - name: instanceId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: startsAt
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: minLevel
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: tank
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: support
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: dps
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: characterId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A contagem.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TalentCount"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "422":
+          $ref: "#/components/responses/Invalid"
   /instances:
     get:
       operationId: listInstances
@@ -384,6 +513,32 @@ paths:
           $ref: "#/components/responses/LobbyNotOpen"
         "422":
           $ref: "#/components/responses/Invalid"
+  /lobbies/{id}/talents:
+    parameters:
+      - $ref: "#/components/parameters/LobbyId"
+    get:
+      operationId: listLobbyTalents
+      summary: Personagens do banco com afinidade com o lobby
+      description: >
+        Só o dono, só com o lobby aberto (spec banco-de-talentos, RN-06 a RN-09). Lobby de
+        outro Usuário responde 404.
+      security:
+        - sessionToken: []
+      responses:
+        "200":
+          description: Os personagens com afinidade, por nível decrescente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Talent"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/LobbyNotFound"
+        "409":
+          $ref: "#/components/responses/LobbyNotOpen"
   /lobbies/{id}/cancel:
     parameters:
       - $ref: "#/components/parameters/LobbyId"
@@ -965,7 +1120,7 @@ components:
     Character:
       type: object
       additionalProperties: false
-      required: [id, nick, classId, level, role, portrait, link, isMain, createdAt]
+      required: [id, nick, classId, level, role, portrait, link, isMain, createdAt, availability]
       properties:
         id:
           type: string
@@ -988,6 +1143,121 @@ components:
         createdAt:
           type: string
           format: date-time
+        availability:
+          description: Disponibilidade no banco de talentos; null se nunca entrou (spec banco-de-talentos, CA-01.4).
+          allOf:
+            - $ref: "#/components/schemas/Availability"
+          nullable: true
+    AvailabilityInput:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+        days:
+          type: array
+          description: Dias da semana, domingo = 0.
+          items:
+            type: integer
+        start:
+          type: string
+          description: HH:MM de Brasília, de 30 em 30 minutos.
+        end:
+          type: string
+          description: HH:MM de Brasília; menor que o início passa da meia-noite (RN-03).
+        anyInstance:
+          type: boolean
+        instanceIds:
+          type: array
+          items:
+            type: string
+    Availability:
+      type: object
+      additionalProperties: false
+      required: [enabled, days, start, end, anyInstance, instanceIds]
+      properties:
+        enabled:
+          type: boolean
+        days:
+          type: array
+          description: Dias da semana, domingo = 0.
+          items:
+            type: integer
+        start:
+          type: string
+        end:
+          type: string
+        anyInstance:
+          type: boolean
+        instanceIds:
+          type: array
+          description: Só as que continuam no catálogo (RN-04).
+          items:
+            type: string
+    AvailabilityResult:
+      type: object
+      additionalProperties: false
+      required: [availability]
+      properties:
+        availability:
+          allOf:
+            - $ref: "#/components/schemas/Availability"
+          nullable: true
+    TalentInstance:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Talent:
+      type: object
+      additionalProperties: false
+      required: [characterId, nick, classId, level, role, portrait, link, days, start, end, anyInstance, instances]
+      properties:
+        characterId:
+          type: string
+          format: uuid
+        nick:
+          type: string
+        classId:
+          type: string
+        level:
+          type: integer
+        role:
+          $ref: "#/components/schemas/Role"
+        portrait:
+          $ref: "#/components/schemas/Portrait"
+        link:
+          type: string
+          nullable: true
+        days:
+          type: array
+          items:
+            type: integer
+        start:
+          type: string
+        end:
+          type: string
+        anyInstance:
+          type: boolean
+        instances:
+          type: array
+          items:
+            $ref: "#/components/schemas/TalentInstance"
+        discordUsername:
+          type: string
+          description: Só com sessão (RN-12, D-05).
+    TalentCount:
+      type: object
+      additionalProperties: false
+      required: [count]
+      properties:
+        count:
+          type: integer
     FieldError:
       type: object
       additionalProperties: false
@@ -995,10 +1265,10 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time]
         code:
           type: string
-          enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low]
+          enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start]
     ValidationError:
       type: object
       additionalProperties: false
