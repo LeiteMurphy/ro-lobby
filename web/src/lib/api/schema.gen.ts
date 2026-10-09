@@ -959,7 +959,7 @@ export interface components {
             /** @enum {string} */
             error: "application_rule";
             /** @enum {string} */
-            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending";
+            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "group_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending";
         };
         Application: {
             /** Format: uuid */

@@ -23,6 +23,7 @@ const (
 	ApplicationRuleErrorCodeAlreadyActive    ApplicationRuleErrorCode = "already_active"
 	ApplicationRuleErrorCodeBelowMinLevel    ApplicationRuleErrorCode = "below_min_level"
 	ApplicationRuleErrorCodeBlocked          ApplicationRuleErrorCode = "blocked"
+	ApplicationRuleErrorCodeGroupFull        ApplicationRuleErrorCode = "group_full"
 	ApplicationRuleErrorCodeNotMember        ApplicationRuleErrorCode = "not_member"
 	ApplicationRuleErrorCodeNotOpen          ApplicationRuleErrorCode = "not_open"
 	ApplicationRuleErrorCodeNotOwner         ApplicationRuleErrorCode = "not_owner"
@@ -43,6 +44,8 @@ func (e ApplicationRuleErrorCode) Valid() bool {
 	case ApplicationRuleErrorCodeBelowMinLevel:
 		return true
 	case ApplicationRuleErrorCodeBlocked:
+		return true
+	case ApplicationRuleErrorCodeGroupFull:
 		return true
 	case ApplicationRuleErrorCodeNotMember:
 		return true

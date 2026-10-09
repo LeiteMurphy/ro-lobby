@@ -324,7 +324,9 @@ func checkSwap(ctx context.Context, q *db.Queries, lobby db.GetLobbyRow, charact
 	if character.Level < lobby.Lobby.MinLevel {
 		return rule(CodeBelowMinLevel)
 	}
-	if character.Role != currentRole && freeSlots(lobby, character.Role) < 1 {
+	// RN-05 da grupo-livre: no grupo livre, o personagem novo fica com a mesma vaga.
+	if lobby.Lobby.Formation != lobbies.FormationFree && character.Role != currentRole &&
+		freeSlots(lobby, character.Role) < 1 {
 		return rule(CodeRoleFull)
 	}
 	conflict, err := q.HasScheduleConflict(ctx, db.HasScheduleConflictParams{
