@@ -872,3 +872,33 @@ describe('/lobbies/[id] com o banco de talentos (spec banco-de-talentos)', () =>
 		}
 	});
 });
+
+describe('desbloqueio pelo painel (spec candidatura-lobby, CA-06.9)', () => {
+	type UnblockAction = Parameters<(typeof detalhe.actions)['unblock']>[0];
+	const unblock = (f: typeof fetch) => {
+		const d = new FormData();
+		d.set('characterId', 'c9');
+		return detalhe.actions.unblock({
+			params: { id: TEMPLE.id },
+			request: new Request(`http://web/lobbies/${TEMPLE.id}`, { method: 'POST', body: d }),
+			cookies: fakeCookies('t'),
+			fetch: f
+		} as unknown as UnblockAction);
+	};
+
+	it('CA-06.9 / RN-15: manda o personagem para a API', async () => {
+		const { fn, calls } = fakeFetch({ [`POST /lobbies/${TEMPLE.id}/unblock`]: json(204) });
+		expect(await unblock(fn)).toEqual({ done: 'unblock' });
+		expect(calls[0].body).toEqual({ characterId: 'c9' });
+	});
+
+	it('CA-06.9: lobby encerrado mostra o aviso', async () => {
+		const { fn } = fakeFetch({
+			[`POST /lobbies/${TEMPLE.id}/unblock`]: json(409, { error: 'lobby_not_open' })
+		});
+		expect(await unblock(fn)).toMatchObject({
+			status: 409,
+			data: { action: 'unblock', message: 'Esse lobby já começou ou foi cancelado.' }
+		});
+	});
+});

@@ -312,6 +312,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lobbies/{id}/unblock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Desbloqueia o jogador neste lobby
+         * @description O dono do lobby aberto desbloqueia o usuário do personagem, que volta a poder se candidatar (spec candidatura-lobby, RN-15, CA-06.9). A candidatura removida fica no histórico. Personagem sem bloqueio não muda nada.
+         */
+        post: operations["unblockInLobby"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lobbies/{id}/talents": {
         parameters: {
             query?: never;
@@ -769,6 +792,14 @@ export interface components {
             instances: components["schemas"]["TalentInstance"][];
             /** @description Só com sessão (RN-12, D-05). */
             discordUsername?: string;
+            /** @description A pessoa já foi removida deste lobby (RN-13); sempre false fora do painel do dono. */
+            removed: boolean;
+            /** @description Removida com bloqueio deste lobby (RN-13). */
+            blocked: boolean;
+        };
+        UnblockInput: {
+            /** @description Um personagem da pessoa a desbloquear. */
+            characterId: string;
         };
         TalentCount: {
             count: number;
@@ -1769,6 +1800,34 @@ export interface operations {
             404: components["responses"]["LobbyNotFound"];
             409: components["responses"]["LobbyNotOpen"];
             422: components["responses"]["Invalid"];
+        };
+    };
+    unblockInLobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnblockInput"];
+            };
+        };
+        responses: {
+            /** @description Desbloqueado. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["LobbyNotFound"];
+            409: components["responses"]["LobbyNotOpen"];
         };
     };
     listLobbyTalents: {

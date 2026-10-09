@@ -145,7 +145,7 @@ func toAPITalents(list []talents.Talent, withDiscord bool) ([]api.Talent, error)
 		out[i] = api.Talent{
 			CharacterId: id, Nick: t.Nick, ClassId: t.ClassID, Level: t.Level, Role: api.Role(t.Role),
 			Portrait: api.Portrait(t.Portrait), Days: t.Days, Start: t.Start, End: t.End,
-			AnyInstance: t.AnyInstance, Instances: instances,
+			AnyInstance: t.AnyInstance, Instances: instances, Removed: t.Removed, Blocked: t.Blocked,
 		}
 		if t.Link != "" {
 			link := t.Link

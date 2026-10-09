@@ -27,6 +27,7 @@ type ApplicationService interface {
 	AcceptSwap(ctx context.Context, ownerID, swapID string) (applications.SwapRequest, error)
 	RejectSwap(ctx context.Context, ownerID, swapID, reason string) (applications.SwapRequest, error)
 	WithdrawSwap(ctx context.Context, userID, swapID string) (applications.SwapRequest, error)
+	Unblock(ctx context.Context, ownerID, lobbyID, characterID string) error
 }
 
 type applicationsHandler struct {

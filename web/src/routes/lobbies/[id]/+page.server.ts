@@ -22,7 +22,7 @@ import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
 import { cancelLobby, getLobby } from '$lib/lobbies/api';
 import { lobbyConflictMessage, lobbyFieldMessages } from '$lib/lobbies/messages';
 import type { Result } from '$lib/api/request';
-import { listLobbyTalents, type Talent } from '$lib/talents/api';
+import { listLobbyTalents, unblockInLobby, type Talent } from '$lib/talents/api';
 import type { Actions, PageServerLoad } from './$types';
 
 // Detalhe do lobby conforme quem olha, cancelamento pelo dono e candidatura: candidatar,
@@ -271,6 +271,23 @@ export const actions: Actions = {
 			});
 		}
 		return applicationFailure('remove' as const, result, { applicationId, reason, block });
+	},
+
+	// RN-15 / CA-06.9 (revisão de 2026-10-09): o dono desbloqueia quem bloqueou, pelo painel
+	// do banco de talentos (RN-13 da banco-de-talentos).
+	unblock: async ({ params, request, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const call = sessionCall(cookies, fetch, path);
+		const characterId = String((await request.formData()).get('characterId') ?? '');
+		const result = await unblockInLobby(call, params.id, characterId);
+		if (result.ok) return { done: 'unblock' as const };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		if (result.kind === 'not_found') error(404, 'Lobby não encontrado');
+		return fail(result.kind === 'conflict' ? 409 : 503, {
+			action: 'unblock' as const,
+			message:
+				result.kind === 'conflict' ? 'Esse lobby já começou ou foi cancelado.' : UNAVAILABLE_MESSAGE
+		});
 	},
 
 	// RN-19, RN-36: o dono troca o próprio personagem, sem aprovação.

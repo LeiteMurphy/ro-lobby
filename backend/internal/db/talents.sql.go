@@ -14,25 +14,32 @@ import (
 
 const affinity = `-- name: Affinity :many
 SELECT c.id, c.nick, c.class_id, c.level, c.role, c.portrait, c.link,
-       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username
+       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username,
+       -- RN-13: a pessoa já foi removida deste lobby, e se com bloqueio.
+       EXISTS (SELECT 1 FROM applications ap
+               WHERE ap.lobby_id = $1::uuid AND ap.user_id = c.user_id
+                 AND ap.status = 'removed')::boolean AS removed,
+       EXISTS (SELECT 1 FROM applications ap
+               WHERE ap.lobby_id = $1::uuid AND ap.user_id = c.user_id
+                 AND ap.status = 'removed' AND ap.blocked)::boolean AS blocked
 FROM character_availability a
 JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id
 WHERE a.enabled
-  AND c.user_id <> $1
-  AND (a.any_instance OR $2::text = ANY (a.instance_ids))
+  AND c.user_id <> $2
+  AND (a.any_instance OR $3::text = ANY (a.instance_ids))
   AND ((a.start_minute < a.end_minute
-        AND a.days & (1 << $3::int) <> 0
-        AND $4::int >= a.start_minute AND $4::int < a.end_minute)
+        AND a.days & (1 << $4::int) <> 0
+        AND $5::int >= a.start_minute AND $5::int < a.end_minute)
     OR (a.start_minute > a.end_minute
-        AND ((a.days & (1 << $3::int) <> 0 AND $4::int >= a.start_minute)
-          OR (a.days & (1 << (($3::int + 6) % 7)) <> 0 AND $4::int < a.end_minute))))
-  AND c.level >= $5::int
-  AND c.role = ANY ($6::text[])
+        AND ((a.days & (1 << $4::int) <> 0 AND $5::int >= a.start_minute)
+          OR (a.days & (1 << (($4::int + 6) % 7)) <> 0 AND $5::int < a.end_minute))))
+  AND c.level >= $6::int
+  AND c.role = ANY ($7::text[])
   AND NOT EXISTS (
       SELECT 1 FROM lobbies l
       WHERE l.cancelled_at IS NULL
-        AND l.starts_at > $7 AND l.starts_at < $8
+        AND l.starts_at > $8 AND l.starts_at < $9
         AND (l.owner_character_id = c.id
              OR EXISTS (SELECT 1 FROM applications ap
                         WHERE ap.lobby_id = l.id AND ap.character_id = c.id
@@ -41,6 +48,7 @@ ORDER BY c.level DESC, lower(c.nick), c.seq
 `
 
 type AffinityParams struct {
+	LobbyID       pgtype.UUID
 	ExcludeUserID pgtype.UUID
 	InstanceID    string
 	Dow           int32
@@ -65,6 +73,8 @@ type AffinityRow struct {
 	AnyInstance bool
 	InstanceIds []string
 	Username    string
+	Removed     bool
+	Blocked     bool
 }
 
 // RN-06 a RN-08 / D-04: personagens do banco com afinidade com um lobby (gravado ou na
@@ -72,6 +82,7 @@ type AffinityRow struct {
 // ± 2 h (D-03 da lobbies).
 func (q *Queries) Affinity(ctx context.Context, arg AffinityParams) ([]AffinityRow, error) {
 	rows, err := q.db.Query(ctx, affinity,
+		arg.LobbyID,
 		arg.ExcludeUserID,
 		arg.InstanceID,
 		arg.Dow,
@@ -102,6 +113,8 @@ func (q *Queries) Affinity(ctx context.Context, arg AffinityParams) ([]AffinityR
 			&i.AnyInstance,
 			&i.InstanceIds,
 			&i.Username,
+			&i.Removed,
+			&i.Blocked,
 		); err != nil {
 			return nil, err
 		}

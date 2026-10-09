@@ -2,7 +2,8 @@
 
 - Feature: `banco-de-talentos` · Nível: G · Status: Aprovada (2026-10-09)
 - Notion: https://app.notion.com/p/3f4d4a3a5eff817fbd09f468784d45a5
-- Última revisão: 2026-10-09 — primeira versão
+- Última revisão: 2026-10-09 — quem já foi removido do lobby aparece com selo, e o dono
+  desbloqueia pelo painel (RN-13, CA-02.5, CA-02.6). Antes, 2026-10-09 — primeira versão
 
 ## 1. Contexto
 Hoje o dono de um lobby espera que os jogadores achem o grupo na Home. Quem está disposto
@@ -73,6 +74,13 @@ esta. A notificação pelo Discord e o convite dentro do site ficam para depois 
   também o nome no Discord (`@username`) do dono do personagem. Para visitante, mostra
   "Entre para ver o Discord".
 
+- **RN-13** — No painel do dono (RN-09), os personagens de quem já foi removido deste
+  lobby aparecem normalmente, com um selo. Assim o dono pode chamar de novo quem removeu
+  por engano. O selo vale para todos os personagens da pessoa:
+  - removido sem bloqueio: "Removido deste grupo";
+  - removido com bloqueio: "Removido · bloqueado", com o botão "Desbloquear" (RN-15 da
+    `candidatura-lobby`). Depois de desbloquear, o selo vira "Removido deste grupo".
+
 ## 5. Critérios de aceite
 
 ### US-01 — Pôr o personagem no banco
@@ -135,6 +143,19 @@ CA-02.4 — Só o dono e só aberto  [US-02, RN-09]
 Given um lobby com personagens com afinidade
 When um visitante, um candidato ou o dono de um lobby iniciado ou cancelado abre o detalhe
 Then a lista "Jogadores disponíveis" não aparece
+
+CA-02.5 — Removido sem bloqueio  [US-02, RN-13]
+Given "Brasa" com afinidade com o lobby, removido dele antes sem bloqueio
+When o dono abre o detalhe
+Then Brasa aparece em "Jogadores disponíveis" com o selo "Removido deste grupo"
+
+CA-02.6 — Removido com bloqueio e desbloqueio  [US-02, RN-13]
+Given "Brasa" com afinidade com o lobby, removido dele antes com bloqueio
+  And outro personagem do mesmo jogador também no banco, com afinidade
+When o dono abre o detalhe
+Then os dois personagens aparecem com o selo "Removido · bloqueado" e o botão "Desbloquear"
+  And ao desbloquear, os dois passam a "Removido deste grupo"
+  And o jogador pode se candidatar de novo ao lobby
 ```
 
 ### US-03 — Prévia na criação
@@ -199,6 +220,8 @@ Then ele não aparece
 - Nenhuma.
 
 ## 10. Decisões tomadas na entrevista
+- Removido do lobby (revisão de 2026-10-09) → aparece no painel com selo, porque pode ter
+  sido engano; o selo vale para a pessoa; com bloqueio, o dono pode desbloquear ali.
 - Onde fica → por personagem, com liga/desliga.
 - Horários → dias da semana e uma faixa de hora, que pode passar da meia-noite.
 - Onde o dono vê → no detalhe do lobby, na criação e numa página de catálogo.

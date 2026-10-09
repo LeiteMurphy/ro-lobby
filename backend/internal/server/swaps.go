@@ -104,6 +104,32 @@ func (h applicationsHandler) SwapOwnerCharacter(ctx context.Context, req api.Swa
 	return api.SwapOwnerCharacter200JSONResponse(body), err
 }
 
+// UnblockInLobby desbloqueia o jogador no lobby aberto do dono (RN-15, CA-06.9).
+func (h applicationsHandler) UnblockInLobby(ctx context.Context, req api.UnblockInLobbyRequestObject) (api.UnblockInLobbyResponseObject, error) {
+	userID, ok, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.UnblockInLobby401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	characterID := ""
+	if req.Body != nil {
+		characterID = req.Body.CharacterId
+	}
+	err = h.apps.Unblock(ctx, userID, req.Id, characterID)
+	if rule, ok := ruleError(err); ok && rule.Code == applications.CodeNotOpen {
+		return api.UnblockInLobby409JSONResponse{LobbyNotOpenJSONResponse: api.LobbyNotOpenJSONResponse(lobbyNotOpen)}, nil
+	}
+	switch {
+	case errors.Is(err, applications.ErrNotFound):
+		return api.UnblockInLobby404JSONResponse{LobbyNotFoundJSONResponse: api.LobbyNotFoundJSONResponse(lobbyNotFound)}, nil
+	case err != nil:
+		return nil, err
+	}
+	return api.UnblockInLobby204Response{}, nil
+}
+
 // RequestSwap abre o pedido de troca do membro da sessão (RN-20, RN-21, RN-36).
 func (h applicationsHandler) RequestSwap(ctx context.Context, req api.RequestSwapRequestObject) (api.RequestSwapResponseObject, error) {
 	userID, ok, err := h.session.currentUser(ctx)
