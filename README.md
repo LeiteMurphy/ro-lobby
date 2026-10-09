@@ -149,6 +149,51 @@ mesmo da CI:
 bash scripts/smoke-app.sh
 ```
 
+## Publicar para testes (túnel)
+
+Para mostrar o RO Lobby a amigos, o PC publica a pilha app em `https://rolobby.com.br`
+pelo Cloudflare Tunnel ([ADR-08](docs/adr/0008-publicacao-tunel-cloudflare.md)). O túnel
+sai do PC até o Cloudflare: nenhuma porta do roteador é aberta e o IP de casa não aparece.
+
+**Limites:** o site só fica no ar com o PC ligado (sem hibernar) e o Docker rodando, e o
+banco fica no volume do Docker, sem backup.
+
+### Uma vez só
+
+1. **DNS no Cloudflare.** Em dash.cloudflare.com, adicione `rolobby.com.br` no plano Free
+   e troque os servidores DNS no registro.br pelos dois nameservers que o Cloudflare
+   mostrar. Espere o domínio ficar *Active*.
+2. **Túnel.** Em *Zero Trust → Networks → Tunnels*, crie um túnel do tipo *Cloudflared*.
+   Copie o token (o texto longo depois de `--token` no comando de instalação). Em *Public
+   hostnames*, adicione `rolobby.com.br`, sem subdomínio nem caminho, com o serviço
+   `HTTP` e a URL `web:3000`.
+3. **Discord.** No aplicativo em discord.com/developers/applications, em *OAuth2 →
+   Redirects*, adicione `https://rolobby.com.br/auth/discord/callback`.
+4. **`.env`.** Descomente e preencha:
+   ```dotenv
+   APP_ORIGIN=https://rolobby.com.br
+   CLOUDFLARE_TUNNEL_TOKEN=<token do passo 2>
+   ```
+
+### Subir e parar
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.tunnel.yml --profile app up -d --wait --build
+docker compose -f docker-compose.yml -f docker-compose.tunnel.yml --profile app logs -f tunnel
+docker compose -f docker-compose.yml -f docker-compose.tunnel.yml --profile app down
+```
+
+Com `APP_ORIGIN` preenchido, use o site por `https://rolobby.com.br`, inclusive no PC: os
+formulários recusam `http://localhost:3000` (proteção CSRF do SvelteKit). Para voltar ao
+modo só local, comente `APP_ORIGIN` e suba sem o arquivo do túnel.
+
+O túnel fica em `docker-compose.tunnel.yml`, fora do arquivo principal, para o modo local
+e a CI não dependerem do token. A configuração é conferida por:
+
+```powershell
+bash scripts/check-compose-tunnel.sh
+```
+
 ## Testes e verificações
 
 ### Backend (em `backend/`)

@@ -1,0 +1,21 @@
+# Publicação da pilha app para testes fechados pelo Cloudflare Tunnel (spec
+# publicacao-tunel, ADR-08). Fica num arquivo à parte porque o Compose exige as variáveis
+# obrigatórias de todos os serviços do arquivo, mesmo com o perfil desligado: assim o modo
+# local e a CI não dependem do token (RN-02, RN-03).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.tunnel.yml --profile app up -d --wait
+#
+# O túnel sai do PC até o Cloudflare, que entrega rolobby.com.br em http://web:3000 pela
+# rede interna do Compose. Nenhuma porta nova é publicada (RN-04).
+services:
+  tunnel:
+    profiles: [app]
+    image: cloudflare/cloudflared:2026.9.2
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      # RN-03: o token só existe no .env e neste serviço.
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?defina CLOUDFLARE_TUNNEL_TOKEN no .env}
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped

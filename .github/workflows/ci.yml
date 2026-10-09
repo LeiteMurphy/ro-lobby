@@ -60,6 +60,8 @@ jobs:
               - 'docker-compose.yml'
               - '.env.example'
               - 'scripts/smoke-app.sh'
+              - 'docker-compose.tunnel.yml'
+              - 'scripts/check-compose-tunnel.sh'
 
   backend:
     name: Backend
@@ -311,6 +313,10 @@ jobs:
 
       - name: .env da pilha
         run: cp .env.example .env
+
+      # Spec publicacao-tunel: CA-01.1, CA-01.2, CA-01.3 e a configuração do CA-02.1.
+      - name: Configuração do túnel
+        run: bash scripts/check-compose-tunnel.sh
 
       # Sobe a pilha e confere CA-01.1, CA-01.3, CA-01.4 e CA-01.5.
       - name: Teste de fumaça
