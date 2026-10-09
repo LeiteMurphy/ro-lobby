@@ -1,6 +1,6 @@
 # Design — Banco de talentos
 
-- Spec: `./spec.md` · Status: Rascunho
+- Spec: `./spec.md` · Status: Aprovado (2026-10-09)
 
 ## 1. Visão geral
 A disponibilidade é uma tabela nova, 1:1 com o personagem. A API ganha um pacote
@@ -116,7 +116,7 @@ Migração: `00007_character_availability.sql`.
 ## 5. Decisões técnicas (ADR)
 
 ### D-01 — Horário de parede de Brasília, não UTC
-- Status: Proposta
+- Status: Aceita
 - Contexto: o CLAUDE.md pede datas em UTC no banco. A faixa da disponibilidade não é um
   instante: é "toda sexta das 22:00 às 02:00", que se repete. [RN-03, RNF-01]
 - Opções:
@@ -131,7 +131,7 @@ Migração: `00007_character_availability.sql`.
     curta naquele dia.
 
 ### D-02 — Tabela 1:1 em vez de colunas em `characters`
-- Status: Proposta
+- Status: Aceita
 - Contexto: a disponibilidade é opcional e tem o próprio ciclo de vida. [RN-01]
 - Opções: (a) colunas nulas em `characters`; (b) tabela própria.
 - Decisão: (b). Personagem sem linha nunca entrou no banco. `enabled = false` saiu e
@@ -139,7 +139,7 @@ Migração: `00007_character_availability.sql`.
 - Consequências: + `characters` e as regras dela não mudam; − um JOIN a mais no perfil.
 
 ### D-03 — Dias como bitmask e instâncias como `text[]`
-- Status: Proposta
+- Status: Aceita
 - Contexto: são até 7 dias e poucas instâncias por personagem, e o catálogo vive em Go
   (D-02 da `lobbies`). [RN-02, RN-04]
 - Opções: tabelas filhas, ou bitmask e array.
@@ -149,7 +149,7 @@ Migração: `00007_character_availability.sql`.
   o que já é o padrão do projeto.
 
 ### D-04 — Uma consulta de afinidade para lobby e criação
-- Status: Proposta
+- Status: Aceita
 - Contexto: as RN-09 e RN-10 aplicam a mesma RN-06, uma com o lobby gravado e outra com o
   formulário. [RN-06, RN-09, RN-10]
 - Decisão: o serviço monta um `Probe` (instância, dia e minuto, nível, funções com vaga,
@@ -160,7 +160,7 @@ Migração: `00007_character_availability.sql`.
   da criação leva todos os campos do formulário na query string.
 
 ### D-05 — `@username` só com sessão, decidido na API
-- Status: Proposta
+- Status: Aceita
 - Contexto: RN-12 e RNF-05. O web poderia esconder o nome, mas ele ainda iria no JSON e
   no HTML.
 - Decisão: o handler de `GET /talents` lê a sessão de forma opcional e só preenche
@@ -169,7 +169,7 @@ Migração: `00007_character_availability.sql`.
   sessão. O web não guarda essa resposta em cache.
 
 ### D-06 — Erros por campo e mensagens
-- Status: Proposta
+- Status: Aceita
 - Decisão: mesmo formato da D-07 da `lobbies`. Mensagens novas:
   - `days/required` → "Escolha pelo menos um dia";
   - `start/invalid` e `end/invalid` → "Escolha um horário de 30 em 30 minutos";
