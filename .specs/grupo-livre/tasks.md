@@ -6,7 +6,7 @@
 
 ## Backend
 
-### T-01 — Formação no lobby: migração, contrato e criar/editar  [ ]
+### T-01 — Formação no lobby: migração, contrato e criar/editar  [x]
 - Cobre: US-01, US-04, RN-01, RN-02, RN-06, RN-07, CA-01.1, CA-01.2, CA-04.1, CA-04.2,
   CA-04.3, RNF-01, D-01, D-02, D-04
 - Depende de: —
@@ -18,9 +18,9 @@
   integração provam criar livre com o padrão e com 2 a 12 vagas, recusar 1 e 13, editar
   sem ficar abaixo dos ocupantes, trocar a formação sozinho e recusar com aceito ou
   pendente; `HasRoom` coberto por teste.
-- Commit:
+- Commit: f545634
 
-### T-02 — Candidatura e trocas no grupo livre  [ ]
+### T-02 — Candidatura e trocas no grupo livre  [x]
 - Cobre: US-02, RN-03, RN-04, RN-05, CA-02.1, CA-02.2, CA-02.3, CA-02.4, D-03
 - Depende de: T-01
 - Paralelizável: não
@@ -29,9 +29,9 @@
 - Pronto quando: testes de integração provam três Suportes no mesmo grupo livre,
   `group_full` ao candidatar e ao aceitar com o grupo cheio, aceites simultâneos na
   última vaga e troca de função com o grupo cheio.
-- Commit:
+- Commit: bee97cb, e985f93
 
-### T-03 — Banco de talentos no grupo livre  [P] [ ]
+### T-03 — Banco de talentos no grupo livre  [P] [x]
 - Cobre: RN-13, CA-05.2 (API)
 - Depende de: T-01
 - Paralelizável: [P] com T-02 (pacote diferente)
@@ -40,11 +40,11 @@
 - Pronto quando: testes provam que um grupo livre com vaga traz Tank, Suporte e Dano;
   que um grupo livre cheio traz ninguém; e que a contagem da criação usa as vagas do
   formulário menos a do dono.
-- Commit:
+- Commit: 874d1be
 
 ## Web
 
-### T-04 — Formulário, detalhe e diálogos  [ ]
+### T-04 — Formulário, detalhe e diálogos  [x]
 - Cobre: US-01, US-02, US-04, CA-01.1, CA-01.3, CA-02.5, CA-04.3 (mensagem), RN-10,
   RN-11, RNF-03
 - Depende de: T-01, T-02
@@ -55,18 +55,18 @@
 - Pronto quando: testes de SSR e e2e provam a escolha da formação pelo teclado, o
   padrão por função, a lista única de lugares no detalhe, a candidatura de qualquer
   função e as mensagens `group_full` e `formation/locked`.
-- Commit:
+- Commit: 083ac1b
 
-### T-05 — Home: card, destaque e filtro  [P] [ ]
+### T-05 — Home: card, destaque e filtro  [P] [x]
 - Cobre: US-03, RN-08, RN-09, CA-03.1, CA-03.2
 - Depende de: T-01
 - Paralelizável: [P] com T-04 (pastas diferentes)
 - Arquivos: `web/src/lib/home/`, `web/src/lib/lobbies/toHome.ts`, `routes/+page.svelte`
 - Pronto quando: testes provam o card e o destaque com o selo, "X de N" e a barra; o
   filtro "Vaga para" e as contagens com o grupo livre; e a borda neutra.
-- Commit:
+- Commit: ef38eac
 
-### T-06 — Convite, preview e prévia da criação  [P] [ ]
+### T-06 — Convite, preview e prévia da criação  [P] [x]
 - Cobre: RN-12, RN-13 (web), CA-05.1, CA-05.2 (tela)
 - Depende de: T-03, T-04
 - Paralelizável: [P] com T-05
@@ -74,7 +74,7 @@
   `routes/lobbies/novo/disponiveis/+server.ts`, `web/src/lib/talents/api.ts`
 - Pronto quando: testes provam "Vagas: 8 livres", "1 livre" e "Grupo lotado" no convite e
   no preview, a contagem da criação no grupo livre e o painel com as três funções.
-- Commit:
+- Commit: 33f167b
 
 ## Matriz de cobertura
 | Critério | Tasks |
@@ -96,4 +96,7 @@
 | CA-05.2 | T-03, T-06 |
 
 ## Descobertas
-- (nenhuma)
+- 2026-10-09 — A T-05 (Home) foi feita antes da T-04, porque a prévia do formulário usa
+  o card da Home.
+- 2026-10-09 — A query CreateLobby assume "roles" quando a formação vem vazia, para os
+  testes e os chamadores antigos continuarem válidos (RNF-01).
