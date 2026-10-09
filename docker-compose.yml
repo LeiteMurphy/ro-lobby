@@ -9,7 +9,7 @@
 name: ro-lobby
 
 x-postgres: &postgres
-  image: postgres:18-alpine
+  image: mirror.gcr.io/library/postgres:18-alpine
   environment:
     POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
