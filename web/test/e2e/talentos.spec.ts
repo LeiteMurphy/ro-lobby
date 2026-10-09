@@ -142,4 +142,91 @@ test.describe('banco de talentos', () => {
 			/0 jogadores disponíveis no banco de talentos/
 		);
 	});
+
+	test('CA-04.1 / CA-04.2 / CA-04.3 / CA-01.2: catálogo com filtros e Discord só para logado', async ({
+		browser,
+		request
+	}) => {
+		const s = rand();
+		const tok = await apiLogin(request, `cat${s}`);
+		const tank = await createCharacter(request, tok, {
+			nick: `Esc${s}`,
+			classId: 'guardiao-real',
+			level: 172,
+			role: 'tank'
+		});
+		const night = await createCharacter(request, tok, {
+			nick: `Nox${s}`,
+			classId: 'arquimago',
+			level: 200,
+			role: 'dps'
+		});
+		const off = await createCharacter(request, tok, {
+			nick: `Off${s}`,
+			classId: 'arquimago',
+			level: 190,
+			role: 'dps'
+		});
+		await setAvailability(request, tok, tank.id, {
+			days: [3],
+			start: '19:00',
+			end: '23:00',
+			instanceIds: ['templo-do-demonio-rei']
+		});
+		await setAvailability(request, tok, night.id, {
+			days: [5],
+			start: '22:00',
+			end: '02:00',
+			anyInstance: true
+		});
+		await setAvailability(request, tok, off.id, {
+			days: [3],
+			start: '19:00',
+			end: '23:00',
+			anyInstance: true
+		});
+		await request.put(
+			`http://localhost:${process.env.API_PORT || '8080'}/characters/${off.id}/availability`,
+			{
+				data: { enabled: false },
+				headers: { authorization: `Bearer ${tok}` }
+			}
+		);
+
+		const visitor = await (await browser.newContext()).newPage();
+		const cardOf = (nick: string) => visitor.getByTestId('talent-card').filter({ hasText: nick });
+
+		// CA-04.2: o visitante vê o catálogo sem o Discord; o nome não vai no HTML.
+		const res = await visitor.goto('/talentos');
+		expect(await res!.text()).not.toContain(`@cat${s}`);
+		await expect(cardOf(tank.nick)).toContainText('Entre para ver o Discord');
+		// CA-04.3: o desligado não aparece.
+		await expect(cardOf(off.nick)).toHaveCount(0);
+
+		// CA-04.1: por função Tank, só o tank; por Sonho Sombrio, só quem marcou Qualquer.
+		await visitor.getByLabel('Função').selectOption('tank');
+		await visitor.getByRole('button', { name: 'Filtrar' }).click();
+		await expect(visitor).toHaveURL(/funcao=tank/);
+		await expect(cardOf(tank.nick)).toBeVisible();
+		await expect(cardOf(night.nick)).toHaveCount(0);
+		await visitor.goto('/talentos?instancia=sonho-sombrio');
+		await expect(cardOf(night.nick)).toBeVisible();
+		await expect(cardOf(tank.nick)).toHaveCount(0);
+
+		// CA-01.2: sexta 22:00–02:00 aparece no sábado à 01:00, não no sábado às 22:00.
+		await visitor.goto('/talentos?dia=6&hora=01:00');
+		await expect(cardOf(night.nick)).toBeVisible();
+		await visitor.goto('/talentos?dia=6&hora=22:00');
+		await expect(visitor.getByRole('heading', { name: 'Banco de talentos' })).toBeVisible();
+		await expect(cardOf(night.nick)).toHaveCount(0);
+
+		// CA-04.2: logado, vê o Discord; o link da TopBar leva ao catálogo.
+		const page = await (await browser.newContext()).newPage();
+		await loginAs(page, `ver${s}`, '/');
+		await page.getByRole('banner').getByRole('link', { name: 'Banco de talentos' }).click();
+		await expect(page).toHaveURL('/talentos');
+		await expect(page.getByTestId('talent-card').filter({ hasText: tank.nick })).toContainText(
+			`@cat${s}`
+		);
+	});
 });
