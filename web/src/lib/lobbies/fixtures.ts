@@ -11,6 +11,8 @@ export const TEMPLE: ApiLobby = {
 	},
 	startsAt: '2026-10-07T23:00:00Z',
 	status: 'open',
+	formation: 'roles',
+	freeSlots: null,
 	slots: { tank: 1, support: 2, dps: 3 },
 	occupied: { tank: 0, support: 1, dps: 0 },
 	pendingCount: 0,

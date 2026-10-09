@@ -1306,10 +1306,10 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots]
         code:
           type: string
-          enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start]
+          enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start, locked]
     ValidationError:
       type: object
       additionalProperties: false
@@ -1375,6 +1375,11 @@ components:
         note:
           type: string
           description: Opcional, até 250 caracteres.
+        formation:
+          $ref: "#/components/schemas/Formation"
+        freeSlots:
+          type: integer
+          description: Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
     LobbyUpdate:
       type: object
       required: [startsAt, slots, minLevel]
@@ -1391,6 +1396,15 @@ components:
           type: integer
         note:
           type: string
+        formation:
+          $ref: "#/components/schemas/Formation"
+        freeSlots:
+          type: integer
+          description: Sem formação, mantém a atual; só muda com o grupo vazio (RN-07). Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
+    Formation:
+      type: string
+      enum: [roles, free]
+      description: Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
     CancelLobby:
       type: object
       required: [reason]
@@ -1460,7 +1474,7 @@ components:
     Lobby:
       type: object
       additionalProperties: false
-      required: [id, instance, startsAt, status, slots, occupied, pendingCount, minLevel, note, owner, cancelReason, createdAt]
+      required: [id, instance, startsAt, status, formation, freeSlots, slots, occupied, pendingCount, minLevel, note, owner, cancelReason, createdAt]
       properties:
         id:
           type: string
@@ -1472,10 +1486,18 @@ components:
           format: date-time
         status:
           $ref: "#/components/schemas/LobbyStatus"
+        formation:
+          $ref: "#/components/schemas/Formation"
+        freeSlots:
+          type: integer
+          nullable: true
+          description: Total de vagas do grupo livre; null por função.
         slots:
           $ref: "#/components/schemas/Slots"
         occupied:
-          $ref: "#/components/schemas/Slots"
+          description: Ocupantes por função; no grupo livre, só informativo, e o total é a soma (D-02 da grupo-livre).
+          allOf:
+            - $ref: "#/components/schemas/Slots"
         pendingCount:
           type: integer
           description: Candidaturas pendentes; zero depois do início (RN-28, D-02).

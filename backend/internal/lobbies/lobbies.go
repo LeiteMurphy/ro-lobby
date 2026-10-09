@@ -24,6 +24,13 @@ import (
 const (
 	// MaxSlots é o total de vagas de um lobby (RN-06, P-01 da candidatura-lobby).
 	MaxSlots = 12
+	// MinFreeSlots é o mínimo de vagas de um grupo livre: o dono e mais um (RN-02 da
+	// grupo-livre).
+	MinFreeSlots = 2
+
+	// Formações do lobby (RN-01 da grupo-livre).
+	FormationRoles = "roles"
+	FormationFree  = "free"
 	// MaxOpenPerOwner é o limite de lobbies abertos por Usuário (RN-11).
 	MaxOpenPerOwner = 5
 	// ConflictWindow é a janela de cada lobby para conflito de horário (RN-10, D-03).
@@ -73,6 +80,8 @@ const (
 	FieldCharacterID = "characterId"
 	FieldNote        = "note"
 	FieldReason      = "reason"
+	FieldFormation   = "formation"
+	FieldFreeSlots   = "freeSlots"
 
 	CodeRequired      = "required"
 	CodeInvalid       = "invalid"
@@ -82,6 +91,8 @@ const (
 	CodeBelowOccupied = "below_occupied"
 	CodeAboveOwner    = "above_owner"
 	CodeLevelTooLow   = "level_too_low"
+	// CodeLocked: a formação só muda com o grupo vazio (RN-07 da grupo-livre).
+	CodeLocked = "locked"
 )
 
 type FieldError struct {
@@ -134,6 +145,10 @@ type Input struct {
 	MinLevel    int
 	CharacterID string
 	Note        string
+	// Formation é FormationRoles (padrão, quando vazio) ou FormationFree; no grupo livre,
+	// FreeSlots é o total de vagas e Slots fica zerado (RN-01, RN-02 da grupo-livre).
+	Formation string
+	FreeSlots int
 }
 
 // UpdateInput é o que o dono muda ao editar; o personagem fica (RN-17). InstanceID vazio
@@ -144,6 +159,9 @@ type UpdateInput struct {
 	Slots      Slots
 	MinLevel   int
 	Note       string
+	// Formation vazia mantém a atual (RN-07 da grupo-livre).
+	Formation string
+	FreeSlots int
 }
 
 // Owner é o dono com o personagem dele. CharacterID e os dados do personagem ficam vazios
@@ -172,8 +190,12 @@ type Lobby struct {
 	StartsAt      time.Time
 	Status        string
 	Slots         Slots
-	// Occupied são o dono e os membros aceitos por função (D-03 da candidatura).
+	// Occupied são o dono e os membros aceitos por função (D-03 da candidatura). No grupo
+	// livre é só informativo; o total é a soma (D-02 da grupo-livre).
 	Occupied Slots
+	// Formation e FreeSlots: a formação e, no grupo livre, o total de vagas.
+	Formation string
+	FreeSlots int
 	// PendingCount é a quantidade de candidaturas pendentes, pública (RN-28).
 	PendingCount int
 	MinLevel     int
@@ -258,7 +280,8 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 		errs = append(errs, FieldError{FieldInstanceID, CodeInvalid})
 	}
 	errs = append(errs, checkStart(in.StartsAt, now)...)
-	errs = append(errs, checkSlots(in.Slots)...)
+	formation, slotErrs := checkFormation(in.Formation, in.Slots, in.FreeSlots)
+	errs = append(errs, slotErrs...)
 	if ok && (in.MinLevel < instance.Level || in.MinLevel > MaxLevel) {
 		errs = append(errs, FieldError{FieldMinLevel, CodeInvalid})
 	}
@@ -286,7 +309,7 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 		if int(character.Level) < in.MinLevel {
 			return fieldError(FieldCharacterID, CodeLevelTooLow)
 		}
-		if in.Slots.of(character.Role) < 1 {
+		if formation == FormationRoles && in.Slots.of(character.Role) < 1 {
 			return fieldError(FieldSlots, CodeInvalid) // RN-08: a função do dono precisa de vaga
 		}
 		open, err := q.CountOpenLobbiesByOwner(ctx, db.CountOpenLobbiesByOwnerParams{OwnerID: uid, Now: now})
@@ -313,6 +336,8 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 			OwnerRole:        character.Role,
 			Note:             optionalText(note),
 			Now:              now,
+			Formation:        formation,
+			FreeSlots:        freeSlotsParam(formation, in.FreeSlots),
 		})
 		if err != nil {
 			return err
@@ -342,7 +367,10 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 	var errs []FieldError
 	instance, inCatalog := catalog.InstanceByID(in.InstanceID)
 	errs = append(errs, checkStart(in.StartsAt, now)...)
-	errs = append(errs, checkSlots(in.Slots)...)
+	if in.Formation != "" {
+		_, slotErrs := checkFormation(in.Formation, in.Slots, in.FreeSlots)
+		errs = append(errs, slotErrs...)
+	}
 	if in.MinLevel < 1 || in.MinLevel > MaxLevel {
 		errs = append(errs, FieldError{FieldMinLevel, CodeInvalid})
 	}
@@ -373,12 +401,31 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 		if current.Lobby.OwnerCharacterID.Valid && in.MinLevel > int(current.OwnerLevel.Int16) {
 			return fieldError(FieldMinLevel, CodeAboveOwner) // RN-18
 		}
-		// RN-18: as vagas não ficam abaixo dos ocupantes, o dono e os membros (D-03 da
-		// candidatura).
+		// RN-07 da grupo-livre: sem formação, vale a atual (com as vagas validadas para ela);
+		// trocar só com o grupo vazio, sem aceito nem pendente.
+		formation := in.Formation
+		if formation == "" {
+			formation = current.Lobby.Formation
+			if _, slotErrs := checkFormation(formation, in.Slots, in.FreeSlots); len(slotErrs) > 0 {
+				return &ValidationError{Fields: slotErrs}
+			}
+		}
+		accepted := current.AcceptedTank + current.AcceptedSupport + current.AcceptedDps
+		if formation != current.Lobby.Formation && (accepted > 0 || current.PendingCount > 0) {
+			return fieldError(FieldFormation, CodeLocked)
+		}
+		// RN-18 (e RN-06 da grupo-livre): as vagas não ficam abaixo dos ocupantes, o dono e
+		// os membros (D-03 da candidatura).
 		occupied := s.toLobby(current.Lobby, owner{}, counts{current.AcceptedTank, current.AcceptedSupport, current.AcceptedDps, 0}).Occupied
-		for _, role := range []string{"tank", "support", "dps"} {
-			if in.Slots.of(role) < occupied.of(role) {
-				return fieldError(FieldSlots, CodeBelowOccupied)
+		if formation == FormationFree {
+			if in.FreeSlots < occupied.total() {
+				return fieldError(FieldFreeSlots, CodeBelowOccupied)
+			}
+		} else {
+			for _, role := range []string{"tank", "support", "dps"} {
+				if in.Slots.of(role) < occupied.of(role) {
+					return fieldError(FieldSlots, CodeBelowOccupied)
+				}
 			}
 		}
 		if current.Lobby.OwnerCharacterID.Valid {
@@ -397,6 +444,8 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 			SlotsDps:      int16(in.Slots.Dps),     //nolint:gosec // checkSlots: 0..12
 			MinLevel:      int16(in.MinLevel),      //nolint:gosec // validado: 1..275
 			Note:          optionalText(note),
+			Formation:     formation,
+			FreeSlots:     freeSlotsParam(formation, in.FreeSlots),
 		}); err != nil {
 			return err
 		}
@@ -515,6 +564,40 @@ func dayOf(t time.Time) time.Time {
 	return time.Date(y, m, d, 0, 0, 0, 0, Location)
 }
 
+// HasRoom diz se o lobby tem vaga para um personagem da função: no grupo livre, vaga no
+// total, de qualquer função; por função, vaga na função (RN-03 e RN-04 da grupo-livre).
+func HasRoom(l Lobby, role string) bool {
+	if l.Formation == FormationFree {
+		return l.Occupied.total() < l.FreeSlots
+	}
+	return l.Slots.of(role) > l.Occupied.of(role)
+}
+
+// checkFormation confere a formação e as vagas dela: por função, a RN-06 da lobbies; no
+// grupo livre, de 2 a 12 vagas e nenhuma por função (RN-01, RN-02 da grupo-livre).
+// Formação vazia é "por função".
+func checkFormation(formation string, slots Slots, free int) (string, []FieldError) {
+	switch formation {
+	case "", FormationRoles:
+		return FormationRoles, checkSlots(slots)
+	case FormationFree:
+		if free < MinFreeSlots || free > MaxSlots || slots.total() != 0 {
+			return FormationFree, []FieldError{{FieldFreeSlots, CodeInvalid}}
+		}
+		return FormationFree, nil
+	default:
+		return formation, []FieldError{{FieldFormation, CodeInvalid}}
+	}
+}
+
+// freeSlotsParam é o total do grupo livre para o banco, ou nulo por função.
+func freeSlotsParam(formation string, free int) pgtype.Int2 {
+	if formation != FormationFree {
+		return pgtype.Int2{}
+	}
+	return pgtype.Int2{Int16: int16(free), Valid: true} //nolint:gosec // checkFormation: 2..12
+}
+
 // checkSlots confere cada função de 0 a 12 e o total de 1 a 12 (RN-06).
 func checkSlots(s Slots) []FieldError {
 	for _, n := range []int{s.Tank, s.Support, s.Dps} {
@@ -609,6 +692,8 @@ func (s *Service) toLobby(l db.Lobby, o owner, c counts) Lobby {
 		StartsAt:      l.StartsAt.UTC(),
 		Status:        status,
 		Slots:         Slots{Tank: int(l.SlotsTank), Support: int(l.SlotsSupport), Dps: int(l.SlotsDps)},
+		Formation:     l.Formation,
+		FreeSlots:     int(l.FreeSlots.Int16),
 		MinLevel:      int(l.MinLevel),
 		Note:          l.Note.String,
 		CancelReason:  l.CancelReason.String,

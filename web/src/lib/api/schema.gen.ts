@@ -806,9 +806,9 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots";
             /** @enum {string} */
-            code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start";
+            code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start" | "locked";
         };
         ValidationError: {
             /** @enum {string} */
@@ -851,6 +851,9 @@ export interface components {
             characterId: string;
             /** @description Opcional, até 250 caracteres. */
             note?: string;
+            formation?: components["schemas"]["Formation"];
+            /** @description Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02). */
+            freeSlots?: number;
         };
         LobbyUpdate: {
             /** @description ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17). */
@@ -860,7 +863,15 @@ export interface components {
             slots: components["schemas"]["Slots"];
             minLevel: number;
             note?: string;
+            formation?: components["schemas"]["Formation"];
+            /** @description Sem formação, mantém a atual; só muda com o grupo vazio (RN-07). Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02). */
+            freeSlots?: number;
         };
+        /**
+         * @description Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
+         * @enum {string}
+         */
+        Formation: "roles" | "free";
         CancelLobby: {
             /** @description De 10 a 250 caracteres. */
             reason: string;
@@ -907,7 +918,11 @@ export interface components {
             /** Format: date-time */
             startsAt: string;
             status: components["schemas"]["LobbyStatus"];
+            formation: components["schemas"]["Formation"];
+            /** @description Total de vagas do grupo livre; null por função. */
+            freeSlots: number | null;
             slots: components["schemas"]["Slots"];
+            /** @description Ocupantes por função; no grupo livre, só informativo, e o total é a soma (D-02 da grupo-livre). */
             occupied: components["schemas"]["Slots"];
             /** @description Candidaturas pendentes; zero depois do início (RN-28, D-02). */
             pendingCount: number;

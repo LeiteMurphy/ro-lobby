@@ -96,6 +96,10 @@ func (h lobbiesHandler) CreateLobby(ctx context.Context, req api.CreateLobbyRequ
 			MinLevel:    b.MinLevel,
 			CharacterID: b.CharacterId,
 			Note:        deref(b.Note),
+			FreeSlots:   valueOf(b.FreeSlots),
+		}
+		if b.Formation != nil {
+			in.Formation = string(*b.Formation)
 		}
 	}
 	created, err := h.lobbies.Create(ctx, userID, in)
@@ -123,7 +127,10 @@ func (h lobbiesHandler) UpdateLobby(ctx context.Context, req api.UpdateLobbyRequ
 	}
 	in := lobbies.UpdateInput{}
 	if b := req.Body; b != nil {
-		in = lobbies.UpdateInput{InstanceID: deref(b.InstanceId), StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel, Note: deref(b.Note)}
+		in = lobbies.UpdateInput{InstanceID: deref(b.InstanceId), StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel, Note: deref(b.Note), FreeSlots: valueOf(b.FreeSlots)}
+		if b.Formation != nil {
+			in.Formation = string(*b.Formation)
+		}
 	}
 	updated, err := h.lobbies.Update(ctx, userID, req.Id, in)
 	var invalid *lobbies.ValidationError
@@ -211,6 +218,7 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 		},
 		StartsAt:     l.StartsAt,
 		Status:       api.LobbyStatus(l.Status),
+		Formation:    api.Formation(l.Formation),
 		Slots:        toAPISlots(l.Slots),
 		Occupied:     toAPISlots(l.Occupied),
 		PendingCount: l.PendingCount,
@@ -227,6 +235,10 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 			Level:       optional(l.Owner.Level),
 			Link:        optional(l.Owner.Link),
 		},
+	}
+	if l.Formation == lobbies.FormationFree {
+		free := l.FreeSlots
+		body.FreeSlots = &free
 	}
 	if l.InstanceReset != "" {
 		reset := api.LobbyInstanceReset(l.InstanceReset)
