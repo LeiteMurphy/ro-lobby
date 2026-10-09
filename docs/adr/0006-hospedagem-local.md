@@ -1,6 +1,7 @@
 # ADR-06 — Hospedagem: local por enquanto
 
-- Status: Aceito
+- Status: Aceito, revisado pelo [ADR-08](0008-publicacao-tunel-cloudflare.md) (publicação
+  para testes fechados)
 - Data: 2026-09-30
 - Spec: `.specs/home-local/spec.md` (US-01, US-07)
 

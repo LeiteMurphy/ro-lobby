@@ -41,11 +41,11 @@ Futuro: Guilda, Membro de guilda.
 - Estrutura do repositório: monorepo com `backend/`, `web/`, `docs/adr/` e `.specs/` ([ADR-03](docs/adr/0003-estrutura-monorepo.md)).
 - Acesso ao banco: `pgx` + `sqlc`, migrações com `goose` ([ADR-04](docs/adr/0004-acesso-banco-pgx-sqlc-goose.md)).
 - Contrato da API: `openapi.yaml` como fonte, com `oapi-codegen` (Go) e `openapi-typescript` (web) ([ADR-05](docs/adr/0005-contrato-api-openapi.md)).
-- Hospedagem: local por enquanto, com o perfil `app` do Docker Compose; revisão quando a spec do login com Discord for aprovada ([ADR-06](docs/adr/0006-hospedagem-local.md)).
+- Hospedagem: local, com o perfil `app` do Docker Compose ([ADR-06](docs/adr/0006-hospedagem-local.md)). Para testes fechados, o PC do usuário publica em `rolobby.com.br` pelo Cloudflare Tunnel ([ADR-08](docs/adr/0008-publicacao-tunel-cloudflare.md)).
 
 ### Pendente de ADR (fase de Design)
 - Mobile: Kotlin ou Flutter.
-- Hospedagem externa (nuvem ou VPS), na revisão do ADR-06.
+- Hospedagem definitiva (nuvem ou VPS), na revisão do ADR-08.
 
 ### Em aberto
 - Nada no momento.
