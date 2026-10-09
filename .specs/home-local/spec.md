@@ -3,7 +3,8 @@
 - Feature: `home-local` · Nível: M · Status: Aprovada
 - Design: Claude Design, projeto "RO Lobby Home v2", arquivo `Home v2.dc.html`
 - ADR: [ADR-06](../../docs/adr/0006-hospedagem-local.md) (aceito)
-- Última revisão: 2026-10-01 — RN-22 revista a pedido do usuário: nomes de classe do bRO
+- Última revisão: 2026-10-09 — faixas de horário dinâmicas (RN-12, RN-13, CA-04.8,
+  CA-04.9), a pedido do usuário. Antes, 2026-10-01 — RN-22 revista a pedido do usuário: nomes de classe do bRO
   (bROWiki) passam a ser permitidos; logos, artes e sprites continuam proibidos
 
 ## 1. Contexto
@@ -66,7 +67,11 @@ que dependem de backend ficam visíveis, mas desabilitadas.
   - Vaga para: o lobby tem vaga aberta em pelo menos uma das funções marcadas.
   - Nível mínimo: o nível mínimo do lobby é menor ou igual ao escolhido.
   - Faixa de horário: o início fica dentro da faixa, com o início incluído e o fim
-    excluído. As faixas são 18h–20h, 20h–22h e 22h–00h.
+    excluído. O dia é dividido em blocos fixos de 2 h (00h–02h, 02h–04h, …, 22h–00h,
+    em horário de Brasília). "Qualquer horário" e as faixas 18h–20h, 20h–22h e 22h–00h
+    aparecem sempre. As outras aparecem só quando algum lobby do dia escolhido começa
+    nelas, sem considerar os filtros, e a faixa marcada continua visível enquanto estiver
+    marcada. A lista segue a ordem do relógio (revisão de 2026-10-09).
 - **RN-13** — As contagens dos filtros valem para o dia escolhido:
   - Em "Vaga para", cada função mostra quantos lobbies do dia têm vaga nela, sem
     considerar os filtros.
@@ -232,6 +237,19 @@ CA-04.4 — Faixa de horário  [US-04, RN-12]
 Given lobbies às 19:30, 20:00 e 22:45
 When o visitante escolhe "20h–22h"
 Then a lista mostra só o lobby das 20:00
+
+CA-04.8 — Faixa extra aparece com grupo  [US-04, RN-12]
+Given um dia com lobbies às 08:30 e às 20:00
+When o visitante abre os filtros
+Then as faixas são, nesta ordem: "Qualquer horário", "08h–10h", "18h–20h", "20h–22h"
+  e "22h–00h"
+  And "08h–10h" mostra 1, e ao escolhê-la a lista mostra só o lobby das 08:30
+
+CA-04.9 — Faixa extra some sem grupo  [US-04, RN-12]
+Given um dia sem lobby antes das 18:00
+When o visitante abre os filtros
+Then só aparecem "Qualquer horário", "18h–20h", "20h–22h" e "22h–00h", mesmo com 0
+  And com "08h–10h" marcada ao trocar para esse dia, ela continua visível com 0
 
 CA-04.5 — Filtros combinados  [US-04, RN-12]
 Given um dia com lobbies variados
