@@ -332,7 +332,13 @@ describe('/lobbies/[id]', () => {
 		f: typeof fetch,
 		cookies = fakeCookies(user ? 't' : undefined)
 	) =>
-		({ params: { id: TEMPLE.id }, locals: { user }, cookies, fetch: f }) as unknown as DetailLoad;
+		({
+			params: { id: TEMPLE.id },
+			locals: { user },
+			cookies,
+			fetch: f,
+			url: new URL(`https://rolobby.com.br/lobbies/${TEMPLE.id}`)
+		}) as unknown as DetailLoad;
 
 	it('CA-03.1 / RN-15: público, com a classe do dono pelo nome', async () => {
 		const data = (await detalhe.load(detailLoad(null, detailFetch(json(200, TEMPLE))))) as Record<
@@ -342,6 +348,8 @@ describe('/lobbies/[id]', () => {
 		expect(data.lobby).toEqual(TEMPLE);
 		expect(data.ownerClass).toBe('Arcebispo');
 		expect(data.isOwner).toBe(false);
+		// compartilhar-lobby RN-02 / RN-05: a origem do web vai para o convite e o preview.
+		expect(data.origin).toBe('https://rolobby.com.br');
 	});
 
 	it('CA-03.3 / RN-16: o dono é reconhecido pela sessão', async () => {
@@ -441,6 +449,7 @@ describe('/lobbies/[id] — candidatura (candidatura-lobby, T-05)', () => {
 		const cookies = fakeCookies('token-da-bia');
 		const data = (await detalhe.load({
 			params: { id: TEMPLE.id },
+			url: new URL(`http://web/lobbies/${TEMPLE.id}`),
 			locals: { user: BIA },
 			cookies,
 			fetch: spy
@@ -459,6 +468,7 @@ describe('/lobbies/[id] — candidatura (candidatura-lobby, T-05)', () => {
 		});
 		const seen = (await detalhe.load({
 			params: { id: TEMPLE.id },
+			url: new URL(`http://web/lobbies/${TEMPLE.id}`),
 			locals: { user: null },
 			cookies: fakeCookies(),
 			fetch: visitor.fn
@@ -473,6 +483,7 @@ describe('/lobbies/[id] — candidatura (candidatura-lobby, T-05)', () => {
 		});
 		const data = (await detalhe.load({
 			params: { id: TEMPLE.id },
+			url: new URL(`http://web/lobbies/${TEMPLE.id}`),
 			locals: { user: ANA },
 			cookies: fakeCookies('t'),
 			fetch: owner.fn

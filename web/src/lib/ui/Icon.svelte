@@ -39,6 +39,7 @@
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import Share2 from '@lucide/svelte/icons/share-2';
 
 	// Só os ícones Lucide que a interface usa, empacotados no build (RNF-02). O design
 	// system carregava cada ícone de uma CDN.
@@ -82,7 +83,8 @@
 		ellipsis: Ellipsis,
 		'external-link': ExternalLink,
 		pencil: Pencil,
-		'trash-2': Trash2
+		'trash-2': Trash2,
+		'share-2': Share2
 	} as const;
 
 	export type IconName = keyof typeof ICONS;
