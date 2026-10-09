@@ -85,14 +85,10 @@ describe('formulário de lobby', () => {
 		expect(html).toContain('Esse personagem já está num grupo nesse horário');
 	});
 
-	it('RN-17: na edição, instância e personagem ficam fixos', () => {
-		const html = renderForm({
-			mode: 'update',
-			instances: [],
-			fixedInstance: { name: 'Templo do Demônio Rei', level: 160 }
-		});
-		expect(html).not.toContain('name="instanceId"');
-		expect(html).toContain('Templo do Demônio Rei');
+	it('CA-04.5 / RN-17: na edição, a instância muda e o personagem fica fixo', () => {
+		const html = renderForm({ mode: 'update' });
+		expect(html).toMatch(/<select[^>]*name="instanceId"/);
+		expect(html).toMatch(/<option value="templo-do-demonio-rei"[^>]*selected/);
 		expect(html).toMatch(/name="characterId"[^>]*disabled|disabled[^>]*name="characterId"/);
 		expect(html).toContain('Salvar alterações');
 	});

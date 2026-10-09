@@ -397,6 +397,48 @@ func TestUpdate_CA04_2_CA04_3_Limits(t *testing.T) {
 	wantField(t, err, FieldMinLevel, CodeInvalid)
 }
 
+// CA-04.5 / RN-17 / RN-07: trocar a instância grava nome e nível de entrada da nova;
+// instância fora do catálogo é recusada, e sem instância a atual continua.
+func TestUpdate_CA04_5_Instance(t *testing.T) {
+	e := setup(t)
+	ana := e.user(t, "1", "Lirien:arcebispo:178:support")
+	l, err := e.svc.Create(t.Context(), ana.userID, temple(ana.chars["Lirien"], at(1, 20, 0)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = e.svc.Update(t.Context(), ana.userID, l.ID, UpdateInput{InstanceID: "nao-existe", StartsAt: at(1, 20, 0), Slots: Slots{1, 2, 3}, MinLevel: 160})
+	wantField(t, err, FieldInstanceID, CodeInvalid)
+	got, err := e.svc.Update(t.Context(), ana.userID, l.ID, UpdateInput{InstanceID: "sonho-sombrio", StartsAt: at(1, 20, 0), Slots: Slots{1, 2, 3}, MinLevel: 120})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.InstanceID != "sonho-sombrio" || got.InstanceName != "Sonho Sombrio" || got.InstanceLevel != 120 || got.MinLevel != 120 {
+		t.Errorf("editado = %+v", got)
+	}
+	got, err = e.svc.Update(t.Context(), ana.userID, l.ID, UpdateInput{StartsAt: at(1, 20, 0), Slots: Slots{1, 2, 3}, MinLevel: 130})
+	if err != nil || got.InstanceID != "sonho-sombrio" || got.MinLevel != 130 {
+		t.Errorf("sem instância = %+v, %v", got, err)
+	}
+}
+
+// CA-04.6 / RN-07 / RN-18: nova instância acima do personagem do dono é recusada no nível
+// mínimo, e o lobby continua com a instância antiga.
+func TestUpdate_CA04_6_InstanceAboveOwner(t *testing.T) {
+	e := setup(t)
+	ana := e.user(t, "1", "Lirien:arcebispo:178:support")
+	l, err := e.svc.Create(t.Context(), ana.userID, temple(ana.chars["Lirien"], at(1, 20, 0)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = e.svc.Update(t.Context(), ana.userID, l.ID, UpdateInput{InstanceID: "torre-da-constelacao", StartsAt: at(1, 20, 0), Slots: Slots{1, 2, 3}, MinLevel: 240})
+	wantField(t, err, FieldMinLevel, CodeAboveOwner)
+	_, err = e.svc.Update(t.Context(), ana.userID, l.ID, UpdateInput{InstanceID: "torre-da-constelacao", StartsAt: at(1, 20, 0), Slots: Slots{1, 2, 3}, MinLevel: 160})
+	wantField(t, err, FieldMinLevel, CodeInvalid)
+	if got, _ := e.svc.Get(t.Context(), l.ID); got.InstanceID != "templo-do-demonio-rei" || got.MinLevel != 160 {
+		t.Errorf("lobby mudou: %+v", got)
+	}
+}
+
 // CA-04.4 / RN-17 / RN-20 / D-08: lobby de outro é ErrNotFound; iniciado ou cancelado é
 // ErrNotOpen; nada muda.
 func TestUpdate_CA04_4_OtherOrNotOpen(t *testing.T) {
@@ -472,5 +514,9 @@ func TestGet_RN01_InstanceLeftCatalog(t *testing.T) {
 	got, err := e.svc.Get(t.Context(), l.ID)
 	if err != nil || got.InstanceName != "Templo do Demônio Rei" || got.InstanceReset != "" {
 		t.Errorf("lobby = %+v, %v", got, err)
+	} // RN-17: editar mantendo a instância que saiu do catálogo continua possível.
+	got, err = e.svc.Update(t.Context(), ana.userID, l.ID, UpdateInput{InstanceID: "instancia-removida", StartsAt: at(1, 21, 0), Slots: Slots{1, 2, 3}, MinLevel: 160})
+	if err != nil || got.InstanceID != "instancia-removida" || got.InstanceName != "Templo do Demônio Rei" {
+		t.Errorf("editado = %+v, %v", got, err)
 	}
 }

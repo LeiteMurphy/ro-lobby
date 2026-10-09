@@ -16,19 +16,18 @@
 	<main class="content">
 		<div class="titles">
 			<h1>Editar lobby</h1>
-			<span class="hint">A instância e o seu personagem ficam como estão.</span>
+			<span class="hint">O seu personagem fica como está.</span>
 		</div>
 		{#key form}
 			<LobbyForm
 				mode="update"
-				instances={[]}
+				instances={data.instances}
 				characters={data.characters}
 				classes={data.classes}
 				days={data.days}
 				values={form?.values ?? data.values}
 				errors={form?.errors}
 				message={form?.message}
-				fixedInstance={{ name: data.lobby.instance.name, level: data.lobby.instance.level }}
 				cancelHref={resolve('/lobbies/[id]', { id: data.lobby.id })}
 			/>
 		{/key}

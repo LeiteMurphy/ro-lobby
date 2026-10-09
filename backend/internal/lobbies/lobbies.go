@@ -136,12 +136,14 @@ type Input struct {
 	Note        string
 }
 
-// UpdateInput é o que o dono muda ao editar: a instância e o personagem ficam (RN-17).
+// UpdateInput é o que o dono muda ao editar; o personagem fica (RN-17). InstanceID vazio
+// mantém a instância atual.
 type UpdateInput struct {
-	StartsAt time.Time
-	Slots    Slots
-	MinLevel int
-	Note     string
+	InstanceID string
+	StartsAt   time.Time
+	Slots      Slots
+	MinLevel   int
+	Note       string
 }
 
 // Owner é o dono com o personagem dele. CharacterID e os dados do personagem ficam vazios
@@ -324,8 +326,8 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 	return created, nil
 }
 
-// Update grava horário, vagas, nível mínimo e observação do lobby aberto do dono
-// (RN-17, RN-18, RN-20).
+// Update grava instância, horário, vagas, nível mínimo e observação do lobby aberto do
+// dono (RN-17, RN-18, RN-20). Membros e candidaturas continuam ao trocar a instância.
 func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput) (Lobby, error) {
 	uid, err := parseUUID(userID)
 	if err != nil {
@@ -338,6 +340,7 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 	now := s.Now().UTC()
 
 	var errs []FieldError
+	instance, inCatalog := catalog.InstanceByID(in.InstanceID)
 	errs = append(errs, checkStart(in.StartsAt, now)...)
 	errs = append(errs, checkSlots(in.Slots)...)
 	if in.MinLevel < 1 || in.MinLevel > MaxLevel {
@@ -355,8 +358,17 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 		if err != nil {
 			return err
 		}
-		if in.MinLevel < int(current.Lobby.InstanceLevel) {
-			return fieldError(FieldMinLevel, CodeInvalid)
+		// RN-17: sem instância ou com a mesma, vale a gravada, mesmo que tenha saído do
+		// catálogo; outra precisa estar no catálogo.
+		instanceID, instanceName, instanceLevel := current.Lobby.InstanceID, current.Lobby.InstanceName, current.Lobby.InstanceLevel
+		if in.InstanceID != "" && in.InstanceID != current.Lobby.InstanceID {
+			if !inCatalog {
+				return fieldError(FieldInstanceID, CodeInvalid)
+			}
+			instanceID, instanceName, instanceLevel = instance.ID, instance.Name, int16(instance.Level) //nolint:gosec // catálogo: 1..275
+		}
+		if in.MinLevel < int(instanceLevel) {
+			return fieldError(FieldMinLevel, CodeInvalid) // RN-07
 		}
 		if current.Lobby.OwnerCharacterID.Valid && in.MinLevel > int(current.OwnerLevel.Int16) {
 			return fieldError(FieldMinLevel, CodeAboveOwner) // RN-18
@@ -375,13 +387,16 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 			}
 		}
 		if err := q.UpdateLobby(ctx, db.UpdateLobbyParams{
-			ID:           lid,
-			StartsAt:     in.StartsAt.UTC(),
-			SlotsTank:    int16(in.Slots.Tank),    //nolint:gosec // checkSlots: 0..12
-			SlotsSupport: int16(in.Slots.Support), //nolint:gosec // checkSlots: 0..12
-			SlotsDps:     int16(in.Slots.Dps),     //nolint:gosec // checkSlots: 0..12
-			MinLevel:     int16(in.MinLevel),      //nolint:gosec // validado: 1..275
-			Note:         optionalText(note),
+			ID:            lid,
+			InstanceID:    instanceID,
+			InstanceName:  instanceName,
+			InstanceLevel: instanceLevel,
+			StartsAt:      in.StartsAt.UTC(),
+			SlotsTank:     int16(in.Slots.Tank),    //nolint:gosec // checkSlots: 0..12
+			SlotsSupport:  int16(in.Slots.Support), //nolint:gosec // checkSlots: 0..12
+			SlotsDps:      int16(in.Slots.Dps),     //nolint:gosec // checkSlots: 0..12
+			MinLevel:      int16(in.MinLevel),      //nolint:gosec // validado: 1..275
+			Note:          optionalText(note),
 		}); err != nil {
 			return err
 		}

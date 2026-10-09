@@ -67,5 +67,5 @@ export function toLobbyInput(v: LobbyFormValues): Parsed<LobbyInput> {
 export function toLobbyUpdate(v: LobbyFormValues): Parsed<LobbyUpdate> {
 	const start = startsAt(v);
 	if (!start) return { ok: false, fields: [{ field: 'startsAt', code: 'invalid' }] };
-	return { ok: true, input: { startsAt: start, ...base(v) } };
+	return { ok: true, input: { instanceId: v.instanceId, startsAt: start, ...base(v) } };
 }

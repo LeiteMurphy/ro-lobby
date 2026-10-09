@@ -6,24 +6,25 @@ import { listCharacters, listClasses } from '$lib/characters/api';
 import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
 import { buildDays } from '$lib/home/days';
 import { zonedNow } from '$lib/home/time';
-import { getLobby, updateLobby } from '$lib/lobbies/api';
+import { getLobby, listInstances, updateLobby } from '$lib/lobbies/api';
 import { readLobbyForm, toLobbyUpdate, type LobbyFormValues } from '$lib/lobbies/form';
 import { lobbyConflictMessage, lobbyFieldMessages } from '$lib/lobbies/messages';
 import { fromUtcIso } from '$lib/lobbies/time';
 import type { Actions, PageServerLoad } from './$types';
 
-// Edição do lobby: só o dono, só aberto; instância e personagem fixos (spec lobbies,
-// RN-17, RN-18, RN-20).
+// Edição do lobby: só o dono, só aberto; a instância muda e o personagem fica (spec
+// lobbies, RN-17, RN-18, RN-20).
 
 export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) => {
 	const path = `/lobbies/${params.id}/editar`;
 	if (!locals.user) toLogin(cookies, path);
 	const call = sessionCall(cookies, fetch, path);
 	const { apiBaseUrl } = authConfig();
-	const [lobby, characters, classes] = await Promise.all([
+	const [lobby, characters, classes, instances] = await Promise.all([
 		getLobby(fetch, apiBaseUrl, params.id),
 		listCharacters(call),
-		listClasses(fetch, apiBaseUrl)
+		listClasses(fetch, apiBaseUrl),
+		listInstances(fetch, apiBaseUrl)
 	]);
 	if (!lobby.ok && lobby.kind === 'not_found') error(404, 'Lobby não encontrado');
 	if (!lobby.ok) error(503, UNAVAILABLE_MESSAGE);
@@ -51,8 +52,12 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		note: l.note ?? ''
 	};
 	const owner = characters.ok ? characters.data.filter((c) => c.id === l.owner.characterId) : [];
+	// RN-17: a instância atual fica na lista mesmo que tenha saído do catálogo.
+	const catalog = instances.ok ? instances.data : [];
+	const current = { id: l.instance.id, name: l.instance.name, level: l.instance.level };
 	return {
 		lobby: l,
+		instances: catalog.some((i) => i.id === l.instance.id) ? catalog : [current, ...catalog],
 		characters: owner,
 		classes: classes.ok ? classes.data : [],
 		days,

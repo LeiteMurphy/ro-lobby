@@ -17,7 +17,8 @@
 
 	interface Props {
 		mode: 'create' | 'update';
-		instances: readonly Instance[];
+		/** O catálogo; na edição, também a instância atual se ela saiu dele (RN-17). */
+		instances: readonly Pick<Instance, 'id' | 'name' | 'level'>[];
 		/** Na criação, os personagens do Usuário; na edição, só o do dono (fixo). */
 		characters: readonly Character[];
 		classes: readonly RoClassEntry[];
@@ -25,8 +26,6 @@
 		values: LobbyFormValues;
 		errors?: Partial<Record<FieldError['field'], string>>;
 		message?: string | null;
-		/** Na edição, a instância fica fixa (RN-17). */
-		fixedInstance?: { name: string; level: number };
 		cancelHref: string;
 	}
 
@@ -39,7 +38,6 @@
 		values,
 		errors = {},
 		message = null,
-		fixedInstance,
 		cancelHref
 	}: Props = $props();
 
@@ -68,9 +66,7 @@
 		{ label: 'Nível 130 ou mais', items: instances.filter((i) => i.level >= HIGH_LEVEL) },
 		{ label: 'Nível menor', items: instances.filter((i) => i.level < HIGH_LEVEL) }
 	]);
-	const instance = $derived(
-		fixedInstance ?? instances.find((i) => i.id === instanceId) ?? { name: '', level: 1 }
-	);
+	const instance = $derived(instances.find((i) => i.id === instanceId) ?? { name: '', level: 1 });
 	const character = $derived(characters.find((c) => c.id === characterId));
 	const className = (id: string) => classes.find((c) => c.id === id)?.name ?? id;
 	const total = $derived(slots.tank + slots.support + slots.dps);
@@ -126,36 +122,29 @@
 		{#if message}<p class="form-error" role="alert">{message}</p>{/if}
 
 		<div class="field">
-			{#if fixedInstance}
-				<span class="lbl">Instância</span>
-				<span class="fixed"
-					>{fixedInstance.name} <span class="muted">Nv {fixedInstance.level}</span></span
-				>
-			{:else}
-				<label class="lbl" for="{uid}-instance">Instância</label>
-				<select
-					id="{uid}-instance"
-					class="input"
-					class:err={errors.instanceId}
-					name="instanceId"
-					bind:value={instanceId}
-					onchange={onInstanceChange}
-					aria-invalid={errors.instanceId ? 'true' : undefined}
-					aria-describedby={describe('instanceId')}
-				>
-					<option value="">Escolha a instância</option>
-					{#each groups as g (g.label)}
-						<optgroup label={g.label}>
-							{#each g.items as i (i.id)}
-								<option value={i.id}>{i.name} · Nv {i.level}</option>
-							{/each}
-						</optgroup>
-					{/each}
-				</select>
-				{#if errors.instanceId}<span class="hint-err" id={errId('instanceId')}
-						><Icon name="circle-x" size={14} />{errors.instanceId}</span
-					>{/if}
-			{/if}
+			<label class="lbl" for="{uid}-instance">Instância</label>
+			<select
+				id="{uid}-instance"
+				class="input"
+				class:err={errors.instanceId}
+				name="instanceId"
+				bind:value={instanceId}
+				onchange={onInstanceChange}
+				aria-invalid={errors.instanceId ? 'true' : undefined}
+				aria-describedby={describe('instanceId')}
+			>
+				<option value="">Escolha a instância</option>
+				{#each groups as g (g.label)}
+					<optgroup label={g.label}>
+						{#each g.items as i (i.id)}
+							<option value={i.id}>{i.name} · Nv {i.level}</option>
+						{/each}
+					</optgroup>
+				{/each}
+			</select>
+			{#if errors.instanceId}<span class="hint-err" id={errId('instanceId')}
+					><Icon name="circle-x" size={14} />{errors.instanceId}</span
+				>{/if}
 		</div>
 
 		<div class="row2">
@@ -378,10 +367,6 @@
 	.hint {
 		font: var(--type-caption);
 		color: var(--fg-3);
-	}
-	.fixed {
-		font: 600 15px/1.3 var(--font-ui);
-		color: var(--fg-1);
 	}
 	.row2 {
 		display: grid;

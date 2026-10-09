@@ -686,6 +686,8 @@ export interface components {
             note?: string;
         };
         LobbyUpdate: {
+            /** @description ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17). */
+            instanceId?: string;
             /** Format: date-time */
             startsAt: string;
             slots: components["schemas"]["Slots"];
