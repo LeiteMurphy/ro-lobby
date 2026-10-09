@@ -4,7 +4,8 @@
 # obrigatório) e a parte de configuração do CA-02.1 (modo local igual). O resto do CA-02.1
 # fica com o teste de fumaça da pilha.
 #
-# Usa uma cópia do .env.example, para não depender do .env de quem roda.
+# Usa uma cópia do .env.example, para não depender do .env de quem roda. Precisa do Docker
+# e do node no PATH (o node lê o JSON do `docker compose config`).
 #
 # Uso, na raiz do repositório:
 #   bash scripts/check-compose-tunnel.sh
@@ -49,10 +50,8 @@ image=$(get services.tunnel.image <<<"$tunnel_json")
 [[ -z "$(get services.tunnel.ports <<<"$tunnel_json")" ]] && ok "tunnel sem porta publicada" || fail "tunnel publica porta"
 published=$(node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const sv=JSON.parse(s).services;console.log(Object.keys(sv).filter(k=>(sv[k].ports??[]).length).join(","))})' <<<"$tunnel_json")
 [[ "$published" == "web" ]] && ok "só o web publica porta" || fail "publicam porta: '$published'"
-for svc in api web migrate app-postgres; do
-	[[ "$(get "services.$svc.environment.TUNNEL_TOKEN" <<<"$tunnel_json")" == "" ]] || fail "o token vaza para $svc"
-done
-ok "token só no tunnel"
+leaks=$(node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const sv=JSON.parse(s).services;console.log(Object.keys(sv).filter(k=>k!=="tunnel"&&JSON.stringify(sv[k]).includes("token-de-teste")).join(","))})' <<<"$tunnel_json")
+[[ -z "$leaks" ]] && ok "token só no tunnel" || fail "o token vaza para: $leaks"
 
 echo "== CA-01.3 — token obrigatório"
 if out=$(tunnel config 2>&1); then
