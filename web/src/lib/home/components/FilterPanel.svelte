@@ -1,7 +1,13 @@
 <script lang="ts">
 	import Check from '$lib/ui/Check.svelte';
 	import Select from '$lib/ui/Select.svelte';
-	import { LEVEL_OPTIONS, TIME_RANGES, type Filters, type TimeRangeKey } from '../filters';
+	import {
+		LEVEL_OPTIONS,
+		TIME_RANGES,
+		type Filters,
+		type TimeRange,
+		type TimeRangeKey
+	} from '../filters';
 	import { ROLE_ICONS } from '../catalog';
 	import { ROLE_LABELS, ROLES, type Role } from '../types';
 
@@ -10,13 +16,24 @@
 		instances: readonly string[];
 		roleCounts: Record<Role, number>;
 		timeCounts: Record<TimeRangeKey, number>;
+		/** RN-12: as faixas visíveis no dia; sem elas, só as fixas. */
+		ranges?: readonly TimeRange[];
 		/** Nome do grupo de radios, único por painel (barra lateral e gaveta). */
 		name: string;
 		size?: 'sm' | 'md';
 		onchange: (filters: Filters) => void;
 	}
 
-	let { filters, instances, roleCounts, timeCounts, name, size = 'sm', onchange }: Props = $props();
+	let {
+		filters,
+		instances,
+		roleCounts,
+		timeCounts,
+		ranges = TIME_RANGES,
+		name,
+		size = 'sm',
+		onchange
+	}: Props = $props();
 
 	const instanceOptions = $derived(instances.map((i) => ({ value: i, label: i })));
 
@@ -64,13 +81,13 @@
 	</section>
 	<section class="last">
 		<h4>Faixa de horário</h4>
-		{#each TIME_RANGES as range (range.key)}
+		{#each ranges as range (range.key)}
 			<Check
 				type="radio"
 				{name}
 				value={range.key}
 				label={range.label}
-				meta={timeCounts[range.key]}
+				meta={timeCounts[range.key] ?? 0}
 				checked={filters.timeRange === range.key}
 				onchange={(on) => on && onchange({ ...filters, timeRange: range.key })}
 			/>

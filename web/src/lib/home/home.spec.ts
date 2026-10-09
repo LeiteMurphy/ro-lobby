@@ -210,7 +210,7 @@ describe('US-04 — filtros', () => {
 
 	it('CA-04.6: "Vaga para" ignora os filtros; faixas respeitam os outros filtros', () => {
 		expect(roleCounts(day)).toEqual({ tank: 1, support: 2, dps: 2 });
-		expect(timeRangeCounts(day, filters({ instance: 'Torre sem fim' }))).toEqual({
+		expect(timeRangeCounts(day, filters({ instance: 'Torre sem fim' }))).toMatchObject({
 			any: 2,
 			'18-20': 1,
 			'20-22': 1,

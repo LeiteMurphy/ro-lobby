@@ -10,6 +10,7 @@
 		NO_FILTERS,
 		roleCounts,
 		timeRangeCounts,
+		visibleTimeRanges,
 		type Filters
 	} from '$lib/home/filters';
 	import { featuredLobby, lobbiesForDay } from '$lib/home/lobbies';
@@ -51,6 +52,8 @@
 	const noFilters = $derived(activeFilters === 0);
 	const dayRoleCounts = $derived(roleCounts(dayLobbies));
 	const dayTimeCounts = $derived(timeRangeCounts(dayLobbies, filters));
+	// RN-12 (revisão de 2026-10-09): as faixas extras aparecem quando há grupo no dia.
+	const dayTimeRanges = $derived(visibleTimeRanges(dayLobbies, filters.timeRange));
 
 	// RN-19: abaixo de 900 px os filtros ficam numa gaveta.
 	let drawerOpen = $state(false);
@@ -101,6 +104,7 @@
 				{instances}
 				roleCounts={dayRoleCounts}
 				timeCounts={dayTimeCounts}
+				ranges={dayTimeRanges}
 				name="faixa"
 				onchange={(f) => (filters = f)}
 			/>
@@ -163,6 +167,7 @@
 				{instances}
 				roleCounts={dayRoleCounts}
 				timeCounts={dayTimeCounts}
+				ranges={dayTimeRanges}
 				name="faixa-gaveta"
 				size="md"
 				onchange={(f) => (filters = f)}
