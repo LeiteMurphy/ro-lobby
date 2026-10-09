@@ -1255,13 +1255,15 @@ type ListTalentsParams struct {
 
 // CountTalentsParams defines parameters for CountTalents.
 type CountTalentsParams struct {
-	InstanceId  string    `form:"instanceId" json:"instanceId"`
-	StartsAt    time.Time `form:"startsAt" json:"startsAt"`
-	MinLevel    int       `form:"minLevel" json:"minLevel"`
-	Tank        int       `form:"tank" json:"tank"`
-	Support     int       `form:"support" json:"support"`
-	Dps         int       `form:"dps" json:"dps"`
-	CharacterId string    `form:"characterId" json:"characterId"`
+	InstanceId  string     `form:"instanceId" json:"instanceId"`
+	StartsAt    time.Time  `form:"startsAt" json:"startsAt"`
+	MinLevel    int        `form:"minLevel" json:"minLevel"`
+	Tank        *int       `form:"tank,omitempty" json:"tank,omitempty"`
+	Support     *int       `form:"support,omitempty" json:"support,omitempty"`
+	Dps         *int       `form:"dps,omitempty" json:"dps,omitempty"`
+	Formation   *Formation `form:"formation,omitempty" json:"formation,omitempty"`
+	FreeSlots   *int       `form:"freeSlots,omitempty" json:"freeSlots,omitempty"`
+	CharacterId string     `form:"characterId" json:"characterId"`
 }
 
 // RejectApplicationJSONRequestBody defines body for RejectApplication for application/json ContentType.
@@ -2244,9 +2246,9 @@ func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Required query parameter "tank" -------------
+	// ------------- Optional query parameter "tank" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "tank", r.URL.Query(), &params.Tank, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tank", r.URL.Query(), &params.Tank, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
@@ -2257,9 +2259,9 @@ func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Required query parameter "support" -------------
+	// ------------- Optional query parameter "support" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "support", r.URL.Query(), &params.Support, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "support", r.URL.Query(), &params.Support, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
@@ -2270,15 +2272,41 @@ func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Required query parameter "dps" -------------
+	// ------------- Optional query parameter "dps" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "dps", r.URL.Query(), &params.Dps, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "dps", r.URL.Query(), &params.Dps, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "dps"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dps", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "formation" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "formation", r.URL.Query(), &params.Formation, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "formation"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "formation", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "freeSlots" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "freeSlots", r.URL.Query(), &params.FreeSlots, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "freeSlots"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "freeSlots", Err: err})
 		}
 		return
 	}

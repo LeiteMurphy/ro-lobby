@@ -74,13 +74,10 @@ func (s *Service) ForLobby(ctx context.Context, userID, lobbyID string) ([]Talen
 	if err != nil {
 		return nil, fmt.Errorf("talents: id de usuário inválido: %w", err)
 	}
+	// RN-06.4; no grupo livre, as três funções se há vaga no total (RN-13 da grupo-livre).
 	var roles []string
-	for role, open := range map[string]bool{
-		"tank":    l.Slots.Tank > l.Occupied.Tank,
-		"support": l.Slots.Support > l.Occupied.Support,
-		"dps":     l.Slots.Dps > l.Occupied.Dps,
-	} {
-		if open {
+	for _, role := range []string{"tank", "support", "dps"} {
+		if lobbies.HasRoom(l, role) {
 			roles = append(roles, role)
 		}
 	}

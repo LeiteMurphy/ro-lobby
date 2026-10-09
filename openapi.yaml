@@ -321,7 +321,9 @@ paths:
       summary: Quantos personagens têm afinidade com um lobby em criação
       description: >
         A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação
-        (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono.
+        (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono;
+        no grupo livre, formation=free e freeSlots no lugar de tank, support e dps (spec
+        grupo-livre, RN-13).
       security:
         - sessionToken: []
       parameters:
@@ -343,17 +345,22 @@ paths:
             type: integer
         - name: tank
           in: query
-          required: true
           schema:
             type: integer
         - name: support
           in: query
-          required: true
           schema:
             type: integer
         - name: dps
           in: query
-          required: true
+          schema:
+            type: integer
+        - name: formation
+          in: query
+          schema:
+            $ref: "#/components/schemas/Formation"
+        - name: freeSlots
+          in: query
           schema:
             type: integer
         - name: characterId

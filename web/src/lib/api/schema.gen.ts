@@ -230,7 +230,7 @@ export interface paths {
         };
         /**
          * Quantos personagens têm afinidade com um lobby em criação
-         * @description A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono.
+         * @description A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono; no grupo livre, formation=free e freeSlots no lugar de tank, support e dps (spec grupo-livre, RN-13).
          */
         get: operations["countTalents"];
         put?: never;
@@ -1641,9 +1641,11 @@ export interface operations {
                 instanceId: string;
                 startsAt: string;
                 minLevel: number;
-                tank: number;
-                support: number;
-                dps: number;
+                tank?: number;
+                support?: number;
+                dps?: number;
+                formation?: components["schemas"]["Formation"];
+                freeSlots?: number;
                 characterId: string;
             };
             header?: never;

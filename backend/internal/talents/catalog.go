@@ -12,6 +12,7 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/catalog"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 )
 
 // MaxCatalog é o máximo de personagens numa resposta do catálogo (risco do design).
@@ -88,6 +89,10 @@ type CountInput struct {
 	Support     int
 	Dps         int
 	CharacterID string
+	// Formation e FreeSlots: no grupo livre, o total de vagas do formulário (RN-13 da
+	// grupo-livre); Tank, Support e Dps ficam de fora.
+	Formation string
+	FreeSlots int
 }
 
 // Count conta os personagens com afinidade com o lobby em criação (RN-10, D-04). As
@@ -119,7 +124,11 @@ func (s *Service) Count(ctx context.Context, userID string, in CountInput) (int,
 	open[character.Role]--
 	var openRoles []string
 	for _, role := range roles {
-		if open[role] > 0 {
+		if in.Formation == lobbies.FormationFree {
+			if in.FreeSlots-1 > 0 { // a vaga do dono
+				openRoles = append(openRoles, role)
+			}
+		} else if open[role] > 0 {
 			openRoles = append(openRoles, role)
 		}
 	}
