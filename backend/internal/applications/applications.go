@@ -381,6 +381,43 @@ func (s *Service) Remove(ctx context.Context, ownerID, applicationID, reason str
 	}, StatusRemoved, uid, reason, block)
 }
 
+// Unblock desbloqueia, no lobby aberto do dono, o usuário do personagem, que volta a
+// poder se candidatar (RN-15, CA-06.9). A candidatura removida fica no histórico. Lobby
+// de outro Usuário é ErrNotFound; personagem sem bloqueio não muda nada.
+func (s *Service) Unblock(ctx context.Context, ownerID, lobbyID, characterID string) error {
+	uid, err := parseUUID(ownerID)
+	if err != nil {
+		return fmt.Errorf("applications: id de usuário inválido: %w", err)
+	}
+	lid, err := parseUUID(lobbyID)
+	if err != nil {
+		return ErrNotFound
+	}
+	cid, err := parseUUID(characterID)
+	if err != nil {
+		return ErrNotFound
+	}
+	now := s.Now().UTC()
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.queries.WithTx(tx)
+		lobby, err := q.GetOwnLobbyForUpdate(ctx, db.GetOwnLobbyForUpdateParams{ID: lid, OwnerID: uid})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if !isOpen(lobby, now) {
+			return rule(CodeNotOpen)
+		}
+		return q.UnblockUserInLobby(ctx, db.UnblockUserInLobbyParams{LobbyID: lid, CharacterID: cid})
+	})
+	if err != nil {
+		return wrap(err, "desbloquear")
+	}
+	return nil
+}
+
 // endMembership é a saída e a remoção: confere quem pede (who), o lobby aberto e o membro
 // aceito; grava o novo estado e cancela o pedido de troca pendente na mesma transação.
 func (s *Service) endMembership(ctx context.Context, applicationID, action string,

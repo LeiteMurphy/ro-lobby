@@ -1064,7 +1064,10 @@ type SwapRequestStatus string
 
 // Talent defines model for Talent.
 type Talent struct {
-	AnyInstance bool               `json:"anyInstance"`
+	AnyInstance bool `json:"anyInstance"`
+
+	// Blocked Removida com bloqueio deste lobby (RN-13).
+	Blocked     bool               `json:"blocked"`
 	CharacterId openapi_types.UUID `json:"characterId"`
 	ClassId     string             `json:"classId"`
 	Days        []int              `json:"days"`
@@ -1080,6 +1083,9 @@ type Talent struct {
 	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
 	Portrait Portrait `json:"portrait"`
 
+	// Removed A pessoa já foi removida deste lobby (RN-13); sempre false fora do painel do dono.
+	Removed bool `json:"removed"`
+
 	// Role Função do personagem (RN-08).
 	Role  Role   `json:"role"`
 	Start string `json:"start"`
@@ -1094,6 +1100,12 @@ type TalentCount struct {
 type TalentInstance struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// UnblockInput defines model for UnblockInput.
+type UnblockInput struct {
+	// CharacterId Um personagem da pessoa a desbloquear.
+	CharacterId string `json:"characterId"`
 }
 
 // User defines model for User.
@@ -1235,6 +1247,9 @@ type CancelLobbyJSONRequestBody = CancelLobby
 // SwapOwnerCharacterJSONRequestBody defines body for SwapOwnerCharacter for application/json ContentType.
 type SwapOwnerCharacterJSONRequestBody = OwnerCharacterInput
 
+// UnblockInLobbyJSONRequestBody defines body for UnblockInLobby for application/json ContentType.
+type UnblockInLobbyJSONRequestBody = UnblockInput
+
 // RejectSwapRequestJSONRequestBody defines body for RejectSwapRequest for application/json ContentType.
 type RejectSwapRequestJSONRequestBody = RejectInput
 
@@ -1312,6 +1327,9 @@ type ServerInterface interface {
 	// ListLobbyTalents Personagens do banco com afinidade com o lobby
 	// (GET /lobbies/{id}/talents)
 	ListLobbyTalents(w http.ResponseWriter, r *http.Request, id LobbyId)
+	// UnblockInLobby Desbloqueia o jogador neste lobby
+	// (POST /lobbies/{id}/unblock)
+	UnblockInLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
@@ -1907,6 +1925,32 @@ func (siw *ServerInterfaceWrapper) ListLobbyTalents(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// UnblockInLobby operation middleware
+func (siw *ServerInterfaceWrapper) UnblockInLobby(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnblockInLobby(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetMe operation middleware
 func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request) {
 
@@ -2348,6 +2392,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies", wrapper.CreateLobby)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}", wrapper.GetLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}", wrapper.UpdateLobby)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/unblock", wrapper.UnblockInLobby)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}/talents", wrapper.ListLobbyTalents)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/cancel", wrapper.CancelLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}/owner-character", wrapper.SwapOwnerCharacter)
@@ -3811,6 +3856,65 @@ func (response ListLobbyTalents409JSONResponse) VisitListLobbyTalentsResponse(w 
 	return err
 }
 
+type UnblockInLobbyRequestObject struct {
+	Id   LobbyId `json:"id"`
+	Body *UnblockInLobbyJSONRequestBody
+}
+
+type UnblockInLobbyResponseObject interface {
+	VisitUnblockInLobbyResponse(w http.ResponseWriter) error
+}
+
+type UnblockInLobby204Response struct {
+}
+
+func (response UnblockInLobby204Response) VisitUnblockInLobbyResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnblockInLobby401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response UnblockInLobby401JSONResponse) VisitUnblockInLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnblockInLobby404JSONResponse struct{ LobbyNotFoundJSONResponse }
+
+func (response UnblockInLobby404JSONResponse) VisitUnblockInLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnblockInLobby409JSONResponse struct{ LobbyNotOpenJSONResponse }
+
+func (response UnblockInLobby409JSONResponse) VisitUnblockInLobbyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetMeRequestObject struct {
 }
 
@@ -4269,6 +4373,9 @@ type StrictServerInterface interface {
 	// ListLobbyTalents Personagens do banco com afinidade com o lobby
 	// (GET /lobbies/{id}/talents)
 	ListLobbyTalents(ctx context.Context, request ListLobbyTalentsRequestObject) (ListLobbyTalentsResponseObject, error)
+	// UnblockInLobby Desbloqueia o jogador neste lobby
+	// (POST /lobbies/{id}/unblock)
+	UnblockInLobby(ctx context.Context, request UnblockInLobbyRequestObject) (UnblockInLobbyResponseObject, error)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
@@ -5021,6 +5128,39 @@ func (sh *strictHandler) ListLobbyTalents(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListLobbyTalentsResponseObject); ok {
 		if err := validResponse.VisitListLobbyTalentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnblockInLobby operation middleware
+func (sh *strictHandler) UnblockInLobby(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request UnblockInLobbyRequestObject
+
+	request.Id = id
+
+	var body UnblockInLobbyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnblockInLobby(ctx, request.(UnblockInLobbyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnblockInLobby")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnblockInLobbyResponseObject); ok {
+		if err := validResponse.VisitUnblockInLobbyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

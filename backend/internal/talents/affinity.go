@@ -38,6 +38,10 @@ type Talent struct {
 	AnyInstance     bool
 	Instances       []Instance
 	DiscordUsername string
+	// Removed e Blocked: a pessoa já foi removida do lobby, e se com bloqueio (RN-13). Só
+	// a afinidade de um lobby gravado preenche.
+	Removed bool
+	Blocked bool
 }
 
 // Probe é o lobby, gravado ou em criação, contra o qual se procura afinidade (D-04).
@@ -49,6 +53,8 @@ type Probe struct {
 	Roles []string
 	// Owner é o Usuário dono do lobby; os personagens dele não entram (RN-07).
 	Owner pgtype.UUID
+	// Lobby é o lobby gravado, para o selo de removido (RN-13); vazio na criação.
+	Lobby pgtype.UUID
 }
 
 // ForLobby devolve os personagens com afinidade com o lobby aberto do Usuário (RN-06 a
@@ -78,8 +84,13 @@ func (s *Service) ForLobby(ctx context.Context, userID, lobbyID string) ([]Talen
 			roles = append(roles, role)
 		}
 	}
+	lid, err := parseUUID(l.ID)
+	if err != nil {
+		return nil, fmt.Errorf("talents: id do lobby: %w", err)
+	}
 	return s.affinity(ctx, Probe{
 		InstanceID: l.InstanceID, StartsAt: l.StartsAt, MinLevel: l.MinLevel, Roles: roles, Owner: owner,
+		Lobby: lid,
 	})
 }
 
@@ -98,13 +109,19 @@ func (s *Service) affinity(ctx context.Context, p Probe) ([]Talent, error) {
 		Roles:         p.Roles,
 		WindowStart:   p.StartsAt.Add(-window),
 		WindowEnd:     p.StartsAt.Add(window),
+		LobbyID:       p.Lobby,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("talents: afinidade: %w", err)
 	}
 	out := make([]Talent, len(rows))
 	for i, r := range rows {
-		out[i] = toTalent(db.CatalogRow(r))
+		out[i] = toTalent(db.CatalogRow{
+			ID: r.ID, Nick: r.Nick, ClassID: r.ClassID, Level: r.Level, Role: r.Role, Portrait: r.Portrait,
+			Link: r.Link, Days: r.Days, StartMinute: r.StartMinute, EndMinute: r.EndMinute,
+			AnyInstance: r.AnyInstance, InstanceIds: r.InstanceIds, Username: r.Username,
+		})
+		out[i].Removed, out[i].Blocked = r.Removed, r.Blocked
 	}
 	return out, nil
 }

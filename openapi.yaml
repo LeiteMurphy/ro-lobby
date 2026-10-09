@@ -513,6 +513,33 @@ paths:
           $ref: "#/components/responses/LobbyNotOpen"
         "422":
           $ref: "#/components/responses/Invalid"
+  /lobbies/{id}/unblock:
+    parameters:
+      - $ref: "#/components/parameters/LobbyId"
+    post:
+      operationId: unblockInLobby
+      summary: Desbloqueia o jogador neste lobby
+      description: >
+        O dono do lobby aberto desbloqueia o usuário do personagem, que volta a poder se
+        candidatar (spec candidatura-lobby, RN-15, CA-06.9). A candidatura removida fica no
+        histórico. Personagem sem bloqueio não muda nada.
+      security:
+        - sessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnblockInput"
+      responses:
+        "204":
+          description: Desbloqueado.
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/LobbyNotFound"
+        "409":
+          $ref: "#/components/responses/LobbyNotOpen"
   /lobbies/{id}/talents:
     parameters:
       - $ref: "#/components/parameters/LobbyId"
@@ -1216,7 +1243,7 @@ components:
     Talent:
       type: object
       additionalProperties: false
-      required: [characterId, nick, classId, level, role, portrait, link, days, start, end, anyInstance, instances]
+      required: [characterId, nick, classId, level, role, portrait, link, days, start, end, anyInstance, instances, removed, blocked]
       properties:
         characterId:
           type: string
@@ -1251,6 +1278,20 @@ components:
         discordUsername:
           type: string
           description: Só com sessão (RN-12, D-05).
+        removed:
+          type: boolean
+          description: A pessoa já foi removida deste lobby (RN-13); sempre false fora do painel do dono.
+        blocked:
+          type: boolean
+          description: Removida com bloqueio deste lobby (RN-13).
+    UnblockInput:
+      type: object
+      additionalProperties: false
+      required: [characterId]
+      properties:
+        characterId:
+          type: string
+          description: Um personagem da pessoa a desbloquear.
     TalentCount:
       type: object
       additionalProperties: false

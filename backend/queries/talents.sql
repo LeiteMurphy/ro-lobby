@@ -28,7 +28,14 @@ WHERE c.user_id = @user_id;
 -- criação). dow e minute são o início do lobby em Brasília (D-01); a janela é o início
 -- ± 2 h (D-03 da lobbies).
 SELECT c.id, c.nick, c.class_id, c.level, c.role, c.portrait, c.link,
-       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username
+       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username,
+       -- RN-13: a pessoa já foi removida deste lobby, e se com bloqueio.
+       EXISTS (SELECT 1 FROM applications ap
+               WHERE ap.lobby_id = sqlc.narg(lobby_id)::uuid AND ap.user_id = c.user_id
+                 AND ap.status = 'removed')::boolean AS removed,
+       EXISTS (SELECT 1 FROM applications ap
+               WHERE ap.lobby_id = sqlc.narg(lobby_id)::uuid AND ap.user_id = c.user_id
+                 AND ap.status = 'removed' AND ap.blocked)::boolean AS blocked
 FROM character_availability a
 JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id

@@ -81,6 +81,13 @@ SELECT * FROM applications WHERE id = @id;
 -- RN-15: remoção com bloqueio.
 UPDATE applications SET blocked = true WHERE id = @id;
 
+-- name: UnblockUserInLobby :exec
+-- RN-15 / CA-06.9: o dono desbloqueia o usuário do personagem neste lobby; a candidatura
+-- removida continua no histórico.
+UPDATE applications SET blocked = false
+WHERE lobby_id = @lobby_id AND blocked
+  AND user_id = (SELECT c.user_id FROM characters c WHERE c.id = @character_id);
+
 -- name: IsBlocked :one
 -- RN-07, RN-15: removido com bloqueio não se candidata de novo ao mesmo lobby.
 SELECT EXISTS (

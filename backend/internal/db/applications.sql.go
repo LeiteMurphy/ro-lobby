@@ -479,6 +479,24 @@ func (q *Queries) SetApplicationStatus(ctx context.Context, arg SetApplicationSt
 	return i, err
 }
 
+const unblockUserInLobby = `-- name: UnblockUserInLobby :exec
+UPDATE applications SET blocked = false
+WHERE lobby_id = $1 AND blocked
+  AND user_id = (SELECT c.user_id FROM characters c WHERE c.id = $2)
+`
+
+type UnblockUserInLobbyParams struct {
+	LobbyID     pgtype.UUID
+	CharacterID pgtype.UUID
+}
+
+// RN-15 / CA-06.9: o dono desbloqueia o usuário do personagem neste lobby; a candidatura
+// removida continua no histórico.
+func (q *Queries) UnblockUserInLobby(ctx context.Context, arg UnblockUserInLobbyParams) error {
+	_, err := q.db.Exec(ctx, unblockUserInLobby, arg.LobbyID, arg.CharacterID)
+	return err
+}
+
 const wasRejected = `-- name: WasRejected :one
 SELECT EXISTS (
     SELECT 1 FROM applications

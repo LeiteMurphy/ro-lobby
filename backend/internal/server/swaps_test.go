@@ -41,6 +41,11 @@ func (f *fakeApps) Remove(_ context.Context, ownerID, id, reason string, block b
 	return a, f.err
 }
 
+func (f *fakeApps) Unblock(_ context.Context, ownerID, lobbyID, characterID string) error {
+	f.called, f.gotUser, f.gotID, f.gotChar = true, ownerID, lobbyID, characterID
+	return f.err
+}
+
 func (f *fakeApps) SwapOwnerCharacter(_ context.Context, ownerID, lobbyID, characterID string) error {
 	f.called, f.gotUser, f.gotID, f.gotChar = true, ownerID, lobbyID, characterID
 	return f.err
@@ -227,5 +232,28 @@ func TestGetLobby_D12_SwapRequestsAndBlocked(t *testing.T) {
 	mine = body["myApplication"].(map[string]any)
 	if mine["blocked"] != true || mine["swapRequest"] != nil || mine["reason"] != "mudamos o horário da run" {
 		t.Errorf("bloqueado: %v", mine)
+	}
+}
+
+// CA-06.9 / RN-15: o desbloqueio repassa dono, lobby e personagem; 404 e 409 nos erros.
+func TestUnblockInLobby_CA06_9(t *testing.T) {
+	path := "/lobbies/" + lobbyID + "/unblock"
+	body := `{"characterId":"` + charID + `"}`
+	f := &fakeApps{}
+	h := New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, &fakeLobbies{}, f, nil)
+	if rec, _ := call(t, h, http.MethodPost, path, "", body); rec.Code != http.StatusUnauthorized {
+		t.Errorf("sem sessão: %d", rec.Code)
+	}
+	rec, _ := call(t, h, http.MethodPost, path, "token-valido", body)
+	if rec.Code != http.StatusNoContent || f.gotUser != userID || f.gotID != lobbyID || f.gotChar != charID {
+		t.Errorf("status %d, %+v", rec.Code, f)
+	}
+	f.err = applications.ErrNotFound
+	if rec, _ := call(t, h, http.MethodPost, path, "token-valido", body); rec.Code != http.StatusNotFound {
+		t.Errorf("de outro: %d", rec.Code)
+	}
+	f.err = &applications.RuleError{Code: applications.CodeNotOpen}
+	if rec, _ := call(t, h, http.MethodPost, path, "token-valido", body); rec.Code != http.StatusConflict {
+		t.Errorf("encerrado: %d", rec.Code)
 	}
 }

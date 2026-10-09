@@ -48,7 +48,7 @@ func (f *fakeTalents) Count(_ context.Context, userID string, in talents.CountIn
 var fogo = talents.Talent{
 	CharacterID: charID, Nick: "Fogo", ClassID: "arquimago", Level: 200, Role: "dps", Portrait: "retrato-2",
 	Days: []int{3}, Start: "18:00", End: "00:00", AnyInstance: true, Instances: []talents.Instance{},
-	DiscordUsername: "caio",
+	DiscordUsername: "caio", Removed: true,
 }
 
 func newTalentsServer(f *fakeTalents) http.Handler {
@@ -112,6 +112,7 @@ func TestListLobbyTalents_CA02_1(t *testing.T) {
 		"characterId": charID, "nick": "Fogo", "classId": "arquimago", "level": float64(200), "role": "dps",
 		"portrait": "retrato-2", "link": nil, "days": []any{float64(3)}, "start": "18:00", "end": "00:00",
 		"anyInstance": true, "instances": []any{}, "discordUsername": "caio",
+		"removed": true, "blocked": false,
 	}
 	if !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got[0])
