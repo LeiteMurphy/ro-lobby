@@ -321,7 +321,9 @@ paths:
       summary: Quantos personagens têm afinidade com um lobby em criação
       description: >
         A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação
-        (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono.
+        (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono;
+        no grupo livre, formation=free e freeSlots no lugar de tank, support e dps (spec
+        grupo-livre, RN-13).
       security:
         - sessionToken: []
       parameters:
@@ -343,17 +345,22 @@ paths:
             type: integer
         - name: tank
           in: query
-          required: true
           schema:
             type: integer
         - name: support
           in: query
-          required: true
           schema:
             type: integer
         - name: dps
           in: query
-          required: true
+          schema:
+            type: integer
+        - name: formation
+          in: query
+          schema:
+            $ref: "#/components/schemas/Formation"
+        - name: freeSlots
+          in: query
           schema:
             type: integer
         - name: characterId
@@ -432,8 +439,9 @@ paths:
       summary: Cria um lobby
       description: >
         O dono escolhe um dos próprios personagens, que ocupa a vaga da função dele
-        (RN-08). Cada Usuário tem até 5 lobbies abertos (RN-11), e o personagem não pode
-        estar em outro lobby a menos de 2 h (RN-10).
+        (RN-08), ou uma das vagas no grupo livre (spec grupo-livre, RN-02). Cada Usuário tem
+        até 5 lobbies abertos (RN-11), e o personagem não pode estar em outro lobby a menos
+        de 2 h (RN-10).
       security:
         - sessionToken: []
       requestBody:
@@ -605,7 +613,8 @@ paths:
       description: >
         Sem aprovação, com o lobby aberto, por um personagem do próprio dono com vaga na
         função (a vaga que ele deixa conta como livre), o nível mínimo e sem conflito de
-        horário (RN-11, RN-19, RN-36). Quem não é dono recebe 409 not_owner (CA-07.5).
+        horário (RN-11, RN-19, RN-36); no grupo livre, sem depender de vaga (spec
+        grupo-livre, RN-05). Quem não é dono recebe 409 not_owner (CA-07.5).
       security:
         - sessionToken: []
       requestBody:
@@ -637,7 +646,8 @@ paths:
       summary: Candidata-se ao lobby
       description: >
         Com um dos próprios personagens, na função dele, se houver vaga e nível (RN-01 a
-        RN-07, RN-30). A candidatura fica pendente até o dono decidir.
+        RN-07, RN-30); no grupo livre, basta vaga no total (spec grupo-livre, RN-04,
+        group_full). A candidatura fica pendente até o dono decidir.
       security:
         - sessionToken: []
       requestBody:
@@ -836,7 +846,7 @@ paths:
       description: >
         Só o dono e só pedido pendente, com vaga na função do personagem novo (a vaga que
         sai conta como livre), o nível mínimo e sem conflito de horário (RN-22, RN-23,
-        RN-36).
+        RN-36). No grupo livre, a troca não depende de vaga (spec grupo-livre, RN-05).
       security:
         - sessionToken: []
       responses:
@@ -1306,10 +1316,10 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots]
         code:
           type: string
-          enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start]
+          enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start, locked]
     ValidationError:
       type: object
       additionalProperties: false
@@ -1375,6 +1385,11 @@ components:
         note:
           type: string
           description: Opcional, até 250 caracteres.
+        formation:
+          $ref: "#/components/schemas/Formation"
+        freeSlots:
+          type: integer
+          description: Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
     LobbyUpdate:
       type: object
       required: [startsAt, slots, minLevel]
@@ -1391,6 +1406,15 @@ components:
           type: integer
         note:
           type: string
+        formation:
+          $ref: "#/components/schemas/Formation"
+        freeSlots:
+          type: integer
+          description: Sem formação, mantém a atual; só muda com o grupo vazio (RN-07). Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
+    Formation:
+      type: string
+      enum: [roles, free]
+      description: Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
     CancelLobby:
       type: object
       required: [reason]
@@ -1460,7 +1484,7 @@ components:
     Lobby:
       type: object
       additionalProperties: false
-      required: [id, instance, startsAt, status, slots, occupied, pendingCount, minLevel, note, owner, cancelReason, createdAt]
+      required: [id, instance, startsAt, status, formation, freeSlots, slots, occupied, pendingCount, minLevel, note, owner, cancelReason, createdAt]
       properties:
         id:
           type: string
@@ -1472,10 +1496,18 @@ components:
           format: date-time
         status:
           $ref: "#/components/schemas/LobbyStatus"
+        formation:
+          $ref: "#/components/schemas/Formation"
+        freeSlots:
+          type: integer
+          nullable: true
+          description: Total de vagas do grupo livre; null por função.
         slots:
           $ref: "#/components/schemas/Slots"
         occupied:
-          $ref: "#/components/schemas/Slots"
+          description: Ocupantes por função; no grupo livre, só informativo, e o total é a soma (D-02 da grupo-livre).
+          allOf:
+            - $ref: "#/components/schemas/Slots"
         pendingCount:
           type: integer
           description: Candidaturas pendentes; zero depois do início (RN-28, D-02).
@@ -1540,7 +1572,7 @@ components:
           enum: [application_rule]
         code:
           type: string
-          enum: [not_open, own_lobby, already_active, role_full, rejected_before, below_min_level, schedule_conflict, not_pending, not_owner, not_yours, blocked, not_member, swap_pending]
+          enum: [not_open, own_lobby, already_active, role_full, group_full, rejected_before, below_min_level, schedule_conflict, not_pending, not_owner, not_yours, blocked, not_member, swap_pending]
     Application:
       type: object
       additionalProperties: false

@@ -57,16 +57,22 @@ export interface CountInput {
 	instanceId: string;
 	startsAt: string;
 	minLevel: number;
-	tank: number;
-	support: number;
-	dps: number;
 	characterId: string;
+	/** Por função: as vagas de cada uma. */
+	tank?: number;
+	support?: number;
+	dps?: number;
+	/** Grupo livre (RN-13 da grupo-livre): formation=free e o total de vagas. */
+	formation?: 'roles' | 'free';
+	freeSlots?: number;
 }
 
 /** RN-10: a contagem da prévia da criação. */
 export function countTalents(call: Call, input: CountInput) {
 	const query = new URLSearchParams(
-		Object.entries(input).map(([k, v]) => [k, String(v)] as [string, string])
+		Object.entries(input)
+			.filter(([, v]) => v !== undefined)
+			.map(([k, v]) => [k, String(v)] as [string, string])
 	);
 	return request<{ count: number }>(call, 'GET', `/talents/count?${query}`);
 }

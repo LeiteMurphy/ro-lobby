@@ -44,12 +44,15 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		instanceId: l.instance.id,
 		date,
 		time,
-		tank: String(l.slots.tank),
-		support: String(l.slots.support),
-		dps: String(l.slots.dps),
+		// spec grupo-livre: a formação atual; trocando, a outra começa no padrão.
+		tank: String(l.formation === 'free' ? 1 : l.slots.tank),
+		support: String(l.formation === 'free' ? 2 : l.slots.support),
+		dps: String(l.formation === 'free' ? 3 : l.slots.dps),
 		minLevel: String(l.minLevel),
 		characterId: l.owner.characterId ?? '',
-		note: l.note ?? ''
+		note: l.note ?? '',
+		formation: l.formation,
+		freeSlots: String(l.freeSlots ?? 12)
 	};
 	const owner = characters.ok ? characters.data.filter((c) => c.id === l.owner.characterId) : [];
 	// RN-17: a instância atual fica na lista mesmo que tenha saído do catálogo.

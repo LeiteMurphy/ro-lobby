@@ -176,3 +176,13 @@ func TestCountTalents_CA03_1(t *testing.T) {
 		t.Errorf("status %d, corpo %v, entrada %+v", rec.Code, got, f.gotCount)
 	}
 }
+
+// CA-05.2 / RN-13 da grupo-livre: a contagem repassa a formação e o total de vagas.
+func TestCountTalents_CA05_2_Free(t *testing.T) {
+	q := "/talents/count?instanceId=templo-do-demonio-rei&startsAt=2026-10-07T23:00:00Z&minLevel=160&formation=free&freeSlots=12&characterId=" + charID
+	f := &fakeTalents{count: 3}
+	rec, _ := call(t, newTalentsServer(f), http.MethodGet, q, "token-valido", "")
+	if rec.Code != http.StatusOK || f.gotCount.Formation != "free" || f.gotCount.FreeSlots != 12 || f.gotCount.Tank != 0 {
+		t.Errorf("status %d, entrada %+v", rec.Code, f.gotCount)
+	}
+}

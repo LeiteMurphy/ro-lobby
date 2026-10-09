@@ -1,5 +1,6 @@
 // Modelo do detalhe do lobby com candidaturas: pessoas do painel, composição e quem pode se
 // candidatar (spec candidatura-lobby, RN-05, RN-28, RN-30, RN-31, design D-06).
+import { isFree, roomFor, totalSeats } from '$lib/lobbies/seats';
 import type { Character } from '$lib/characters/api';
 import { ROLE_LABELS, ROLES, type Role } from '$lib/home/types';
 import type { ApiLobby } from '$lib/lobbies/api';
@@ -86,6 +87,17 @@ export function composition(lobby: ApiLobby, list: Person[]): CompositionRow[] {
 	});
 }
 
+/**
+ * spec grupo-livre, RN-10: os lugares do grupo livre, numa lista única: o anfitrião, os
+ * membros aceitos e nulo nas vagas abertas.
+ */
+export function freeComposition(lobby: ApiLobby, list: Person[]): (Person | null)[] {
+	const occupants = list.filter((p) => p.kind !== 'candidate');
+	return Array.from({ length: Math.max(totalSeats(lobby), occupants.length) }, (_, i) =>
+		i < occupants.length ? occupants[i] : null
+	);
+}
+
 export interface Eligibility {
 	character: Character;
 	ok: boolean;
@@ -111,6 +123,8 @@ export function swapEligibility(
 			if (character.level < lobby.minLevel) {
 				return { character, ok: false, why: `abaixo do nível ${lobby.minLevel}` };
 			}
+			// spec grupo-livre, RN-05: no grupo livre, o personagem novo fica com a mesma vaga.
+			if (isFree(lobby)) return { character, ok: true, why: 'mesma vaga' };
 			if (character.role === current.role) {
 				return { character, ok: true, why: `mesma vaga de ${label}` };
 			}
@@ -131,10 +145,15 @@ export function swapEligibility(
 /** RN-05 / RN-30: quais personagens podem se candidatar e por quê. */
 export function eligibility(lobby: ApiLobby, characters: Character[]): Eligibility[] {
 	return characters.map((character) => {
-		const free = lobby.slots[character.role] - lobby.occupied[character.role];
+		const free = roomFor(lobby, character.role);
 		const label = ROLE_LABELS[character.role];
 		if (character.level < lobby.minLevel) {
 			return { character, ok: false, why: `abaixo do nível ${lobby.minLevel}` };
+		}
+		// spec grupo-livre, RN-11: no grupo livre, só a vaga no total conta.
+		if (isFree(lobby)) {
+			if (free < 1) return { character, ok: false, why: 'grupo cheio' };
+			return { character, ok: true, why: free === 1 ? '1 vaga livre' : `${free} vagas livres` };
 		}
 		if (free < 1) return { character, ok: false, why: `${label} sem vaga` };
 		return {

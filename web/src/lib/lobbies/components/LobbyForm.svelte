@@ -58,6 +58,10 @@
 	});
 	let minLevel = $state(start.minLevel);
 	let characterId = $state(start.characterId);
+	// spec grupo-livre, RN-01 e RN-02.
+	let formation = $state<'roles' | 'free'>(start.formation);
+	let freeSlots = $state(Number(start.freeSlots) || MAX_SLOTS);
+	const MIN_FREE = 2;
 	let note = $state(start.note);
 	let submitting = $state(false);
 
@@ -76,6 +80,10 @@
 	function onInstanceChange() {
 		const level = instances.find((i) => i.id === instanceId)?.level;
 		if (level) minLevel = String(level);
+	}
+
+	function stepFree(delta: number) {
+		freeSlots = Math.min(MAX_SLOTS, Math.max(MIN_FREE, freeSlots + delta));
 	}
 
 	function step(role: Role, delta: number) {
@@ -97,7 +105,8 @@
 			tank: { filled: character?.role === 'tank' ? 1 : 0, total: slots.tank },
 			support: { filled: character?.role === 'support' ? 1 : 0, total: slots.support },
 			dps: { filled: character?.role === 'dps' ? 1 : 0, total: slots.dps }
-		}
+		},
+		...(formation === 'free' ? { free: { filled: character ? 1 : 0, total: freeSlots } } : {})
 	});
 	const dayLabel = $derived(days.find((d) => d.date === date)?.label ?? '');
 
@@ -114,10 +123,11 @@
 			instanceId,
 			startsAt: start,
 			minLevel: String(Number(minLevel) || instance.level),
-			tank: String(slots.tank),
-			support: String(slots.support),
-			dps: String(slots.dps),
-			characterId
+			characterId,
+			// RN-13 da grupo-livre: no grupo livre, o total de vagas.
+			...(formation === 'free'
+				? { formation: 'free', freeSlots: String(freeSlots) }
+				: { tank: String(slots.tank), support: String(slots.support), dps: String(slots.dps) })
 		}).toString();
 	});
 	$effect(() => {
@@ -222,47 +232,104 @@
 				><Icon name="circle-x" size={14} />{errors.startsAt}</span
 			>{/if}
 
-		<fieldset class="field" aria-describedby={describe('slots')}>
-			<legend class="lbl total"
-				><span>Vagas por função</span><span class="muted">{total} de {MAX_SLOTS}</span></legend
-			>
-			<div class="row3">
-				{#each ROLES as role (role)}
-					<div class="stepper" class:err={errors.slots}>
-						<label class="role role--{role}" for="{uid}-{role}"
-							><Icon name={ROLE_ICONS[role]} size={15} />{ROLE_LABELS[role]}</label
-						>
-						<div class="ctl">
-							<button
-								type="button"
-								class="sbtn"
-								aria-label="Menos uma vaga de {ROLE_LABELS[role]}"
-								onclick={() => step(role, -1)}>−</button
-							>
-							<input
-								id="{uid}-{role}"
-								class="n"
-								type="number"
-								inputmode="numeric"
-								min="0"
-								max={MAX_SLOTS}
-								name={role}
-								bind:value={slots[role]}
-							/>
-							<button
-								type="button"
-								class="sbtn"
-								aria-label="Mais uma vaga de {ROLE_LABELS[role]}"
-								onclick={() => step(role, 1)}>+</button
-							>
-						</div>
-					</div>
-				{/each}
+		<!-- spec grupo-livre, RN-01 / RNF-03: a formação, por função ou grupo livre. -->
+		<fieldset class="field" aria-describedby={describe('formation')}>
+			<legend class="lbl">Formação</legend>
+			<div class="formation">
+				<label class="radio">
+					<input type="radio" name="formation" value="roles" bind:group={formation} />
+					<span>Por função <span class="muted">Tank, Suporte e Dano</span></span>
+				</label>
+				<label class="radio">
+					<input type="radio" name="formation" value="free" bind:group={formation} />
+					<span>Grupo livre <span class="muted">qualquer função, até 12</span></span>
+				</label>
 			</div>
-			{#if errors.slots}<span class="hint-err" id={errId('slots')}
-					><Icon name="circle-x" size={14} />{errors.slots}</span
+			{#if errors.formation}<span class="hint-err" id={errId('formation')}
+					><Icon name="circle-x" size={14} />{errors.formation}</span
 				>{/if}
 		</fieldset>
+
+		{#if formation === 'free'}
+			<!-- spec grupo-livre, RN-02: de 2 a 12 vagas, o seu personagem ocupa uma. -->
+			<div class="field">
+				<label class="lbl" for="{uid}-free">Vagas</label>
+				<div class="stepper free" class:err={errors.freeSlots}>
+					<div class="ctl">
+						<button
+							type="button"
+							class="sbtn"
+							aria-label="Menos uma vaga"
+							onclick={() => stepFree(-1)}>−</button
+						>
+						<input
+							id="{uid}-free"
+							class="n"
+							type="number"
+							inputmode="numeric"
+							min={MIN_FREE}
+							max={MAX_SLOTS}
+							name="freeSlots"
+							bind:value={freeSlots}
+							aria-invalid={errors.freeSlots ? 'true' : undefined}
+							aria-describedby={describe('freeSlots')}
+						/>
+						<button
+							type="button"
+							class="sbtn"
+							aria-label="Mais uma vaga"
+							onclick={() => stepFree(1)}>+</button
+						>
+					</div>
+				</div>
+				{#if errors.freeSlots}<span class="hint-err" id={errId('freeSlots')}
+						><Icon name="circle-x" size={14} />{errors.freeSlots}</span
+					>{:else}<span class="hint">Qualquer personagem ocupa qualquer vaga; o seu ocupa uma.</span
+					>{/if}
+			</div>
+		{:else}
+			<fieldset class="field" aria-describedby={describe('slots')}>
+				<legend class="lbl total"
+					><span>Vagas por função</span><span class="muted">{total} de {MAX_SLOTS}</span></legend
+				>
+				<div class="row3">
+					{#each ROLES as role (role)}
+						<div class="stepper" class:err={errors.slots}>
+							<label class="role role--{role}" for="{uid}-{role}"
+								><Icon name={ROLE_ICONS[role]} size={15} />{ROLE_LABELS[role]}</label
+							>
+							<div class="ctl">
+								<button
+									type="button"
+									class="sbtn"
+									aria-label="Menos uma vaga de {ROLE_LABELS[role]}"
+									onclick={() => step(role, -1)}>−</button
+								>
+								<input
+									id="{uid}-{role}"
+									class="n"
+									type="number"
+									inputmode="numeric"
+									min="0"
+									max={MAX_SLOTS}
+									name={role}
+									bind:value={slots[role]}
+								/>
+								<button
+									type="button"
+									class="sbtn"
+									aria-label="Mais uma vaga de {ROLE_LABELS[role]}"
+									onclick={() => step(role, 1)}>+</button
+								>
+							</div>
+						</div>
+					{/each}
+				</div>
+				{#if errors.slots}<span class="hint-err" id={errId('slots')}
+						><Icon name="circle-x" size={14} />{errors.slots}</span
+					>{/if}
+			</fieldset>
+		{/if}
 
 		<div class="row2">
 			<div class="field">
@@ -378,6 +445,28 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
+	}
+	.formation {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px 20px;
+	}
+	.formation .radio {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font: 500 14px/1.3 var(--font-ui);
+		color: var(--fg-1);
+		cursor: pointer;
+	}
+	.formation .radio input {
+		accent-color: var(--accent);
+		width: 16px;
+		height: 16px;
+		margin: 0;
+	}
+	.stepper.free {
+		align-self: flex-start;
 	}
 	.available {
 		display: flex;

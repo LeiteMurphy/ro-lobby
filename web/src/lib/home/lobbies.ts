@@ -1,5 +1,5 @@
 import { toMinutes, type ZonedNow } from './time';
-import { ROLES, type Composition, type Lobby, type Role } from './types';
+import { ROLES, type Composition, type Lobby, type Role, type Slots } from './types';
 
 /** RN-14: vagas abertas da função = total − ocupadas. */
 export function openSlots(composition: Composition, role: Role): number {
@@ -36,6 +36,26 @@ export function edgeRole(composition: Composition): Role | null {
 	return best;
 }
 
+/** Ocupantes e total do lobby inteiro: do grupo livre ou a soma das funções. */
+export function seats(lobby: Pick<Lobby, 'composition' | 'free'>): Slots {
+	return lobby.free ?? headcount(lobby.composition);
+}
+
+/** RN-14 e RN-08 da grupo-livre: lotado quando os ocupantes chegam ao total. */
+export function lobbyIsFull(lobby: Pick<Lobby, 'composition' | 'free'>): boolean {
+	const { filled, total } = seats(lobby);
+	return filled >= total;
+}
+
+/**
+ * Vagas abertas para a função: no grupo livre, as vagas livres do total, para qualquer
+ * função (RN-09 da grupo-livre); por função, as da função (RN-14).
+ */
+export function roomFor(lobby: Pick<Lobby, 'composition' | 'free'>, role: Role): number {
+	if (lobby.free) return Math.max(0, lobby.free.total - lobby.free.filled);
+	return openSlots(lobby.composition, role);
+}
+
 /** RN-11: lobbies do dia em ordem crescente de horário. */
 export function lobbiesForDay(lobbies: readonly Lobby[], date: string): Lobby[] {
 	return lobbies
@@ -50,7 +70,7 @@ export function lobbiesForDay(lobbies: readonly Lobby[], date: string): Lobby[] 
 export function featuredLobby(dayLobbies: readonly Lobby[], now: ZonedNow): Lobby | null {
 	return (
 		dayLobbies.find(
-			(l) => !isFull(l.composition) && (l.date !== now.date || toMinutes(l.time) > now.minutes)
+			(l) => !lobbyIsFull(l) && (l.date !== now.date || toMinutes(l.time) > now.minutes)
 		) ?? null
 	);
 }

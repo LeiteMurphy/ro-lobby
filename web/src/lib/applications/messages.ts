@@ -8,6 +8,8 @@ const RULES: Record<ApplicationRuleCode, string> = {
 	own_lobby: 'Você é o anfitrião deste lobby.',
 	already_active: 'Você já tem uma candidatura ativa neste lobby.',
 	role_full: 'Essa função não tem mais vaga.',
+	// spec grupo-livre, RN-04.
+	group_full: 'Esse grupo não tem mais vaga.',
 	rejected_before: 'Sua candidatura a este lobby já foi recusada.',
 	below_min_level: 'O personagem está abaixo do nível mínimo do lobby.',
 	schedule_conflict: 'O personagem já está em outro grupo a menos de 2 h deste horário.',

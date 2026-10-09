@@ -49,4 +49,26 @@ describe('/lobbies/novo/disponiveis', () => {
 		expect(await (await GET(event('instanceId=x', 'tok', down))).json()).toEqual({ count: null });
 		expect(await (await GET(event(QUERY, 'tok', down))).json()).toEqual({ count: null });
 	});
+
+	it('CA-05.2 / RN-13 da grupo-livre: no grupo livre, manda a formação e o total, sem as funções', async () => {
+		const fetchFn = vi.fn(
+			async () =>
+				new Response(JSON.stringify({ count: 3 }), {
+					status: 200,
+					headers: { 'content-type': 'application/json' }
+				})
+		) as unknown as typeof fetch;
+		const query =
+			'instanceId=templo-do-demonio-rei&startsAt=2026-10-07T23%3A00%3A00Z&minLevel=160&formation=free&freeSlots=12&characterId=c1';
+		expect(await (await GET(event(query, 'tok', fetchFn))).json()).toEqual({ count: 3 });
+		const [url] = (fetchFn as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+		expect(Object.fromEntries(new URL(String(url)).searchParams)).toEqual({
+			instanceId: 'templo-do-demonio-rei',
+			startsAt: '2026-10-07T23:00:00Z',
+			minLevel: '160',
+			characterId: 'c1',
+			formation: 'free',
+			freeSlots: '12'
+		});
+	});
 });

@@ -76,6 +76,8 @@ type Lobby struct {
 	CancelledAt      pgtype.Timestamptz
 	CancelReason     pgtype.Text
 	CreatedAt        time.Time
+	Formation        string
+	FreeSlots        pgtype.Int2
 }
 
 type Session struct {

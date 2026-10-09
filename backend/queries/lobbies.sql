@@ -1,8 +1,10 @@
 -- name: CreateLobby :one
 INSERT INTO lobbies (owner_id, instance_id, instance_name, instance_level, starts_at,
-    slots_tank, slots_support, slots_dps, min_level, owner_character_id, owner_role, note, created_at)
+    slots_tank, slots_support, slots_dps, min_level, owner_character_id, owner_role, note, created_at,
+    formation, free_slots)
 VALUES (@owner_id, @instance_id, @instance_name, @instance_level, @starts_at,
-    @slots_tank, @slots_support, @slots_dps, @min_level, @owner_character_id, @owner_role, @note, @now)
+    @slots_tank, @slots_support, @slots_dps, @min_level, @owner_character_id, @owner_role, @note, @now,
+    COALESCE(NULLIF(@formation::text, ''), 'roles'), sqlc.narg(free_slots))
 RETURNING id;
 
 -- name: GetLobby :one
@@ -68,7 +70,8 @@ SELECT * FROM lobbies WHERE id = @id AND owner_id = @owner_id FOR UPDATE;
 UPDATE lobbies
 SET instance_id = @instance_id, instance_name = @instance_name, instance_level = @instance_level,
     starts_at = @starts_at, slots_tank = @slots_tank, slots_support = @slots_support,
-    slots_dps = @slots_dps, min_level = @min_level, note = @note
+    slots_dps = @slots_dps, min_level = @min_level, note = @note,
+    formation = @formation, free_slots = sqlc.narg(free_slots)
 WHERE id = @id;
 
 -- name: CancelLobby :exec

@@ -27,7 +27,7 @@
 			<!-- RN-12 / CA-01.10 -->
 			<section class="empty">
 				<h2>{NO_CHARACTER_MESSAGE}</h2>
-				<p>O lobby usa um dos seus personagens, que ocupa a vaga da função dele.</p>
+				<p>O lobby usa um dos seus personagens, que ocupa uma das vagas.</p>
 				<Button iconLeft="plus" href={resolve('/perfil')}>Ir para o perfil</Button>
 			</section>
 		{:else}

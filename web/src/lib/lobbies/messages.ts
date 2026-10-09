@@ -24,6 +24,15 @@ const MESSAGES: Partial<Record<Field, Partial<Record<Code, string>> & { fallback
 		fallback: 'Escolha um dos seus personagens'
 	},
 	note: { fallback: 'Use até 250 caracteres' },
+	// spec grupo-livre, RN-02, RN-06 e RN-07.
+	freeSlots: {
+		below_occupied: 'O grupo já tem mais gente que isso',
+		fallback: 'De 2 a 12 vagas'
+	},
+	formation: {
+		locked: 'Só dá para trocar a formação com o grupo vazio',
+		fallback: 'Escolha a formação'
+	},
 	reason: { fallback: 'Escreva de 10 a 250 caracteres' }
 };
 

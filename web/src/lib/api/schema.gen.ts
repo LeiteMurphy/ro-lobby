@@ -230,7 +230,7 @@ export interface paths {
         };
         /**
          * Quantos personagens têm afinidade com um lobby em criação
-         * @description A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono.
+         * @description A mesma afinidade do lobby gravado (RN-06), com os campos do formulário de criação (RN-10, D-04). As vagas abertas são as do formulário menos a do personagem do dono; no grupo livre, formation=free e freeSlots no lugar de tank, support e dps (spec grupo-livre, RN-13).
          */
         get: operations["countTalents"];
         put?: never;
@@ -276,7 +276,7 @@ export interface paths {
         put?: never;
         /**
          * Cria um lobby
-         * @description O dono escolhe um dos próprios personagens, que ocupa a vaga da função dele (RN-08). Cada Usuário tem até 5 lobbies abertos (RN-11), e o personagem não pode estar em outro lobby a menos de 2 h (RN-10).
+         * @description O dono escolhe um dos próprios personagens, que ocupa a vaga da função dele (RN-08), ou uma das vagas no grupo livre (spec grupo-livre, RN-02). Cada Usuário tem até 5 lobbies abertos (RN-11), e o personagem não pode estar em outro lobby a menos de 2 h (RN-10).
          */
         post: operations["createLobby"];
         delete?: never;
@@ -394,7 +394,7 @@ export interface paths {
         get?: never;
         /**
          * O dono troca o próprio personagem no lobby
-         * @description Sem aprovação, com o lobby aberto, por um personagem do próprio dono com vaga na função (a vaga que ele deixa conta como livre), o nível mínimo e sem conflito de horário (RN-11, RN-19, RN-36). Quem não é dono recebe 409 not_owner (CA-07.5).
+         * @description Sem aprovação, com o lobby aberto, por um personagem do próprio dono com vaga na função (a vaga que ele deixa conta como livre), o nível mínimo e sem conflito de horário (RN-11, RN-19, RN-36); no grupo livre, sem depender de vaga (spec grupo-livre, RN-05). Quem não é dono recebe 409 not_owner (CA-07.5).
          */
         put: operations["swapOwnerCharacter"];
         post?: never;
@@ -418,7 +418,7 @@ export interface paths {
         put?: never;
         /**
          * Candidata-se ao lobby
-         * @description Com um dos próprios personagens, na função dele, se houver vaga e nível (RN-01 a RN-07, RN-30). A candidatura fica pendente até o dono decidir.
+         * @description Com um dos próprios personagens, na função dele, se houver vaga e nível (RN-01 a RN-07, RN-30); no grupo livre, basta vaga no total (spec grupo-livre, RN-04, group_full). A candidatura fica pendente até o dono decidir.
          */
         post: operations["applyToLobby"];
         delete?: never;
@@ -579,7 +579,7 @@ export interface paths {
         put?: never;
         /**
          * O dono aceita o pedido de troca
-         * @description Só o dono e só pedido pendente, com vaga na função do personagem novo (a vaga que sai conta como livre), o nível mínimo e sem conflito de horário (RN-22, RN-23, RN-36).
+         * @description Só o dono e só pedido pendente, com vaga na função do personagem novo (a vaga que sai conta como livre), o nível mínimo e sem conflito de horário (RN-22, RN-23, RN-36). No grupo livre, a troca não depende de vaga (spec grupo-livre, RN-05).
          */
         post: operations["acceptSwapRequest"];
         delete?: never;
@@ -806,9 +806,9 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots";
             /** @enum {string} */
-            code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start";
+            code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start" | "locked";
         };
         ValidationError: {
             /** @enum {string} */
@@ -851,6 +851,9 @@ export interface components {
             characterId: string;
             /** @description Opcional, até 250 caracteres. */
             note?: string;
+            formation?: components["schemas"]["Formation"];
+            /** @description Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02). */
+            freeSlots?: number;
         };
         LobbyUpdate: {
             /** @description ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17). */
@@ -860,7 +863,15 @@ export interface components {
             slots: components["schemas"]["Slots"];
             minLevel: number;
             note?: string;
+            formation?: components["schemas"]["Formation"];
+            /** @description Sem formação, mantém a atual; só muda com o grupo vazio (RN-07). Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02). */
+            freeSlots?: number;
         };
+        /**
+         * @description Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
+         * @enum {string}
+         */
+        Formation: "roles" | "free";
         CancelLobby: {
             /** @description De 10 a 250 caracteres. */
             reason: string;
@@ -907,7 +918,11 @@ export interface components {
             /** Format: date-time */
             startsAt: string;
             status: components["schemas"]["LobbyStatus"];
+            formation: components["schemas"]["Formation"];
+            /** @description Total de vagas do grupo livre; null por função. */
+            freeSlots: number | null;
             slots: components["schemas"]["Slots"];
+            /** @description Ocupantes por função; no grupo livre, só informativo, e o total é a soma (D-02 da grupo-livre). */
             occupied: components["schemas"]["Slots"];
             /** @description Candidaturas pendentes; zero depois do início (RN-28, D-02). */
             pendingCount: number;
@@ -944,7 +959,7 @@ export interface components {
             /** @enum {string} */
             error: "application_rule";
             /** @enum {string} */
-            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending";
+            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "group_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending";
         };
         Application: {
             /** Format: uuid */
@@ -1626,9 +1641,11 @@ export interface operations {
                 instanceId: string;
                 startsAt: string;
                 minLevel: number;
-                tank: number;
-                support: number;
-                dps: number;
+                tank?: number;
+                support?: number;
+                dps?: number;
+                formation?: components["schemas"]["Formation"];
+                freeSlots?: number;
                 characterId: string;
             };
             header?: never;

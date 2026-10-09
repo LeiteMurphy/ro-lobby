@@ -23,6 +23,7 @@ const (
 	ApplicationRuleErrorCodeAlreadyActive    ApplicationRuleErrorCode = "already_active"
 	ApplicationRuleErrorCodeBelowMinLevel    ApplicationRuleErrorCode = "below_min_level"
 	ApplicationRuleErrorCodeBlocked          ApplicationRuleErrorCode = "blocked"
+	ApplicationRuleErrorCodeGroupFull        ApplicationRuleErrorCode = "group_full"
 	ApplicationRuleErrorCodeNotMember        ApplicationRuleErrorCode = "not_member"
 	ApplicationRuleErrorCodeNotOpen          ApplicationRuleErrorCode = "not_open"
 	ApplicationRuleErrorCodeNotOwner         ApplicationRuleErrorCode = "not_owner"
@@ -43,6 +44,8 @@ func (e ApplicationRuleErrorCode) Valid() bool {
 	case ApplicationRuleErrorCodeBelowMinLevel:
 		return true
 	case ApplicationRuleErrorCodeBlocked:
+		return true
+	case ApplicationRuleErrorCodeGroupFull:
 		return true
 	case ApplicationRuleErrorCodeNotMember:
 		return true
@@ -199,6 +202,7 @@ const (
 	FieldErrorCodeConflict      FieldErrorCode = "conflict"
 	FieldErrorCodeInvalid       FieldErrorCode = "invalid"
 	FieldErrorCodeLevelTooLow   FieldErrorCode = "level_too_low"
+	FieldErrorCodeLocked        FieldErrorCode = "locked"
 	FieldErrorCodeRequired      FieldErrorCode = "required"
 	FieldErrorCodeSameAsStart   FieldErrorCode = "same_as_start"
 	FieldErrorCodeTaken         FieldErrorCode = "taken"
@@ -218,6 +222,8 @@ func (e FieldErrorCode) Valid() bool {
 	case FieldErrorCodeInvalid:
 		return true
 	case FieldErrorCodeLevelTooLow:
+		return true
+	case FieldErrorCodeLocked:
 		return true
 	case FieldErrorCodeRequired:
 		return true
@@ -241,6 +247,8 @@ const (
 	FieldErrorFieldDay         FieldErrorField = "day"
 	FieldErrorFieldDays        FieldErrorField = "days"
 	FieldErrorFieldEnd         FieldErrorField = "end"
+	FieldErrorFieldFormation   FieldErrorField = "formation"
+	FieldErrorFieldFreeSlots   FieldErrorField = "freeSlots"
 	FieldErrorFieldInstanceId  FieldErrorField = "instanceId"
 	FieldErrorFieldInstanceIds FieldErrorField = "instanceIds"
 	FieldErrorFieldLevel       FieldErrorField = "level"
@@ -271,6 +279,10 @@ func (e FieldErrorField) Valid() bool {
 		return true
 	case FieldErrorFieldEnd:
 		return true
+	case FieldErrorFieldFormation:
+		return true
+	case FieldErrorFieldFreeSlots:
+		return true
 	case FieldErrorFieldInstanceId:
 		return true
 	case FieldErrorFieldInstanceIds:
@@ -300,6 +312,24 @@ func (e FieldErrorField) Valid() bool {
 	case FieldErrorFieldStartsAt:
 		return true
 	case FieldErrorFieldTime:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for Formation.
+const (
+	FormationFree  Formation = "free"
+	FormationRoles Formation = "roles"
+)
+
+// Valid indicates whether the value is a known member of the Formation enum.
+func (e Formation) Valid() bool {
+	switch e {
+	case FormationFree:
+		return true
+	case FormationRoles:
 		return true
 	default:
 		return false
@@ -778,6 +808,9 @@ type FieldErrorCode string
 // FieldErrorField defines model for FieldError.Field.
 type FieldErrorField string
 
+// Formation Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
+type Formation string
+
 // Health defines model for Health.
 type Health struct {
 	Database HealthDatabase `json:"database"`
@@ -812,10 +845,16 @@ type InstanceReset string
 
 // Lobby defines model for Lobby.
 type Lobby struct {
-	CancelReason *string            `json:"cancelReason"`
-	CreatedAt    time.Time          `json:"createdAt"`
-	Id           openapi_types.UUID `json:"id"`
-	Instance     LobbyInstance      `json:"instance"`
+	CancelReason *string   `json:"cancelReason"`
+	CreatedAt    time.Time `json:"createdAt"`
+
+	// Formation Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
+	Formation Formation `json:"formation"`
+
+	// FreeSlots Total de vagas do grupo livre; null por função.
+	FreeSlots *int               `json:"freeSlots"`
+	Id        openapi_types.UUID `json:"id"`
+	Instance  LobbyInstance      `json:"instance"`
 
 	// Members Membros aceitos. Só no detalhe (D-06).
 	Members  *[]LobbyParticipant `json:"members,omitempty"`
@@ -824,8 +863,10 @@ type Lobby struct {
 	// MyApplication A candidatura mais recente de quem olha o lobby (RN-29, D-06, D-12).
 	MyApplication *ViewerApplication `json:"myApplication,omitempty"`
 	Note          *string            `json:"note"`
-	Occupied      Slots              `json:"occupied"`
-	Owner         LobbyOwner         `json:"owner"`
+
+	// Occupied Ocupantes por função; no grupo livre, só informativo, e o total é a soma (D-02 da grupo-livre).
+	Occupied Slots      `json:"occupied"`
+	Owner    LobbyOwner `json:"owner"`
 
 	// Pending Candidaturas pendentes. Só no detalhe e só para o dono (RN-28).
 	Pending *[]LobbyParticipant `json:"pending,omitempty"`
@@ -844,6 +885,12 @@ type Lobby struct {
 type LobbyInput struct {
 	// CharacterId Um dos personagens do Usuário da sessão.
 	CharacterId string `json:"characterId"`
+
+	// Formation Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
+	Formation *Formation `json:"formation,omitempty"`
+
+	// FreeSlots Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
+	FreeSlots *int `json:"freeSlots,omitempty"`
 
 	// InstanceId ID de uma instância de GET /instances.
 	InstanceId string `json:"instanceId"`
@@ -943,6 +990,12 @@ type LobbySwapRequest struct {
 
 // LobbyUpdate defines model for LobbyUpdate.
 type LobbyUpdate struct {
+	// Formation Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
+	Formation *Formation `json:"formation,omitempty"`
+
+	// FreeSlots Sem formação, mantém a atual; só muda com o grupo vazio (RN-07). Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
+	FreeSlots *int `json:"freeSlots,omitempty"`
+
 	// InstanceId ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17).
 	InstanceId *string   `json:"instanceId,omitempty"`
 	MinLevel   int       `json:"minLevel"`
@@ -1202,13 +1255,15 @@ type ListTalentsParams struct {
 
 // CountTalentsParams defines parameters for CountTalents.
 type CountTalentsParams struct {
-	InstanceId  string    `form:"instanceId" json:"instanceId"`
-	StartsAt    time.Time `form:"startsAt" json:"startsAt"`
-	MinLevel    int       `form:"minLevel" json:"minLevel"`
-	Tank        int       `form:"tank" json:"tank"`
-	Support     int       `form:"support" json:"support"`
-	Dps         int       `form:"dps" json:"dps"`
-	CharacterId string    `form:"characterId" json:"characterId"`
+	InstanceId  string     `form:"instanceId" json:"instanceId"`
+	StartsAt    time.Time  `form:"startsAt" json:"startsAt"`
+	MinLevel    int        `form:"minLevel" json:"minLevel"`
+	Tank        *int       `form:"tank,omitempty" json:"tank,omitempty"`
+	Support     *int       `form:"support,omitempty" json:"support,omitempty"`
+	Dps         *int       `form:"dps,omitempty" json:"dps,omitempty"`
+	Formation   *Formation `form:"formation,omitempty" json:"formation,omitempty"`
+	FreeSlots   *int       `form:"freeSlots,omitempty" json:"freeSlots,omitempty"`
+	CharacterId string     `form:"characterId" json:"characterId"`
 }
 
 // RejectApplicationJSONRequestBody defines body for RejectApplication for application/json ContentType.
@@ -2191,9 +2246,9 @@ func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Required query parameter "tank" -------------
+	// ------------- Optional query parameter "tank" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "tank", r.URL.Query(), &params.Tank, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tank", r.URL.Query(), &params.Tank, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
@@ -2204,9 +2259,9 @@ func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Required query parameter "support" -------------
+	// ------------- Optional query parameter "support" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "support", r.URL.Query(), &params.Support, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "support", r.URL.Query(), &params.Support, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
@@ -2217,15 +2272,41 @@ func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Required query parameter "dps" -------------
+	// ------------- Optional query parameter "dps" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "dps", r.URL.Query(), &params.Dps, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "dps", r.URL.Query(), &params.Dps, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "dps"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dps", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "formation" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "formation", r.URL.Query(), &params.Formation, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "formation"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "formation", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "freeSlots" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "freeSlots", r.URL.Query(), &params.FreeSlots, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "freeSlots"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "freeSlots", Err: err})
 		}
 		return
 	}

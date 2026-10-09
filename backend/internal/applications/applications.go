@@ -39,10 +39,12 @@ const (
 
 // Códigos das regras de negócio (D-07). O web traduz para pt-BR.
 const (
-	CodeNotOpen          = "not_open"
-	CodeOwnLobby         = "own_lobby"
-	CodeAlreadyActive    = "already_active"
-	CodeRoleFull         = "role_full"
+	CodeNotOpen       = "not_open"
+	CodeOwnLobby      = "own_lobby"
+	CodeAlreadyActive = "already_active"
+	CodeRoleFull      = "role_full"
+	// CodeGroupFull: o grupo livre não tem vaga no total (RN-04 da grupo-livre, D-03).
+	CodeGroupFull        = "group_full"
 	CodeRejectedBefore   = "rejected_before"
 	CodeBelowMinLevel    = "below_min_level"
 	CodeScheduleConflict = "schedule_conflict"
@@ -198,8 +200,8 @@ func (s *Service) Apply(ctx context.Context, userID, lobbyID string, in ApplyInp
 		if character.Level < lobby.Lobby.MinLevel {
 			return rule(CodeBelowMinLevel) // RN-30
 		}
-		if freeSlots(lobby, character.Role) < 1 {
-			return rule(CodeRoleFull) // RN-05
+		if err := noRoom(lobby, character.Role); err != nil {
+			return err // RN-05; no grupo livre, RN-04 da grupo-livre
 		}
 		created, err = q.CreateApplication(ctx, db.CreateApplicationParams{
 			LobbyID:     lid,
@@ -236,8 +238,8 @@ func (s *Service) Accept(ctx context.Context, ownerID, applicationID string) (Ap
 		if character.Level < lobby.Lobby.MinLevel {
 			return rule(CodeBelowMinLevel)
 		}
-		if freeSlots(lobby, app.Role) < 1 {
-			return rule(CodeRoleFull)
+		if err := noRoom(lobby, app.Role); err != nil {
+			return err // RN-10; no grupo livre, RN-04 da grupo-livre
 		}
 		conflict, err := q.HasScheduleConflict(ctx, db.HasScheduleConflictParams{
 			CharacterID: app.CharacterID,
@@ -581,6 +583,23 @@ func lobbyStatus(l db.Lobby, now time.Time) string {
 }
 
 // freeSlots são as vagas da função menos os ocupantes: o dono e os aceitos (RN-05, D-03).
+// noRoom devolve a regra quebrada quando não há vaga para um personagem da função: no
+// grupo livre, vaga no total, de qualquer função (RN-03 e RN-04 da grupo-livre); por
+// função, vaga na função (RN-05, RN-10).
+func noRoom(l db.GetLobbyRow, role string) error {
+	if l.Lobby.Formation == lobbies.FormationFree {
+		occupied := int(l.AcceptedTank+l.AcceptedSupport+l.AcceptedDps) + 1 // o dono
+		if occupied >= int(l.Lobby.FreeSlots.Int16) {
+			return rule(CodeGroupFull)
+		}
+		return nil
+	}
+	if freeSlots(l, role) < 1 {
+		return rule(CodeRoleFull)
+	}
+	return nil
+}
+
 func freeSlots(l db.GetLobbyRow, role string) int {
 	var slots, accepted int
 	switch role {

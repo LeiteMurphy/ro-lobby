@@ -95,7 +95,8 @@ func (h talentsHandler) CountTalents(ctx context.Context, req api.CountTalentsRe
 	p := req.Params
 	n, err := h.talents.Count(ctx, userID, talents.CountInput{
 		InstanceID: p.InstanceId, StartsAt: p.StartsAt, MinLevel: p.MinLevel,
-		Tank: p.Tank, Support: p.Support, Dps: p.Dps, CharacterID: p.CharacterId,
+		Tank: valueOf(p.Tank), Support: valueOf(p.Support), Dps: valueOf(p.Dps), CharacterID: p.CharacterId,
+		FreeSlots: valueOf(p.FreeSlots), Formation: string(valueOf(p.Formation)),
 	})
 	var invalid *talents.ValidationError
 	if errors.As(err, &invalid) {
