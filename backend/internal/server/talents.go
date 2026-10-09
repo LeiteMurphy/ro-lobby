@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
+
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/api"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/talents"
 )
@@ -12,6 +14,7 @@ import (
 // satisfaz.
 type TalentService interface {
 	SetAvailability(ctx context.Context, userID, characterID string, in talents.AvailabilityInput) (*talents.Availability, error)
+	ForLobby(ctx context.Context, userID, lobbyID string) ([]talents.Talent, error)
 }
 
 // talentsHandler serve o banco de talentos (spec banco-de-talentos).
@@ -64,8 +67,56 @@ func (talentsHandler) CountTalents(context.Context, api.CountTalentsRequestObjec
 	return nil, errNotImplemented
 }
 
-func (talentsHandler) ListLobbyTalents(context.Context, api.ListLobbyTalentsRequestObject) (api.ListLobbyTalentsResponseObject, error) {
-	return nil, errNotImplemented
+// ListLobbyTalents lista quem tem afinidade com o lobby aberto do dono (RN-06 a RN-09).
+// O dono tem sessão, então o nome no Discord vai junto (RN-12).
+func (h talentsHandler) ListLobbyTalents(ctx context.Context, req api.ListLobbyTalentsRequestObject) (api.ListLobbyTalentsResponseObject, error) {
+	userID, ok, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.ListLobbyTalents401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	list, err := h.talents.ForLobby(ctx, userID, req.Id)
+	switch {
+	case errors.Is(err, talents.ErrNotFound):
+		return api.ListLobbyTalents404JSONResponse{LobbyNotFoundJSONResponse: api.LobbyNotFoundJSONResponse(lobbyNotFound)}, nil
+	case errors.Is(err, talents.ErrNotOpen):
+		return api.ListLobbyTalents409JSONResponse{LobbyNotOpenJSONResponse: api.LobbyNotOpenJSONResponse(lobbyNotOpen)}, nil
+	case err != nil:
+		return nil, err
+	}
+	body, err := toAPITalents(list, true)
+	return api.ListLobbyTalents200JSONResponse(body), err
+}
+
+// toAPITalents converte a lista; sem sessão, o nome no Discord fica de fora (D-05).
+func toAPITalents(list []talents.Talent, withDiscord bool) ([]api.Talent, error) {
+	out := make([]api.Talent, len(list))
+	for i, t := range list {
+		id, err := uuid.Parse(t.CharacterID)
+		if err != nil {
+			return nil, err
+		}
+		instances := make([]api.TalentInstance, len(t.Instances))
+		for j, in := range t.Instances {
+			instances[j] = api.TalentInstance{Id: in.ID, Name: in.Name}
+		}
+		out[i] = api.Talent{
+			CharacterId: id, Nick: t.Nick, ClassId: t.ClassID, Level: t.Level, Role: api.Role(t.Role),
+			Portrait: api.Portrait(t.Portrait), Days: t.Days, Start: t.Start, End: t.End,
+			AnyInstance: t.AnyInstance, Instances: instances,
+		}
+		if t.Link != "" {
+			link := t.Link
+			out[i].Link = &link
+		}
+		if withDiscord {
+			name := t.DiscordUsername
+			out[i].DiscordUsername = &name
+		}
+	}
+	return out, nil
 }
 
 func toAPIAvailability(a talents.Availability) api.Availability {

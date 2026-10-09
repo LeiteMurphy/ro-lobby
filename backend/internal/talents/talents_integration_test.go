@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -25,6 +26,14 @@ import (
 
 // "Agora" dos testes: terça, 6 out 2026, 16:40 em São Paulo (19:40 UTC).
 var now = time.Date(2026, 10, 6, 19, 40, 0, 0, time.UTC)
+
+var nextDiscordID atomic.Int64
+
+// at monta um horário de São Paulo, daqui a `days` dias.
+func at(days, hour, minute int) time.Time {
+	y, m, d := now.In(lobbies.Location).Date()
+	return time.Date(y, m, d+days, hour, minute, 0, 0, lobbies.Location)
+}
 
 type env struct {
 	svc     *talents.Service
@@ -73,7 +82,7 @@ type who struct {
 func (e *env) user(t *testing.T, name string, chars ...string) who {
 	t.Helper()
 	u, err := e.q.UpsertUserByDiscordID(t.Context(), db.UpsertUserByDiscordIDParams{
-		DiscordID: fmt.Sprint(len(name)*1000 + int(name[0])), Username: name,
+		DiscordID: fmt.Sprint(nextDiscordID.Add(1)), Username: name,
 		GlobalName: pgtype.Text{String: name, Valid: true}, Now: now,
 	})
 	if err != nil {
@@ -94,6 +103,15 @@ func (e *env) user(t *testing.T, name string, chars ...string) who {
 		w.chars[parts[0]] = c.ID.String()
 	}
 	return w
+}
+
+// put liga a disponibilidade e falha o teste se não der.
+func (e *env) put(t *testing.T, w who, nick string, in talents.AvailabilityInput) {
+	t.Helper()
+	in.Enabled = true
+	if _, err := e.svc.SetAvailability(t.Context(), w.userID, w.chars[nick], in); err != nil {
+		t.Fatalf("%s: %v", nick, err)
+	}
 }
 
 func wantField(t *testing.T, err error, field, code string) {

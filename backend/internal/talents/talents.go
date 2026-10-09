@@ -17,6 +17,7 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/catalog"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 )
 
 // ErrNotFound vale para personagem ou lobby inexistente e para os de outro Usuário
@@ -96,12 +97,16 @@ func FromRow(r db.CharacterAvailability) Availability {
 type Service struct {
 	pool    *pgxpool.Pool
 	queries *db.Queries
+	// lobbies lê o lobby com o estado calculado pelo mesmo relógio (RN-09).
+	lobbies *lobbies.Service
 	// Now é o relógio do serviço; os testes trocam por um relógio fixo.
 	Now func() time.Time
 }
 
 func NewService(pool *pgxpool.Pool) *Service {
-	return &Service{pool: pool, queries: db.New(pool), Now: time.Now}
+	s := &Service{pool: pool, queries: db.New(pool), lobbies: lobbies.NewService(pool), Now: time.Now}
+	s.lobbies.Now = func() time.Time { return s.Now() }
+	return s
 }
 
 // SetAvailability liga, edita ou desliga o personagem no banco (RN-01 a RN-05). Desligar

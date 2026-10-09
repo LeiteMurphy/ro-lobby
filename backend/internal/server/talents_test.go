@@ -13,6 +13,7 @@ import (
 // banco-de-talentos, T-02 a T-04). O fluxo com o PostgreSQL fica em internal/talents.
 
 type fakeTalents struct {
+	list   []talents.Talent
 	err    error
 	got    *talents.Availability
 	gotIn  talents.AvailabilityInput
@@ -22,6 +23,17 @@ type fakeTalents struct {
 func (f *fakeTalents) SetAvailability(_ context.Context, userID, characterID string, in talents.AvailabilityInput) (*talents.Availability, error) {
 	f.gotIDs, f.gotIn = [2]string{userID, characterID}, in
 	return f.got, f.err
+}
+
+func (f *fakeTalents) ForLobby(_ context.Context, userID, lobbyID string) ([]talents.Talent, error) {
+	f.gotIDs = [2]string{userID, lobbyID}
+	return f.list, f.err
+}
+
+var fogo = talents.Talent{
+	CharacterID: charID, Nick: "Fogo", ClassID: "arquimago", Level: 200, Role: "dps", Portrait: "retrato-2",
+	Days: []int{3}, Start: "18:00", End: "00:00", AnyInstance: true, Instances: []talents.Instance{},
+	DiscordUsername: "caio",
 }
 
 func newTalentsServer(f *fakeTalents) http.Handler {
@@ -71,5 +83,36 @@ func TestSetAvailability_CA01_3_CA01_5_Errors(t *testing.T) {
 	if rec.Code != http.StatusUnprocessableEntity || len(fields) != 1 ||
 		!reflect.DeepEqual(fields[0], map[string]any{"field": "end", "code": "same_as_start"}) {
 		t.Errorf("inválido: %d %v", rec.Code, got)
+	}
+}
+
+// CA-02.1 / RN-12: a lista do dono traz o personagem com o nome no Discord.
+func TestListLobbyTalents_CA02_1(t *testing.T) {
+	f := &fakeTalents{list: []talents.Talent{fogo}}
+	rec, got := callList(t, newTalentsServer(f), "/lobbies/"+lobbyID+"/talents")
+	if rec.Code != http.StatusOK || f.gotIDs != [2]string{userID, lobbyID} || len(got) != 1 {
+		t.Fatalf("status %d, ids %v, corpo %v", rec.Code, f.gotIDs, got)
+	}
+	want := map[string]any{
+		"characterId": charID, "nick": "Fogo", "classId": "arquimago", "level": float64(200), "role": "dps",
+		"portrait": "retrato-2", "link": nil, "days": []any{float64(3)}, "start": "18:00", "end": "00:00",
+		"anyInstance": true, "instances": []any{}, "discordUsername": "caio",
+	}
+	if !reflect.DeepEqual(got[0], want) {
+		t.Errorf("corpo = %v", got[0])
+	}
+}
+
+// CA-02.4 (API) / RN-09: sem sessão 401, de outro 404, encerrado 409.
+func TestListLobbyTalents_CA02_4_Errors(t *testing.T) {
+	path := "/lobbies/" + lobbyID + "/talents"
+	if rec, _ := call(t, newTalentsServer(&fakeTalents{}), http.MethodGet, path, "", ""); rec.Code != http.StatusUnauthorized {
+		t.Errorf("sem sessão: %d", rec.Code)
+	}
+	if rec, _ := call(t, newTalentsServer(&fakeTalents{err: talents.ErrNotFound}), http.MethodGet, path, "token-valido", ""); rec.Code != http.StatusNotFound {
+		t.Errorf("de outro: %d", rec.Code)
+	}
+	if rec, _ := call(t, newTalentsServer(&fakeTalents{err: talents.ErrNotOpen}), http.MethodGet, path, "token-valido", ""); rec.Code != http.StatusConflict {
+		t.Errorf("encerrado: %d", rec.Code)
 	}
 }
