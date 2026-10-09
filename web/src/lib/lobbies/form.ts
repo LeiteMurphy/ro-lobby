@@ -16,6 +16,9 @@ export interface LobbyFormValues {
 	minLevel: string;
 	characterId: string;
 	note: string;
+	/** spec grupo-livre, RN-01 e RN-02: formação e, no grupo livre, o total de vagas. */
+	formation: 'roles' | 'free';
+	freeSlots: string;
 }
 
 export function readLobbyForm(data: FormData): LobbyFormValues {
@@ -29,7 +32,9 @@ export function readLobbyForm(data: FormData): LobbyFormValues {
 		dps: text('dps'),
 		minLevel: text('minLevel'),
 		characterId: text('characterId'),
-		note: String(data.get('note') ?? '')
+		note: String(data.get('note') ?? ''),
+		formation: text('formation') === 'free' ? 'free' : 'roles',
+		freeSlots: text('freeSlots')
 	};
 }
 
@@ -49,8 +54,14 @@ export function startsAt(v: Pick<LobbyFormValues, 'date' | 'time'>): string | nu
 }
 
 function base(v: LobbyFormValues) {
+	// spec grupo-livre, RN-02: no grupo livre, as vagas por função vão zeradas.
+	const free = v.formation === 'free';
 	return {
-		slots: { tank: int(v.tank), support: int(v.support), dps: int(v.dps) },
+		formation: v.formation,
+		slots: free
+			? { tank: 0, support: 0, dps: 0 }
+			: { tank: int(v.tank), support: int(v.support), dps: int(v.dps) },
+		...(free ? { freeSlots: int(v.freeSlots) } : {}),
 		minLevel: int(v.minLevel),
 		...(v.note.trim() ? { note: v.note } : {})
 	};

@@ -13,6 +13,7 @@
 		applyState,
 		composition,
 		eligibility,
+		freeComposition,
 		HOST_KEY,
 		people,
 		swapEligibility,
@@ -25,6 +26,7 @@
 	import { ROLE_LABELS } from '$lib/home/types';
 	import CancelDialog from '$lib/lobbies/components/CancelDialog.svelte';
 	import ShareButton from '$lib/lobbies/components/ShareButton.svelte';
+	import { isFree, occupiedTotal, totalSeats } from '$lib/lobbies/seats';
 	import TalentCard from '$lib/talents/components/TalentCard.svelte';
 	import { inviteText, shareMeta, THEME_COLOR } from '$lib/lobbies/share';
 	import { fromUtcIso } from '$lib/lobbies/time';
@@ -38,8 +40,10 @@
 	const when = $derived(fromUtcIso(lobby.startsAt));
 	const dayLabel = $derived(buildDays(when.date, [])[0].label);
 	const relative = $derived(relativeLabel(when.date, when.time, zonedNow(new Date(data.now))));
-	const occupied = $derived(lobby.occupied.tank + lobby.occupied.support + lobby.occupied.dps);
-	const total = $derived(lobby.slots.tank + lobby.slots.support + lobby.slots.dps);
+	const occupied = $derived(occupiedTotal(lobby));
+	// spec grupo-livre: o total do grupo livre ou a soma das funções.
+	const total = $derived(totalSeats(lobby));
+	const free = $derived(isFree(lobby));
 
 	const RESET_LABELS = {
 		daily: 'Retorno diário',
@@ -52,6 +56,7 @@
 	// RN-15 / D-03: as vagas de cada função com o anfitrião e os membros aceitos.
 	const list = $derived(people(lobby));
 	const rows = $derived(composition(lobby, list));
+	const places = $derived(freeComposition(lobby, list));
 	const candidates = $derived(list.filter((p) => p.kind === 'candidate'));
 	const art = $derived(instanceArt(lobby.instance.name));
 	const viewerState = $derived(applyState(lobby, data.user?.id ?? null));
@@ -322,7 +327,57 @@
 		<div class="cols">
 			<section class="panel" aria-labelledby="comp-title">
 				<h2 id="comp-title">Composição</h2>
-				{#each rows as r (r.role)}
+				{#if free}
+					<!-- spec grupo-livre, RN-10: uma lista de lugares, a função só como informação. -->
+					<div class="rolerow" data-testid="free-places">
+						<div class="rolehead">
+							<span class="role"><Icon name="users" size={15} />Grupo livre</span>
+							<span class="hint">{occupied} de {total}</span>
+						</div>
+						<ul class="slots">
+							{#each places as p, i (p?.key ?? `open-${i}`)}
+								{#if p}
+									<li>
+										<button
+											type="button"
+											class="slot filled slot--{p.role}"
+											class:sel={selected.key === p.key}
+											aria-pressed={selected.key === p.key}
+											data-testid={p.kind === 'host' ? 'owner-slot' : 'member-slot'}
+											onclick={() => (selectedKey = p.key)}
+										>
+											{#if p.portrait}<img
+													class="portrait"
+													src="/portraits/{p.portrait}.svg"
+													alt=""
+													width="52"
+													height="52"
+												/>{/if}
+											<span class="who">
+												<span class="nm">{p.nick}</span>
+												<span class="sub"
+													>{[classLevel(p), ROLE_LABELS[p.role]].filter(Boolean).join(' · ')}</span
+												>
+												{#if p.kind === 'host'}<span class="tag tag--{p.role}"
+														><Icon name="star" size={11} />Anfitrião</span
+													>{/if}
+											</span>
+										</button>
+									</li>
+								{:else}
+									<li class="slot">
+										<span class="empty-icon"><Icon name="users" size={18} /></span>
+										<span class="who">
+											<span class="open">Vaga aberta</span>
+											<span class="sub">Qualquer função</span>
+										</span>
+									</li>
+								{/if}
+							{/each}
+						</ul>
+					</div>
+				{/if}
+				{#each free ? [] : rows as r (r.role)}
 					<div class="rolerow">
 						<div class="rolehead">
 							<span class="role role--{r.role}"

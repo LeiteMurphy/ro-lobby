@@ -185,6 +185,7 @@ describe('/lobbies/novo', () => {
 			instanceId: 'templo-do-demonio-rei',
 			characterId: LIRIEN.id,
 			startsAt: '2026-10-07T23:00:00Z',
+			formation: 'roles',
 			slots: { tank: 1, support: 2, dps: 3 },
 			minLevel: 160,
 			note: 'Chamar no Discord'
@@ -322,6 +323,7 @@ describe('/lobbies/[id]/editar', () => {
 		expect(calls[0].body).toEqual({
 			instanceId: 'templo-do-demonio-rei',
 			startsAt: '2026-10-07T23:00:00Z',
+			formation: 'roles',
 			slots: { tank: 1, support: 0, dps: 3 },
 			minLevel: 160
 		});

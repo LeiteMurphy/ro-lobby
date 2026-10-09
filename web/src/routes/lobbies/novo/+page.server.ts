@@ -53,7 +53,10 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch, url }) => {
 		dps: '3',
 		minLevel: String(firstInstance?.level ?? 1),
 		characterId: main?.id ?? '',
-		note: ''
+		note: '',
+		// spec grupo-livre, RN-01 e RN-02: por função; o grupo livre começa com 12 vagas.
+		formation: 'roles',
+		freeSlots: '12'
 	};
 	return {
 		characters: mine,
