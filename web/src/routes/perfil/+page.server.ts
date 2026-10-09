@@ -21,6 +21,10 @@ import {
 	NOT_FOUND_MESSAGE,
 	UNAVAILABLE_MESSAGE
 } from '$lib/characters/messages';
+import { listInstances } from '$lib/lobbies/api';
+import { setAvailability } from '$lib/talents/api';
+import type { AvailabilityValues } from '$lib/talents/components/AvailabilityDialog.svelte';
+import { talentFieldMessages } from '$lib/talents/messages';
 import type { Actions, PageServerLoad } from './$types';
 
 // Página de perfil (spec personagens, D-05). O servidor do web lê o token do cookie
@@ -39,15 +43,18 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
 	if (!locals.user || !token) toLogin(cookies);
 
 	const { apiBaseUrl } = authConfig();
-	const [characters, classes] = await Promise.all([
+	const [characters, classes, instances] = await Promise.all([
 		listCharacters({ fetchFn: fetch, apiBaseUrl, token }),
-		listClasses(fetch, apiBaseUrl)
+		listClasses(fetch, apiBaseUrl),
+		listInstances(fetch, apiBaseUrl)
 	]);
 	if (!characters.ok && characters.kind === 'no_session') toLogin(cookies);
 
 	return {
 		characters: characters.ok ? characters.data : [],
 		classes: classes.ok ? classes.data : [],
+		// Banco de talentos (RN-04): as instâncias de interesse saem do catálogo.
+		instances: instances.ok ? instances.data : [],
 		loadError: characters.ok && classes.ok ? null : UNAVAILABLE_MESSAGE,
 		loginHref: loginHref(PROFILE)
 	};
@@ -147,6 +154,33 @@ export const actions: Actions = {
 		const call = session(cookies, fetch);
 		const id = String((await request.formData()).get('id') ?? '');
 		return outcome(await deleteCharacter(call, id), cookies, { mode: 'delete', id });
+	},
+	// Banco de talentos (spec banco-de-talentos, RN-01 a RN-05).
+	availability: async ({ request, cookies, fetch }) => {
+		const call = session(cookies, fetch);
+		const data = await request.formData();
+		const id = String(data.get('id') ?? '');
+		const values: AvailabilityValues = {
+			enabled: data.get('enabled') === 'on',
+			days: data.getAll('days').map(Number),
+			start: String(data.get('start') ?? ''),
+			end: String(data.get('end') ?? ''),
+			anyInstance: data.get('anyInstance') === 'on',
+			instanceIds: data.getAll('instanceIds').map(String)
+		};
+		const result = await setAvailability(call, id, values);
+		if (result.ok) return { done: 'availability' as const };
+		const form = { mode: 'availability' as const, id, values };
+		switch (result.kind) {
+			case 'no_session':
+				return toLogin(cookies);
+			case 'invalid':
+				return fail(422, { ...form, errors: talentFieldMessages(result.fields), message: null });
+			case 'not_found':
+				return fail(404, { ...form, errors: {}, message: NOT_FOUND_MESSAGE });
+			default:
+				return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
+		}
 	},
 	main: async ({ request, cookies, fetch }) => {
 		const call = session(cookies, fetch);

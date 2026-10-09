@@ -48,6 +48,17 @@ type Character struct {
 	CreatedAt time.Time
 }
 
+type CharacterAvailability struct {
+	CharacterID pgtype.UUID
+	Enabled     bool
+	Days        int16
+	StartMinute int16
+	EndMinute   int16
+	AnyInstance bool
+	InstanceIds []string
+	UpdatedAt   time.Time
+}
+
 type Lobby struct {
 	ID               pgtype.UUID
 	OwnerID          pgtype.UUID

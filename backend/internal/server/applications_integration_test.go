@@ -19,6 +19,7 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/migrate"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/talents"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/testdb"
 )
 
@@ -51,7 +52,7 @@ func newFlow(t *testing.T) flow {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), lobbies.NewService(pool), applications.NewService(pool))
+	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), lobbies.NewService(pool), applications.NewService(pool), talents.NewService(pool))
 	return flow{h: h, q: db.New(pool)}
 }
 

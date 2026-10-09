@@ -42,7 +42,7 @@ func TestAuthFlowIntegration_CA06_1_LoginMeLogout(t *testing.T) {
 	discordSrv := httptest.NewServer(fake.Handler())
 	defer discordSrv.Close()
 	svc := auth.NewService(pool, discord.New(discordSrv.URL+"/api", "123", "segredo"))
-	h := New(pool, svc, nil, nil, nil)
+	h := New(pool, svc, nil, nil, nil, nil)
 
 	const redirect = "http://localhost:3000/auth/discord/callback"
 	code := fake.IssueCode(fake.User, redirect)

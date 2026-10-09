@@ -59,7 +59,7 @@ func (f *fakeChars) SetMain(_ context.Context, userID, id string) error {
 }
 
 func newCharsServer(f *fakeChars) http.Handler {
-	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, f, nil, nil)
+	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, f, nil, nil, nil)
 }
 
 const brasaJSON = `{"nick":"Brasa","classId":"guardiao-real","level":172,"role":"tank"}`
@@ -118,6 +118,7 @@ func TestCharacters_RN01_ListOfSessionUser(t *testing.T) {
 	want := map[string]any{
 		"id": charID, "nick": "Brasa", "classId": "guardiao-real", "level": float64(172), "role": "tank",
 		"portrait": "retrato-1", "link": nil, "isMain": true, "createdAt": "2026-10-06T12:00:00Z",
+		"availability": nil,
 	}
 	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got)

@@ -834,3 +834,41 @@ describe('/lobbies/[id] — remover e trocas do dono (candidatura-lobby, T-15)',
 		}
 	});
 });
+
+describe('/lobbies/[id] com o banco de talentos (spec banco-de-talentos)', () => {
+	const talentsFetch = (lobby: unknown) =>
+		fakeFetch({
+			[`GET /lobbies/${TEMPLE.id}`]: json(200, lobby),
+			'GET /classes': json(200, []),
+			'GET /characters': json(200, []),
+			[`GET /lobbies/${TEMPLE.id}/talents`]: json(200, [{ characterId: 'f1', nick: 'Fogo' }])
+		});
+	const loadAs = (user: unknown, f: typeof fetch) =>
+		detalhe.load({
+			params: { id: TEMPLE.id },
+			url: new URL(`http://web/lobbies/${TEMPLE.id}`),
+			locals: { user },
+			cookies: fakeCookies(user ? 't' : undefined),
+			fetch: f
+		} as unknown as DetailLoad) as Promise<Record<string, unknown>>;
+
+	it('CA-02.1 / RN-09: o dono do lobby aberto recebe os jogadores disponíveis', async () => {
+		const { fn, calls } = talentsFetch(TEMPLE);
+		const data = await loadAs(ANA, fn);
+		expect(data.talents).toEqual([{ characterId: 'f1', nick: 'Fogo' }]);
+		expect(calls.map((c) => c.key)).toContain(`GET /lobbies/${TEMPLE.id}/talents`);
+	});
+
+	it('CA-02.4 / RN-09: visitante, outro Usuário e lobby iniciado não pedem a lista', async () => {
+		for (const [user, lobby] of [
+			[null, TEMPLE],
+			[BIA, TEMPLE],
+			[ANA, { ...TEMPLE, status: 'started' }]
+		] as const) {
+			const { fn, calls } = talentsFetch(lobby);
+			const data = await loadAs(user, fn);
+			expect(data.talents).toBeNull();
+			expect(calls.map((c) => c.key)).not.toContain(`GET /lobbies/${TEMPLE.id}/talents`);
+		}
+	});
+});

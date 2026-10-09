@@ -230,3 +230,105 @@ describe('actions de /perfil', () => {
 		expect(calls).toEqual([]);
 	});
 });
+
+describe('banco de talentos no /perfil (spec banco-de-talentos)', () => {
+	const availabilityForm = (fields: [string, string][]) => {
+		const data = new FormData();
+		for (const [k, v] of fields) data.append(k, v);
+		return new Request('http://web/perfil', { method: 'POST', body: data });
+	};
+
+	it('CA-01.1 / RN-01: ligar manda dias, faixa e instâncias para a API', async () => {
+		const { fn, calls } = fakeFetch({
+			'PUT /characters/c1/availability': json(200, { availability: null })
+		});
+		const result = await actions.availability(
+			actionEvent(
+				availabilityForm([
+					['id', 'c1'],
+					['enabled', 'on'],
+					['days', '1'],
+					['days', '5'],
+					['start', '19:00'],
+					['end', '23:00'],
+					['instanceIds', 'templo-do-demonio-rei'],
+					['instanceIds', 'sonho-sombrio']
+				]),
+				fakeCookies('tok'),
+				fn
+			)
+		);
+		expect(result).toEqual({ done: 'availability' });
+		expect(calls[0].body).toEqual({
+			enabled: true,
+			days: [1, 5],
+			start: '19:00',
+			end: '23:00',
+			anyInstance: false,
+			instanceIds: ['templo-do-demonio-rei', 'sonho-sombrio']
+		});
+		expect(calls[0].auth).toBe('Bearer tok');
+	});
+
+	it('CA-01.4 / RN-01: desligar manda enabled false', async () => {
+		const { fn, calls } = fakeFetch({
+			'PUT /characters/c1/availability': json(200, { availability: null })
+		});
+		await actions.availability(
+			actionEvent(
+				availabilityForm([
+					['id', 'c1'],
+					['start', '19:00'],
+					['end', '23:00']
+				]),
+				fakeCookies('t'),
+				fn
+			)
+		);
+		expect((calls[0].body as { enabled: boolean }).enabled).toBe(false);
+	});
+
+	it('CA-01.3: erros da API voltam ao diálogo com os valores e as mensagens', async () => {
+		const { fn } = fakeFetch({
+			'PUT /characters/c1/availability': json(422, {
+				error: 'validation',
+				fields: [{ field: 'days', code: 'required' }]
+			})
+		});
+		const result = await actions.availability(
+			actionEvent(
+				availabilityForm([
+					['id', 'c1'],
+					['enabled', 'on'],
+					['start', '19:00'],
+					['end', '23:00'],
+					['anyInstance', 'on']
+				]),
+				fakeCookies('t'),
+				fn
+			)
+		);
+		expect(result).toMatchObject({
+			status: 422,
+			data: {
+				mode: 'availability',
+				id: 'c1',
+				values: { enabled: true, days: [], anyInstance: true },
+				errors: { days: 'Escolha pelo menos um dia' }
+			}
+		});
+	});
+
+	it('CA-01.5: personagem de outro Usuário mostra que não existe', async () => {
+		const { fn } = fakeFetch({
+			'PUT /characters/c9/availability': json(404, { error: 'not_found' })
+		});
+		const result = await actions.availability(
+			actionEvent(availabilityForm([['id', 'c9']]), fakeCookies('t'), fn)
+		);
+		expect(result).toMatchObject({
+			status: 404,
+			data: { message: 'Esse personagem não existe mais.' }
+		});
+	});
+});

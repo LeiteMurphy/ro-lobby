@@ -12,9 +12,12 @@
 		className: string;
 		onedit: () => void;
 		ondelete: () => void;
+		/** Abre a disponibilidade no banco de talentos (spec banco-de-talentos, US-01). */
+		onavailability: () => void;
 	}
 
-	let { character, className, onedit, ondelete }: Props = $props();
+	let { character, className, onedit, ondelete, onavailability }: Props = $props();
+	const inBank = $derived(character.availability?.enabled ?? false);
 	const portrait = $derived(portraitInfo(character.portrait));
 	const headingId = $props.id();
 </script>
@@ -45,6 +48,17 @@
 				</dd>
 			</div>
 		</dl>
+		<!-- banco-de-talentos RN-01: ligado ou desligado, e o botão que abre a disponibilidade. -->
+		<button
+			type="button"
+			class="talent"
+			class:on={inBank}
+			aria-label="Banco de talentos de {character.nick}: {inBank ? 'disponível' : 'fora'}"
+			onclick={onavailability}
+		>
+			<span class="dot" aria-hidden="true"></span>
+			{inBank ? 'No banco de talentos' : 'Fora do banco de talentos'}
+		</button>
 		<div class="foot">
 			{#if character.link}
 				<!-- RN-09 / CA-01.4: abre em outra aba sem passar a página de origem. -->
@@ -126,6 +140,41 @@
 		background: var(--gold-soft);
 		color: var(--gold-300);
 		font: 600 11px/1 var(--font-ui);
+	}
+	.talent {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		padding: 8px 10px;
+		border: 1px dashed var(--border-default);
+		border-radius: var(--radius-sm);
+		background: transparent;
+		color: var(--fg-3);
+		font: 600 12px/1.2 var(--font-ui);
+		text-align: left;
+		cursor: pointer;
+	}
+	.talent:hover {
+		color: var(--fg-1);
+	}
+	.talent:focus-visible {
+		outline: 2px solid var(--gold-400);
+		outline-offset: 2px;
+	}
+	.talent.on {
+		border-style: solid;
+		border-color: var(--support-line);
+		color: var(--support-300);
+	}
+	.dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--fg-4);
+	}
+	.talent.on .dot {
+		background: var(--support-400);
 	}
 	.cls {
 		font: 500 13px/1.3 var(--font-ui);

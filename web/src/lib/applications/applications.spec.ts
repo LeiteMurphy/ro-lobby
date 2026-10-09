@@ -58,6 +58,7 @@ const character = (over: Partial<Character>): Character => ({
 	link: null,
 	isMain: false,
 	createdAt: '',
+	availability: null,
 	...over
 });
 

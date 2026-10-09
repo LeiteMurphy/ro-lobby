@@ -41,7 +41,8 @@ function int(value: string): number {
 
 type Parsed<T> = { ok: true; input: T } | { ok: false; fields: FieldError[] };
 
-function startsAt(v: LobbyFormValues): string | null {
+/** Início em UTC a partir do dia e da hora de Brasília, ou null se faltar algum. */
+export function startsAt(v: Pick<LobbyFormValues, 'date' | 'time'>): string | null {
 	return /^\d{4}-\d{2}-\d{2}$/.test(v.date) && isTime(v.time)
 		? toUtcIso({ date: v.date, time: v.time })
 		: null;

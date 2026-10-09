@@ -19,6 +19,7 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/catalog"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/talents"
 )
 
 const (
@@ -104,6 +105,9 @@ type Character struct {
 	Link      string
 	IsMain    bool
 	CreatedAt time.Time
+	// Availability é a disponibilidade no banco de talentos; nil se nunca entrou. Só a
+	// lista do Usuário traz (spec banco-de-talentos, CA-01.4).
+	Availability *talents.Availability
 }
 
 type Service struct {
@@ -128,9 +132,16 @@ func (s *Service) List(ctx context.Context, userID string) ([]Character, error) 
 	if err != nil {
 		return nil, fmt.Errorf("characters: listar: %w", err)
 	}
+	avail, err := talents.ByUser(ctx, s.queries, uid)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]Character, len(rows))
 	for i, r := range rows {
 		out[i] = toCharacter(r)
+		if a, ok := avail[out[i].ID]; ok {
+			out[i].Availability = &a
+		}
 	}
 	return out, nil
 }

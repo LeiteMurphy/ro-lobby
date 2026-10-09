@@ -1,10 +1,15 @@
 <script lang="ts">
 	import CharacterCard from '$lib/characters/components/CharacterCard.svelte';
-	import CharacterDialog from '$lib/characters/components/CharacterDialog.svelte';
+	import CharacterDialog, {
+		type DialogForm
+	} from '$lib/characters/components/CharacterDialog.svelte';
 	import ConfirmDialog from '$lib/characters/components/ConfirmDialog.svelte';
 	import type { Character } from '$lib/characters/api';
 	import { LIMIT_MESSAGE } from '$lib/characters/messages';
 	import TopBar from '$lib/home/components/TopBar.svelte';
+	import AvailabilityDialog, {
+		type AvailabilityForm
+	} from '$lib/talents/components/AvailabilityDialog.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import type { PageProps } from './$types';
 
@@ -21,7 +26,8 @@
 	type OpenInput =
 		| { kind: 'create' }
 		| { kind: 'update'; character: Character }
-		| { kind: 'delete'; character: Character };
+		| { kind: 'delete'; character: Character }
+		| { kind: 'availability'; character: Character };
 	// `staleForm` guarda o resultado de action que já existia quando o diálogo abriu: ele é
 	// de uma tentativa anterior e não volta para o diálogo novo (AJ-04, RN-19).
 	type Open = OpenInput & { key: number; staleForm: typeof form };
@@ -104,6 +110,7 @@
 							className={classNameOf(character.classId)}
 							onedit={() => show({ kind: 'update', character })}
 							ondelete={() => show({ kind: 'delete', character })}
+							onavailability={() => show({ kind: 'availability', character })}
 						/>
 					</li>
 				{/each}
@@ -114,7 +121,14 @@
 
 {#if open}
 	{#key open.key}
-		{#if open.kind === 'delete'}
+		{#if open.kind === 'availability'}
+			<AvailabilityDialog
+				character={open.character}
+				instances={data.instances}
+				form={dialogForm as AvailabilityForm | null}
+				onclose={() => (open = null)}
+			/>
+		{:else if open.kind === 'delete'}
 			<ConfirmDialog
 				id={open.character.id}
 				nick={open.character.nick}
@@ -125,7 +139,7 @@
 				mode={open.kind}
 				character={open.kind === 'update' ? open.character : undefined}
 				classes={data.classes}
-				form={dialogForm}
+				form={dialogForm as DialogForm | null}
 				onclose={() => (open = null)}
 			/>
 		{/if}

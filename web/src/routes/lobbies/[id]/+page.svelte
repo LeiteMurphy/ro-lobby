@@ -25,6 +25,7 @@
 	import { ROLE_LABELS } from '$lib/home/types';
 	import CancelDialog from '$lib/lobbies/components/CancelDialog.svelte';
 	import ShareButton from '$lib/lobbies/components/ShareButton.svelte';
+	import TalentCard from '$lib/talents/components/TalentCard.svelte';
 	import { inviteText, shareMeta, THEME_COLOR } from '$lib/lobbies/share';
 	import { fromUtcIso } from '$lib/lobbies/time';
 	import Button from '$lib/ui/Button.svelte';
@@ -481,6 +482,30 @@
 						onswap={() => open(() => (ownerSwapOpen = true))}
 					/>
 				{/if}
+				{#if data.isOwner && lobby.status === 'open' && data.talents}
+					<!-- banco-de-talentos RN-09: quem combina com as vagas abertas, só para o dono. -->
+					<section class="panel" aria-labelledby="talents-title" data-testid="talents-panel">
+						<div class="rolehead">
+							<h2 id="talents-title">Jogadores disponíveis</h2>
+							<span class="hint">só você vê</span>
+						</div>
+						{#if data.talents.length === 0}
+							<span class="hint">Nenhum jogador disponível agora.</span>
+						{:else}
+							<span class="hint"
+								>No banco de talentos, com a instância, o horário, o nível e uma função com vaga.
+								Chame pelo Discord.</span
+							>
+							<ul class="talents">
+								{#each data.talents as t (t.characterId)}
+									<li>
+										<TalentCard talent={t} className={data.classNames[t.classId] ?? t.classId} />
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</section>
+				{/if}
 				{#if lobby.note}
 					<section class="panel" aria-labelledby="note-title">
 						<h2 id="note-title">Observação</h2>
@@ -871,6 +896,14 @@
 		background: var(--gold-soft);
 		color: var(--gold-300);
 		font: 600 11px/1 var(--font-ui);
+	}
+	.talents {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 	.note {
 		margin: 0;

@@ -8,8 +8,9 @@ Prontos: fundação (backend Go com `GET /healthz`, PostgreSQL, migrações, Ope
 Home do Claude Design em `/` com os lobbies reais, login com Discord, o perfil com os
 personagens em `/perfil`, lobbies (criar, detalhe, editar, cancelar) e a candidatura
 completa (candidatar, decidir, sair, remover com bloqueio e trocas de personagem, com
-"Minhas candidaturas" em `/candidaturas`) e o compartilhamento de lobby (convite copiado e
-preview Open Graph). A pilha completa roda com
+"Minhas candidaturas" em `/candidaturas`) o compartilhamento de lobby (convite copiado e
+preview Open Graph) e o banco de talentos (disponibilidade por personagem, afinidade com o
+lobby e catálogo em `/talentos`). A pilha completa roda com
 `docker compose --profile app up` (ADR-06). Nada em andamento; os próximos passos ficam no
 Notion. O setup local e os comandos estão no `README.md`. As decisões de arquitetura ficam
 em `docs/adr/`.

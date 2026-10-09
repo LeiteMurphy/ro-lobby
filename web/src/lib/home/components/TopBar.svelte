@@ -25,6 +25,15 @@
 		<span>RO Lobby</span>
 	</a>
 	<div class="actions">
+		<!-- spec banco-de-talentos, RN-11: o catálogo é público. -->
+		<span class="desktop"
+			><Button variant="ghost" iconLeft="users" href={resolve('/talentos')}
+				>Banco de talentos</Button
+			></span
+		>
+		<span class="mobile"
+			><IconButton icon="users" label="Banco de talentos" href={resolve('/talentos')} /></span
+		>
 		<!-- spec lobbies, RN-23: "Criar lobby" leva à criação; visitante passa pelo login. -->
 		<span class="desktop"><Button iconLeft="plus" href={createHref}>Criar lobby</Button></span>
 		<span class="mobile"

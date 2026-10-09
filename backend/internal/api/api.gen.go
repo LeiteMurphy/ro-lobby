@@ -200,6 +200,7 @@ const (
 	FieldErrorCodeInvalid       FieldErrorCode = "invalid"
 	FieldErrorCodeLevelTooLow   FieldErrorCode = "level_too_low"
 	FieldErrorCodeRequired      FieldErrorCode = "required"
+	FieldErrorCodeSameAsStart   FieldErrorCode = "same_as_start"
 	FieldErrorCodeTaken         FieldErrorCode = "taken"
 	FieldErrorCodeTooLong       FieldErrorCode = "too_long"
 	FieldErrorCodeTooShort      FieldErrorCode = "too_short"
@@ -220,6 +221,8 @@ func (e FieldErrorCode) Valid() bool {
 		return true
 	case FieldErrorCodeRequired:
 		return true
+	case FieldErrorCodeSameAsStart:
+		return true
 	case FieldErrorCodeTaken:
 		return true
 	case FieldErrorCodeTooLong:
@@ -235,7 +238,11 @@ func (e FieldErrorCode) Valid() bool {
 const (
 	FieldErrorFieldCharacterId FieldErrorField = "characterId"
 	FieldErrorFieldClassId     FieldErrorField = "classId"
+	FieldErrorFieldDay         FieldErrorField = "day"
+	FieldErrorFieldDays        FieldErrorField = "days"
+	FieldErrorFieldEnd         FieldErrorField = "end"
 	FieldErrorFieldInstanceId  FieldErrorField = "instanceId"
+	FieldErrorFieldInstanceIds FieldErrorField = "instanceIds"
 	FieldErrorFieldLevel       FieldErrorField = "level"
 	FieldErrorFieldLink        FieldErrorField = "link"
 	FieldErrorFieldMessage     FieldErrorField = "message"
@@ -246,7 +253,9 @@ const (
 	FieldErrorFieldReason      FieldErrorField = "reason"
 	FieldErrorFieldRole        FieldErrorField = "role"
 	FieldErrorFieldSlots       FieldErrorField = "slots"
+	FieldErrorFieldStart       FieldErrorField = "start"
 	FieldErrorFieldStartsAt    FieldErrorField = "startsAt"
+	FieldErrorFieldTime        FieldErrorField = "time"
 )
 
 // Valid indicates whether the value is a known member of the FieldErrorField enum.
@@ -256,7 +265,15 @@ func (e FieldErrorField) Valid() bool {
 		return true
 	case FieldErrorFieldClassId:
 		return true
+	case FieldErrorFieldDay:
+		return true
+	case FieldErrorFieldDays:
+		return true
+	case FieldErrorFieldEnd:
+		return true
 	case FieldErrorFieldInstanceId:
+		return true
+	case FieldErrorFieldInstanceIds:
 		return true
 	case FieldErrorFieldLevel:
 		return true
@@ -278,7 +295,11 @@ func (e FieldErrorField) Valid() bool {
 		return true
 	case FieldErrorFieldSlots:
 		return true
+	case FieldErrorFieldStart:
+		return true
 	case FieldErrorFieldStartsAt:
+		return true
+	case FieldErrorFieldTime:
 		return true
 	default:
 		return false
@@ -623,6 +644,41 @@ type ApplyInput struct {
 	Message *string `json:"message,omitempty"`
 }
 
+// Availability defines model for Availability.
+type Availability struct {
+	AnyInstance bool `json:"anyInstance"`
+
+	// Days Dias da semana, domingo = 0.
+	Days    []int  `json:"days"`
+	Enabled bool   `json:"enabled"`
+	End     string `json:"end"`
+
+	// InstanceIds Só as que continuam no catálogo (RN-04).
+	InstanceIds []string `json:"instanceIds"`
+	Start       string   `json:"start"`
+}
+
+// AvailabilityInput defines model for AvailabilityInput.
+type AvailabilityInput struct {
+	AnyInstance *bool `json:"anyInstance,omitempty"`
+
+	// Days Dias da semana, domingo = 0.
+	Days    *[]int `json:"days,omitempty"`
+	Enabled bool   `json:"enabled"`
+
+	// End HH:MM de Brasília; menor que o início passa da meia-noite (RN-03).
+	End         *string   `json:"end,omitempty"`
+	InstanceIds *[]string `json:"instanceIds,omitempty"`
+
+	// Start HH:MM de Brasília, de 30 em 30 minutos.
+	Start *string `json:"start,omitempty"`
+}
+
+// AvailabilityResult defines model for AvailabilityResult.
+type AvailabilityResult struct {
+	Availability *Availability `json:"availability"`
+}
+
 // CancelLobby defines model for CancelLobby.
 type CancelLobby struct {
 	// Reason De 10 a 250 caracteres.
@@ -631,13 +687,15 @@ type CancelLobby struct {
 
 // Character defines model for Character.
 type Character struct {
-	ClassId   string             `json:"classId"`
-	CreatedAt time.Time          `json:"createdAt"`
-	Id        openapi_types.UUID `json:"id"`
-	IsMain    bool               `json:"isMain"`
-	Level     int                `json:"level"`
-	Link      *string            `json:"link"`
-	Nick      string             `json:"nick"`
+	// Availability Disponibilidade no banco de talentos; null se nunca entrou (spec banco-de-talentos, CA-01.4).
+	Availability *Availability      `json:"availability"`
+	ClassId      string             `json:"classId"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	Id           openapi_types.UUID `json:"id"`
+	IsMain       bool               `json:"isMain"`
+	Level        int                `json:"level"`
+	Link         *string            `json:"link"`
+	Nick         string             `json:"nick"`
 
 	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
 	Portrait Portrait `json:"portrait"`
@@ -1004,6 +1062,40 @@ type SwapRequestInput struct {
 // SwapRequestStatus Estado do pedido de troca (RN-24); pendente de lobby iniciado vem como expired (D-12).
 type SwapRequestStatus string
 
+// Talent defines model for Talent.
+type Talent struct {
+	AnyInstance bool               `json:"anyInstance"`
+	CharacterId openapi_types.UUID `json:"characterId"`
+	ClassId     string             `json:"classId"`
+	Days        []int              `json:"days"`
+
+	// DiscordUsername Só com sessão (RN-12, D-05).
+	DiscordUsername *string          `json:"discordUsername,omitempty"`
+	End             string           `json:"end"`
+	Instances       []TalentInstance `json:"instances"`
+	Level           int              `json:"level"`
+	Link            *string          `json:"link"`
+	Nick            string           `json:"nick"`
+
+	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+	Portrait Portrait `json:"portrait"`
+
+	// Role Função do personagem (RN-08).
+	Role  Role   `json:"role"`
+	Start string `json:"start"`
+}
+
+// TalentCount defines model for TalentCount.
+type TalentCount struct {
+	Count int `json:"count"`
+}
+
+// TalentInstance defines model for TalentInstance.
+type TalentInstance struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // User defines model for User.
 type User struct {
 	// GlobalName Nome de exibição no Discord; nulo quando a pessoa não definiu.
@@ -1084,6 +1176,29 @@ type ListLobbiesParams struct {
 	To   openapi_types.Date `form:"to" json:"to"`
 }
 
+// ListTalentsParams defines parameters for ListTalents.
+type ListTalentsParams struct {
+	InstanceId *string `form:"instanceId,omitempty" json:"instanceId,omitempty"`
+	Role       *Role   `form:"role,omitempty" json:"role,omitempty"`
+
+	// Day Dia da semana, domingo = 0.
+	Day *int `form:"day,omitempty" json:"day,omitempty"`
+
+	// Time Hora de Brasília, HH:MM de 30 em 30 minutos.
+	Time *string `form:"time,omitempty" json:"time,omitempty"`
+}
+
+// CountTalentsParams defines parameters for CountTalents.
+type CountTalentsParams struct {
+	InstanceId  string    `form:"instanceId" json:"instanceId"`
+	StartsAt    time.Time `form:"startsAt" json:"startsAt"`
+	MinLevel    int       `form:"minLevel" json:"minLevel"`
+	Tank        int       `form:"tank" json:"tank"`
+	Support     int       `form:"support" json:"support"`
+	Dps         int       `form:"dps" json:"dps"`
+	CharacterId string    `form:"characterId" json:"characterId"`
+}
+
 // RejectApplicationJSONRequestBody defines body for RejectApplication for application/json ContentType.
 type RejectApplicationJSONRequestBody = RejectInput
 
@@ -1101,6 +1216,9 @@ type CreateCharacterJSONRequestBody = CharacterInput
 
 // UpdateCharacterJSONRequestBody defines body for UpdateCharacter for application/json ContentType.
 type UpdateCharacterJSONRequestBody = CharacterInput
+
+// SetAvailabilityJSONRequestBody defines body for SetAvailability for application/json ContentType.
+type SetAvailabilityJSONRequestBody = AvailabilityInput
 
 // CreateLobbyJSONRequestBody defines body for CreateLobby for application/json ContentType.
 type CreateLobbyJSONRequestBody = LobbyInput
@@ -1155,6 +1273,9 @@ type ServerInterface interface {
 	// UpdateCharacter Edita um personagem
 	// (PUT /characters/{id})
 	UpdateCharacter(w http.ResponseWriter, r *http.Request, id CharacterId)
+	// SetAvailability Liga, edita ou desliga o personagem no banco de talentos
+	// (PUT /characters/{id}/availability)
+	SetAvailability(w http.ResponseWriter, r *http.Request, id CharacterId)
 	// SetMainCharacter Torna o personagem o principal
 	// (PUT /characters/{id}/main)
 	SetMainCharacter(w http.ResponseWriter, r *http.Request, id CharacterId)
@@ -1188,6 +1309,9 @@ type ServerInterface interface {
 	// SwapOwnerCharacter O dono troca o próprio personagem no lobby
 	// (PUT /lobbies/{id}/owner-character)
 	SwapOwnerCharacter(w http.ResponseWriter, r *http.Request, id LobbyId)
+	// ListLobbyTalents Personagens do banco com afinidade com o lobby
+	// (GET /lobbies/{id}/talents)
+	ListLobbyTalents(w http.ResponseWriter, r *http.Request, id LobbyId)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
@@ -1206,6 +1330,12 @@ type ServerInterface interface {
 	// WithdrawSwapRequest O membro retira o próprio pedido de troca
 	// (POST /swap-requests/{id}/withdraw)
 	WithdrawSwapRequest(w http.ResponseWriter, r *http.Request, id SwapRequestId)
+	// ListTalents Catálogo do banco de talentos
+	// (GET /talents)
+	ListTalents(w http.ResponseWriter, r *http.Request, params ListTalentsParams)
+	// CountTalents Quantos personagens têm afinidade com um lobby em criação
+	// (GET /talents/count)
+	CountTalents(w http.ResponseWriter, r *http.Request, params CountTalentsParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1458,6 +1588,32 @@ func (siw *ServerInterfaceWrapper) UpdateCharacter(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateCharacter(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetAvailability operation middleware
+func (siw *ServerInterfaceWrapper) SetAvailability(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CharacterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetAvailability(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1725,6 +1881,32 @@ func (siw *ServerInterfaceWrapper) SwapOwnerCharacter(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListLobbyTalents operation middleware
+func (siw *ServerInterfaceWrapper) ListLobbyTalents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListLobbyTalents(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetMe operation middleware
 func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request) {
 
@@ -1836,6 +2018,189 @@ func (siw *ServerInterfaceWrapper) WithdrawSwapRequest(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.WithdrawSwapRequest(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListTalents operation middleware
+func (siw *ServerInterfaceWrapper) ListTalents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTalentsParams
+
+	// ------------- Optional query parameter "instanceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "instanceId", r.URL.Query(), &params.InstanceId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "instanceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "instanceId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "role" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "role", r.URL.Query(), &params.Role, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "role"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "role", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "day" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "day", r.URL.Query(), &params.Day, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "day"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "day", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "time" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "time", r.URL.Query(), &params.Time, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "time"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "time", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListTalents(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CountTalents operation middleware
+func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CountTalentsParams
+
+	// ------------- Required query parameter "instanceId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "instanceId", r.URL.Query(), &params.InstanceId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "instanceId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "instanceId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "startsAt" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "startsAt", r.URL.Query(), &params.StartsAt, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "startsAt"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "startsAt", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "minLevel" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "minLevel", r.URL.Query(), &params.MinLevel, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "minLevel"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "minLevel", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "tank" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "tank", r.URL.Query(), &params.Tank, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tank"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tank", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "support" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "support", r.URL.Query(), &params.Support, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "support"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "support", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "dps" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "dps", r.URL.Query(), &params.Dps, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "dps"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dps", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "characterId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "characterId", r.URL.Query(), &params.CharacterId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "characterId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "characterId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CountTalents(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1975,11 +2340,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/characters/{id}", wrapper.DeleteCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}", wrapper.UpdateCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/main", wrapper.SetMainCharacter)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/availability", wrapper.SetAvailability)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/talents", wrapper.ListTalents)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/talents/count", wrapper.CountTalents)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instances", wrapper.ListInstances)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies", wrapper.ListLobbies)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies", wrapper.CreateLobby)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}", wrapper.GetLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}", wrapper.UpdateLobby)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}/talents", wrapper.ListLobbyTalents)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/cancel", wrapper.CancelLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}/owner-character", wrapper.SwapOwnerCharacter)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/applications", wrapper.ApplyToLobby)
@@ -2740,6 +3109,71 @@ func (response UpdateCharacter422JSONResponse) VisitUpdateCharacterResponse(w ht
 	return err
 }
 
+type SetAvailabilityRequestObject struct {
+	Id   CharacterId `json:"id"`
+	Body *SetAvailabilityJSONRequestBody
+}
+
+type SetAvailabilityResponseObject interface {
+	VisitSetAvailabilityResponse(w http.ResponseWriter) error
+}
+
+type SetAvailability200JSONResponse AvailabilityResult
+
+func (response SetAvailability200JSONResponse) VisitSetAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAvailability401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response SetAvailability401JSONResponse) VisitSetAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAvailability404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SetAvailability404JSONResponse) VisitSetAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAvailability422JSONResponse struct{ InvalidJSONResponse }
+
+func (response SetAvailability422JSONResponse) VisitSetAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetMainCharacterRequestObject struct {
 	Id CharacterId `json:"id"`
 }
@@ -3313,6 +3747,70 @@ func (response SwapOwnerCharacter422JSONResponse) VisitSwapOwnerCharacterRespons
 	return err
 }
 
+type ListLobbyTalentsRequestObject struct {
+	Id LobbyId `json:"id"`
+}
+
+type ListLobbyTalentsResponseObject interface {
+	VisitListLobbyTalentsResponse(w http.ResponseWriter) error
+}
+
+type ListLobbyTalents200JSONResponse []Talent
+
+func (response ListLobbyTalents200JSONResponse) VisitListLobbyTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLobbyTalents401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response ListLobbyTalents401JSONResponse) VisitListLobbyTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLobbyTalents404JSONResponse struct{ LobbyNotFoundJSONResponse }
+
+func (response ListLobbyTalents404JSONResponse) VisitListLobbyTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListLobbyTalents409JSONResponse struct{ LobbyNotOpenJSONResponse }
+
+func (response ListLobbyTalents409JSONResponse) VisitListLobbyTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetMeRequestObject struct {
 }
 
@@ -3611,6 +4109,92 @@ func (response WithdrawSwapRequest409JSONResponse) VisitWithdrawSwapRequestRespo
 	return err
 }
 
+type ListTalentsRequestObject struct {
+	Params ListTalentsParams
+}
+
+type ListTalentsResponseObject interface {
+	VisitListTalentsResponse(w http.ResponseWriter) error
+}
+
+type ListTalents200JSONResponse []Talent
+
+func (response ListTalents200JSONResponse) VisitListTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListTalents422JSONResponse struct{ InvalidJSONResponse }
+
+func (response ListTalents422JSONResponse) VisitListTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CountTalentsRequestObject struct {
+	Params CountTalentsParams
+}
+
+type CountTalentsResponseObject interface {
+	VisitCountTalentsResponse(w http.ResponseWriter) error
+}
+
+type CountTalents200JSONResponse TalentCount
+
+func (response CountTalents200JSONResponse) VisitCountTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CountTalents401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response CountTalents401JSONResponse) VisitCountTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CountTalents422JSONResponse struct{ InvalidJSONResponse }
+
+func (response CountTalents422JSONResponse) VisitCountTalentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// AcceptApplication O dono aceita a candidatura
@@ -3646,6 +4230,9 @@ type StrictServerInterface interface {
 	// UpdateCharacter Edita um personagem
 	// (PUT /characters/{id})
 	UpdateCharacter(ctx context.Context, request UpdateCharacterRequestObject) (UpdateCharacterResponseObject, error)
+	// SetAvailability Liga, edita ou desliga o personagem no banco de talentos
+	// (PUT /characters/{id}/availability)
+	SetAvailability(ctx context.Context, request SetAvailabilityRequestObject) (SetAvailabilityResponseObject, error)
 	// SetMainCharacter Torna o personagem o principal
 	// (PUT /characters/{id}/main)
 	SetMainCharacter(ctx context.Context, request SetMainCharacterRequestObject) (SetMainCharacterResponseObject, error)
@@ -3679,6 +4266,9 @@ type StrictServerInterface interface {
 	// SwapOwnerCharacter O dono troca o próprio personagem no lobby
 	// (PUT /lobbies/{id}/owner-character)
 	SwapOwnerCharacter(ctx context.Context, request SwapOwnerCharacterRequestObject) (SwapOwnerCharacterResponseObject, error)
+	// ListLobbyTalents Personagens do banco com afinidade com o lobby
+	// (GET /lobbies/{id}/talents)
+	ListLobbyTalents(ctx context.Context, request ListLobbyTalentsRequestObject) (ListLobbyTalentsResponseObject, error)
 	// GetMe Usuário da sessão
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
@@ -3697,6 +4287,12 @@ type StrictServerInterface interface {
 	// WithdrawSwapRequest O membro retira o próprio pedido de troca
 	// (POST /swap-requests/{id}/withdraw)
 	WithdrawSwapRequest(ctx context.Context, request WithdrawSwapRequestRequestObject) (WithdrawSwapRequestResponseObject, error)
+	// ListTalents Catálogo do banco de talentos
+	// (GET /talents)
+	ListTalents(ctx context.Context, request ListTalentsRequestObject) (ListTalentsResponseObject, error)
+	// CountTalents Quantos personagens têm afinidade com um lobby em criação
+	// (GET /talents/count)
+	CountTalents(ctx context.Context, request CountTalentsRequestObject) (CountTalentsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -4060,6 +4656,39 @@ func (sh *strictHandler) UpdateCharacter(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// SetAvailability operation middleware
+func (sh *strictHandler) SetAvailability(w http.ResponseWriter, r *http.Request, id CharacterId) {
+	var request SetAvailabilityRequestObject
+
+	request.Id = id
+
+	var body SetAvailabilityJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetAvailability(ctx, request.(SetAvailabilityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetAvailability")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetAvailabilityResponseObject); ok {
+		if err := validResponse.VisitSetAvailabilityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SetMainCharacter operation middleware
 func (sh *strictHandler) SetMainCharacter(w http.ResponseWriter, r *http.Request, id CharacterId) {
 	var request SetMainCharacterRequestObject
@@ -4373,6 +5002,32 @@ func (sh *strictHandler) SwapOwnerCharacter(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// ListLobbyTalents operation middleware
+func (sh *strictHandler) ListLobbyTalents(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request ListLobbyTalentsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListLobbyTalents(ctx, request.(ListLobbyTalentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListLobbyTalents")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListLobbyTalentsResponseObject); ok {
+		if err := validResponse.VisitListLobbyTalentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetMe operation middleware
 func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	var request GetMeRequestObject
@@ -4523,6 +5178,58 @@ func (sh *strictHandler) WithdrawSwapRequest(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(WithdrawSwapRequestResponseObject); ok {
 		if err := validResponse.VisitWithdrawSwapRequestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListTalents operation middleware
+func (sh *strictHandler) ListTalents(w http.ResponseWriter, r *http.Request, params ListTalentsParams) {
+	var request ListTalentsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListTalents(ctx, request.(ListTalentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListTalents")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListTalentsResponseObject); ok {
+		if err := validResponse.VisitListTalentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CountTalents operation middleware
+func (sh *strictHandler) CountTalents(w http.ResponseWriter, r *http.Request, params CountTalentsParams) {
+	var request CountTalentsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CountTalents(ctx, request.(CountTalentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CountTalents")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CountTalentsResponseObject); ok {
+		if err := validResponse.VisitCountTalentsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -196,6 +196,10 @@ func toAPICharacter(c characters.Character) (api.Character, error) {
 	if c.Link != "" {
 		body.Link = &c.Link
 	}
+	if c.Availability != nil {
+		a := toAPIAvailability(*c.Availability)
+		body.Availability = &a
+	}
 	return body, nil
 }
 
