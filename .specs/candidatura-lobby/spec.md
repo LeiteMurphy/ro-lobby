@@ -2,7 +2,8 @@
 
 - Feature: `candidatura-lobby` · Nível: G · Status: Aprovada (revisão de 2026-10-06)
 - Notion: [Épico](https://app.notion.com/p/3ead4a3a5eff810bb7f4eae87f4ab3b2)
-- Última revisão: 2026-10-06 — alinhada com `personagens` e `lobbies` antes da
+- Última revisão: 2026-10-09 — o dono desbloqueia quem bloqueou (RN-15, CA-06.9), pelo
+  painel do banco de talentos. Antes, 2026-10-06 — alinhada com `personagens` e `lobbies` antes da
   implementação: entrega em duas partes, janela de 2 h, nível mínimo, travas do
   personagem (nível incluído), painel de detalhes do jogador, "Minhas candidaturas" e
   selo de pendentes. A versão de 2026-09-29 foi aprovada antes de existir código.
@@ -99,7 +100,9 @@ transversais de personagem.
 - **RN-15** — O dono pode remover um membro enquanto o lobby estiver aberto, com
   justificativa (RN-09). A vaga volta a ficar livre. Na remoção, o dono escolhe se
   bloqueia o usuário neste lobby (por exemplo, por comportamento desrespeitoso). O
-  bloqueio vale só para este lobby.
+  bloqueio vale só para este lobby. Enquanto o lobby estiver aberto, o dono pode
+  desbloquear o usuário, e ele volta a poder se candidatar (revisão de 2026-10-09; a tela
+  fica no painel da RN-13 da `banco-de-talentos`).
 - **RN-16** — Quando o lobby inicia ou é cancelado, todas as candidaturas e pedidos
   de troca pendentes dele passam para *expirada*.
 - **RN-17** — Os estados da candidatura são: *pendente*, *aceita*, *recusada*,
@@ -487,6 +490,13 @@ When ele usa "Remover", escreve a justificativa e marca "Bloquear neste lobby"
 Then o membro sai da composição
   And o removido vê "Você não pode se candidatar a este lobby" no detalhe
   And vê "Removida" com a justificativa em "Minhas candidaturas"
+
+CA-06.9 — Desbloquear  [US-06, RN-15]
+Given um jogador removido com bloqueio de um lobby aberto
+When o dono desbloqueia o jogador
+Then o jogador pode se candidatar de novo ao lobby
+  And a candidatura removida continua no histórico com a justificativa
+  And desbloquear em lobby iniciado ou cancelado é recusado
 ```
 
 ### US-07 — Dono troca o próprio personagem
