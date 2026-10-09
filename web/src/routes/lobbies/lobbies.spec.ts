@@ -595,3 +595,74 @@ describe('/lobbies/[id] compartilhável (spec compartilhar-lobby)', () => {
 		expect(meta(head, 'og:description')).toBe('Esse grupo foi cancelado.');
 	});
 });
+
+describe('/lobbies/[id] com o banco de talentos (spec banco-de-talentos)', () => {
+	const FOGO = {
+		characterId: 'f1',
+		nick: 'Fogo',
+		classId: 'arquimago',
+		level: 200,
+		role: 'dps',
+		portrait: 'retrato-3',
+		link: null,
+		days: [0, 1, 2, 3, 4, 5, 6],
+		start: '18:00',
+		end: '00:00',
+		anyInstance: true,
+		instances: [],
+		discordUsername: 'caio'
+	};
+	const BRASA = {
+		...FOGO,
+		characterId: 'b1',
+		nick: 'Brasa',
+		classId: 'guardiao-real',
+		level: 172,
+		role: 'tank',
+		days: [3],
+		start: '19:00',
+		end: '23:00',
+		anyInstance: false,
+		instances: [{ id: 'templo-do-demonio-rei', name: 'Templo do Demônio Rei' }],
+		discordUsername: 'bia'
+	};
+	const renderWith = (opts: { owner: boolean; talents: unknown; status?: string }) =>
+		render(Detalhe, {
+			props: {
+				data: {
+					user: opts.owner ? { id: TEMPLE.owner.userId, username: 'ana', globalName: null } : null,
+					lobby: { ...TEMPLE, status: opts.status ?? 'open', cancelReason: 'Faltou gente demais' },
+					ownerClass: 'Arcebispo',
+					classNames: { arquimago: 'Arquimago', 'guardiao-real': 'Guardião Real' },
+					characters: [],
+					isOwner: opts.owner,
+					talents: opts.talents,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/',
+					origin: 'https://rolobby.com.br'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body;
+
+	it('CA-02.1 / RN-08 / RN-12: o dono vê os jogadores na ordem da API, com classe, faixa e Discord', () => {
+		const html = renderWith({ owner: true, talents: [FOGO, BRASA] });
+		expect(html).toContain('data-testid="talents-panel"');
+		expect(html).toMatch(/Fogo[\s\S]*Arquimago · Nv 200[\s\S]*@caio[\s\S]*Brasa[\s\S]*@bia/);
+		expect(html).toContain('qua · 19:00–23:00 (Brasília)');
+		expect(html).toContain('Templo do Demônio Rei');
+		expect(html).toContain('todos os dias · 18:00–00:00 (até o dia seguinte) (Brasília)');
+	});
+
+	it('borda de RN-06: lista vazia mostra o aviso', () => {
+		expect(renderWith({ owner: true, talents: [] })).toContain('Nenhum jogador disponível agora.');
+	});
+
+	it('CA-02.4 / RN-09: visitante e lobby encerrado não mostram o painel', () => {
+		expect(renderWith({ owner: false, talents: null })).not.toContain('Jogadores disponíveis');
+		expect(renderWith({ owner: true, talents: [FOGO], status: 'cancelled' })).not.toContain(
+			'Jogadores disponíveis'
+		);
+	});
+});

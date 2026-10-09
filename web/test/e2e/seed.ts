@@ -121,3 +121,17 @@ export function cancelLobby(
 ) {
 	return post<{ id: string }>(request, token, `/lobbies/${lobbyId}/cancel`, { reason });
 }
+
+/** Banco de talentos pela API (spec banco-de-talentos, T-06). */
+export async function setAvailability(
+	request: APIRequestContext,
+	token: string,
+	characterId: string,
+	a: { days: number[]; start: string; end: string; anyInstance?: boolean; instanceIds?: string[] }
+) {
+	const res = await request.put(`${API}/characters/${characterId}/availability`, {
+		data: { enabled: true, anyInstance: false, instanceIds: [], ...a },
+		headers: { authorization: `Bearer ${token}` }
+	});
+	if (!res.ok()) throw new Error(`PUT availability: ${res.status()} ${await res.text()}`);
+}

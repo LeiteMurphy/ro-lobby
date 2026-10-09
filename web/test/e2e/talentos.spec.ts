@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apiLogin, createCharacter, rand } from './seed';
+import { apiLogin, createCharacter, createLobby, rand, setAvailability, spDay } from './seed';
 
 // Ponta a ponta do banco de talentos (spec banco-de-talentos, T-05 a T-07), com o Discord
 // falso e o banco do ponta a ponta. Cada teste usa contas e nicks novos.
@@ -79,5 +79,67 @@ test.describe('banco de talentos', () => {
 		await expect(again.getByLabel(/Sonho Sombrio/)).toBeChecked();
 		await page.keyboard.press('Escape');
 		await expect(again).toHaveCount(0);
+	});
+
+	test('CA-02.1 / CA-02.4 / CA-03.1: o dono vê quem combina; a criação conta os disponíveis', async ({
+		browser,
+		request
+	}) => {
+		const s = rand();
+		// Brasa (Tank, 172) disponível todo dia das 05:00 às 07:00, no Templo.
+		const biaToken = await apiLogin(request, `bia${s}`);
+		const brasa = await createCharacter(request, biaToken, {
+			nick: `Bra${s}`,
+			classId: 'guardiao-real',
+			level: 172,
+			role: 'tank'
+		});
+		await setAvailability(request, biaToken, brasa.id, {
+			days: [0, 1, 2, 3, 4, 5, 6],
+			start: '05:00',
+			end: '07:00',
+			instanceIds: ['templo-do-demonio-rei']
+		});
+		const owner = `ana${s}`;
+		const anaToken = await apiLogin(request, owner);
+		const lirien = await createCharacter(request, anaToken, {
+			nick: `Lir${s}`,
+			classId: 'arcebispo',
+			level: 178,
+			role: 'support'
+		});
+		const lobby = await createLobby(request, anaToken, {
+			instanceId: 'templo-do-demonio-rei',
+			day: 4,
+			time: '06:00',
+			characterId: lirien.id,
+			minLevel: 160
+		});
+
+		// CA-02.1: o dono vê Brasa com o Discord.
+		const page = await (await browser.newContext()).newPage();
+		await loginAs(page, owner, `/lobbies/${lobby.id}`);
+		const panel = page.getByTestId('talents-panel');
+		await expect(panel.getByTestId('talent-card').filter({ hasText: brasa.nick })).toContainText(
+			`@bia${s}`
+		);
+
+		// CA-02.4: o visitante não vê o painel.
+		const visitor = await (await browser.newContext()).newPage();
+		await visitor.goto(`/lobbies/${lobby.id}`);
+		await expect(visitor.getByRole('heading', { level: 1 })).toBeVisible();
+		await expect(visitor.getByTestId('talents-panel')).toHaveCount(0);
+
+		// CA-03.1: na criação, 06:00 tem 1 disponível; 09:00, nenhum.
+		await page.goto(`/lobbies/novo?dia=${spDay(5)}`);
+		await page.getByLabel('Instância').selectOption('templo-do-demonio-rei');
+		await page.getByLabel('Hora (Brasília)').fill('06:00');
+		await expect(page.getByTestId('available-count')).toHaveText(
+			/1 jogador disponível no banco de talentos/
+		);
+		await page.getByLabel('Hora (Brasília)').fill('09:00');
+		await expect(page.getByTestId('available-count')).toHaveText(
+			/0 jogadores disponíveis no banco de talentos/
+		);
 	});
 });

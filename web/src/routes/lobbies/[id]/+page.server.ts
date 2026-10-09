@@ -22,6 +22,7 @@ import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
 import { cancelLobby, getLobby } from '$lib/lobbies/api';
 import { lobbyConflictMessage, lobbyFieldMessages } from '$lib/lobbies/messages';
 import type { Result } from '$lib/api/request';
+import { listLobbyTalents, type Talent } from '$lib/talents/api';
 import type { Actions, PageServerLoad } from './$types';
 
 // Detalhe do lobby conforme quem olha, cancelamento pelo dono e candidatura: candidatar,
@@ -47,6 +48,12 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch, url
 		const list = await listCharacters({ fetchFn: fetch, apiBaseUrl, token });
 		if (list.ok) characters = list.data;
 	}
+	// banco-de-talentos RN-09: só o dono, só com o lobby aberto. Sem resposta, o painel some.
+	let talents: Talent[] | null = null;
+	if (token && isOwner && lobby.data.status === 'open') {
+		const list = await listLobbyTalents({ fetchFn: fetch, apiBaseUrl, token }, params.id);
+		if (list.ok) talents = list.data;
+	}
 	const classNames = Object.fromEntries(
 		(classes.ok ? classes.data : []).map((c) => [c.id, c.name] as const)
 	);
@@ -58,6 +65,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch, url
 		ownerClass: classId ? (classNames[classId] ?? classId) : null,
 		// RN-16: as ações do dono aparecem só para ele.
 		isOwner,
+		talents,
 		now: new Date().toISOString(),
 		// Origem do web (ORIGIN no adapter-node) para o convite e o preview (compartilhar-lobby).
 		origin: url.origin,

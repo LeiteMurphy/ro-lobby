@@ -8,7 +8,7 @@
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { FieldError } from '$lib/api/request';
 	import type { Instance } from '../api';
-	import type { LobbyFormValues } from '../form';
+	import { startsAt, type LobbyFormValues } from '../form';
 
 	export interface DayOption {
 		date: string;
@@ -100,6 +100,47 @@
 		}
 	});
 	const dayLabel = $derived(days.find((d) => d.date === date)?.label ?? '');
+
+	// banco-de-talentos RN-10: quantos jogadores do banco combinam com o que está sendo
+	// montado. Só na criação, 300 ms depois da última mudança; sem resposta, a linha some.
+	let available = $state<number | null>(null);
+	const availableLabel = $derived(
+		`${available} ${available === 1 ? 'jogador disponível' : 'jogadores disponíveis'} no banco de talentos`
+	);
+	const countQuery = $derived.by(() => {
+		const start = startsAt({ date, time });
+		if (mode !== 'create' || !instanceId || !start || !characterId) return null;
+		return new URLSearchParams({
+			instanceId,
+			startsAt: start,
+			minLevel: String(Number(minLevel) || instance.level),
+			tank: String(slots.tank),
+			support: String(slots.support),
+			dps: String(slots.dps),
+			characterId
+		}).toString();
+	});
+	$effect(() => {
+		const q = countQuery;
+		if (!q) {
+			available = null;
+			return;
+		}
+		const controller = new AbortController();
+		const timer = setTimeout(async () => {
+			try {
+				const res = await fetch(`/lobbies/novo/disponiveis?${q}`, { signal: controller.signal });
+				const body = (await res.json()) as { count: number | null };
+				available = body.count;
+			} catch {
+				if (!controller.signal.aborted) available = null;
+			}
+		}, 300);
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
+	});
 
 	const errId = (field: string) => `${uid}-${field}-err`;
 	const describe = (field: FieldError['field']) => (errors[field] ? errId(field) : undefined);
@@ -300,6 +341,11 @@
 	<aside class="preview" aria-label="Prévia do card na Home">
 		<span class="over">Como vai aparecer na Home{dayLabel ? ` · ${dayLabel}` : ''}</span>
 		<LobbyCard lobby={preview} relative="" preview />
+		<p class="available" role="status" data-testid="available-count">
+			{#if available !== null}
+				<Icon name="users" size={14} /><span>{availableLabel}</span>
+			{/if}
+		</p>
 	</aside>
 </div>
 
@@ -332,6 +378,15 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
+	}
+	.available {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 18px;
+		margin: 0;
+		font: 600 12px/1.3 var(--font-ui);
+		color: var(--support-300);
 	}
 	.over {
 		font: 600 10px/1.2 var(--font-ui);
