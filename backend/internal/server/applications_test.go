@@ -70,7 +70,7 @@ func (f *fakeApps) ListMine(_ context.Context, userID string) ([]applications.Mi
 }
 
 func newAppsServer(f *fakeApps) http.Handler {
-	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, &fakeLobbies{}, f)
+	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, &fakeLobbies{}, f, nil)
 }
 
 var applicationRoutes = []struct{ method, path, body string }{

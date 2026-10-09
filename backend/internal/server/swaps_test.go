@@ -101,7 +101,7 @@ func TestLeaveRemove_CA05_1_CA06_1(t *testing.T) {
 func TestOwnerSwap_CA07_1_ReturnsDetail(t *testing.T) {
 	f := &fakeApps{}
 	l := &fakeLobbies{}
-	h := New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, l, f)
+	h := New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, l, f, nil)
 	rec, body := call(t, h, http.MethodPut, "/lobbies/"+lobbyID+"/owner-character", "token-valido", `{"characterId":"`+charID+`"}`)
 	if rec.Code != http.StatusOK || body["id"] != lobbyID || f.gotUser != userID || f.gotID != lobbyID || f.gotChar != charID {
 		t.Errorf("troca: %d %v, repassou %s %s %s", rec.Code, body, f.gotUser, f.gotID, f.gotChar)

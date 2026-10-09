@@ -20,6 +20,7 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/server"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/talents"
 )
 
 func main() {
@@ -58,7 +59,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           server.New(pool, authService, characterService, lobbyService, applications.NewService(pool)),
+		Handler:           server.New(pool, authService, characterService, lobbyService, applications.NewService(pool), talents.NewService(pool)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

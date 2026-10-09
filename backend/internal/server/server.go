@@ -22,7 +22,7 @@ type handlers struct {
 var _ api.StrictServerInterface = handlers{}
 
 // New devolve o handler HTTP com todas as rotas do openapi.yaml.
-func New(db health.Pinger, authenticator Authenticator, chars CharacterService, lobbySvc LobbyService, apps ApplicationService) http.Handler {
+func New(db health.Pinger, authenticator Authenticator, chars CharacterService, lobbySvc LobbyService, apps ApplicationService, talentSvc TalentService) http.Handler {
 	session := charactersHandler{auth: authenticator, chars: chars}
 	strict := api.NewStrictHandlerWithOptions(handlers{
 		Handler:             health.New(db),
@@ -30,6 +30,7 @@ func New(db health.Pinger, authenticator Authenticator, chars CharacterService, 
 		charactersHandler:   session,
 		lobbiesHandler:      lobbiesHandler{session: session, lobbies: lobbySvc},
 		applicationsHandler: applicationsHandler{session: session, apps: apps, lobbies: lobbySvc},
+		talentsHandler:      talentsHandler{session: session, talents: talentSvc},
 	}, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)

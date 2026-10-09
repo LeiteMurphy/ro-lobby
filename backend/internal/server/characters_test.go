@@ -59,7 +59,7 @@ func (f *fakeChars) SetMain(_ context.Context, userID, id string) error {
 }
 
 func newCharsServer(f *fakeChars) http.Handler {
-	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, f, nil, nil)
+	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, f, nil, nil, nil)
 }
 
 const brasaJSON = `{"nick":"Brasa","classId":"guardiao-real","level":172,"role":"tank"}`

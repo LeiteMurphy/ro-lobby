@@ -70,7 +70,7 @@ func (f *fakeLobbies) Cancel(_ context.Context, userID, id, reason string) (lobb
 }
 
 func newLobbiesServer(f *fakeLobbies) http.Handler {
-	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, f, &fakeApps{})
+	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, &fakeChars{}, f, &fakeApps{}, nil)
 }
 
 const templeJSON = `{"instanceId":"templo-do-demonio-rei","startsAt":"2026-10-07T23:00:00Z","slots":{"tank":1,"support":2,"dps":3},"minLevel":160,"characterId":"` + charID + `","note":"Chamar no Discord"}`
