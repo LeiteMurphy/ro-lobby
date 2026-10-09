@@ -2,7 +2,7 @@
 # Imagem da API (ADR-06, D-01 da spec home-local). O estágio final só tem os binários:
 # sem compilador, sem código-fonte e sem shell, rodando como usuário não-root (RN-05).
 
-FROM golang:1.27-alpine AS build
+FROM mirror.gcr.io/library/golang:1.27-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download

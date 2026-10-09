@@ -2,7 +2,7 @@
 # Imagem do web (ADR-06, D-02 da spec home-local). O estágio final leva só o build do
 # adapter-node e as dependências de produção, rodando como o usuário node (RN-05).
 
-FROM node:24.14.0-alpine AS build
+FROM mirror.gcr.io/library/node:24.14.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -10,12 +10,12 @@ COPY . .
 RUN npm run build
 
 # Só as dependências de produção, instaladas do zero (o npm prune deixa sobras).
-FROM node:24.14.0-alpine AS prod-deps
+FROM mirror.gcr.io/library/node:24.14.0-alpine AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && mkdir -p node_modules
 
-FROM node:24.14.0-alpine
+FROM mirror.gcr.io/library/node:24.14.0-alpine
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000
 COPY --from=build --chown=node:node /app/package.json ./
