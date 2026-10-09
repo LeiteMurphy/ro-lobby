@@ -4,6 +4,8 @@ import { eligibility, freeComposition, people, swapEligibility } from '$lib/appl
 import { ruleMessage } from '$lib/applications/messages';
 import type { Character } from '$lib/characters/api';
 import LeaveDialog from '$lib/applications/components/LeaveDialog.svelte';
+import PlayerPanel from '$lib/applications/components/PlayerPanel.svelte';
+import SwapDialog from '$lib/applications/components/SwapDialog.svelte';
 import SwapPanel from '$lib/applications/components/SwapPanel.svelte';
 import LobbyForm from './components/LobbyForm.svelte';
 import { TEMPLE } from './fixtures';
@@ -207,5 +209,43 @@ describe('painéis do grupo livre', () => {
 		}).body;
 		expect(html).toContain('Sua vaga fica livre');
 		expect(html).not.toContain('Sua vaga de');
+	});
+});
+
+describe('textos de troca do grupo livre', () => {
+	it('CA-02.4 / RN-05: a troca do dono no grupo livre não fala de vaga na função', () => {
+		const host = people(FREE)[0];
+		const panel = (free: boolean) =>
+			render(PlayerPanel, {
+				props: {
+					person: host,
+					classNames: {},
+					canDecide: true,
+					free,
+					onreject: () => {},
+					onremove: () => {},
+					onswap: () => {}
+				} as never
+			}).body;
+		expect(panel(true)).toContain('a vaga continua sua');
+		expect(panel(true)).not.toContain('vaga na função');
+		expect(panel(false)).toContain('vaga na função');
+	});
+
+	it('CA-02.4 / RN-05: o pedido de troca no grupo livre não espera vaga', () => {
+		const dialog = (free: boolean) =>
+			render(SwapDialog, {
+				props: {
+					mode: 'request',
+					hint: '',
+					options: [],
+					classNames: {},
+					applicationId: 'a1',
+					free,
+					onclose: () => {}
+				} as never
+			}).body;
+		expect(dialog(true)).toContain('O personagem novo fica com a mesma vaga.');
+		expect(dialog(false)).toContain('O pedido pode esperar a vaga abrir.');
 	});
 });

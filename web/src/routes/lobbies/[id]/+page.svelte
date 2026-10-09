@@ -533,6 +533,7 @@
 						person={selected}
 						classNames={data.classNames}
 						{canDecide}
+						{free}
 						onreject={(p) => open(() => (rejecting = p))}
 						onremove={(p) => open(() => (removing = p))}
 						onswap={() => open(() => (ownerSwapOpen = true))}
@@ -549,8 +550,9 @@
 							<span class="hint">Nenhum jogador disponível agora.</span>
 						{:else}
 							<span class="hint"
-								>No banco de talentos, com a instância, o horário, o nível e uma função com vaga.
-								Chame pelo Discord.</span
+								>No banco de talentos, com a instância, o horário, o nível e {free
+									? 'o grupo com vaga livre'
+									: 'uma função com vaga'}. Chame pelo Discord.</span
 							>
 							<ul class="talents">
 								{#each data.talents as t (t.characterId)}
@@ -610,6 +612,7 @@
 	{/if}
 	{#if swapOpen && mine}
 		<SwapDialog
+			{free}
 			mode="request"
 			hint="O anfitrião decide. Você continua no grupo com {myPlace?.nick ??
 				'o personagem atual'} até lá."

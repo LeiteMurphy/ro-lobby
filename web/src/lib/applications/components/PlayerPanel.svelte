@@ -15,12 +15,14 @@
 		 * membro (RN-15) e Trocar o próprio personagem (RN-19).
 		 */
 		canDecide: boolean;
+		/** Grupo livre: a troca do dono não depende de vaga na função (spec grupo-livre, RN-05). */
+		free?: boolean;
 		onreject: (person: Person) => void;
 		onremove?: (person: Person) => void;
 		onswap?: () => void;
 	}
 
-	let { person, classNames, canDecide, onreject, onremove, onswap }: Props = $props();
+	let { person, classNames, canDecide, free = false, onreject, onremove, onswap }: Props = $props();
 
 	const OVER = { host: 'Anfitrião', member: 'Membro', candidate: 'Candidato' } as const;
 	const className = $derived(
@@ -106,7 +108,9 @@
 		<!-- RN-19 / RN-38: o dono troca o próprio personagem, sem aprovação (Candidatura 2e). -->
 		<Button variant="secondary" block onclick={onswap}>Trocar personagem</Button>
 		<span class="sub"
-			>Troque sem aprovação, para um personagem seu com o nível mínimo e vaga na função.</span
+			>{free
+				? 'Troque sem aprovação, para um personagem seu com o nível mínimo; a vaga continua sua.'
+				: 'Troque sem aprovação, para um personagem seu com o nível mínimo e vaga na função.'}</span
 		>
 	{/if}
 </section>

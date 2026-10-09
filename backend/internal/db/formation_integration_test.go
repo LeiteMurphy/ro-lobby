@@ -28,9 +28,9 @@ func TestLobbies_RNF01_DefaultFormation(t *testing.T) {
 	}
 }
 
-// RN-01 / RN-02: o banco aceita o grupo livre de 2 a 12 com as vagas por função zeradas e
+// CA-01.2 / RN-01 / RN-02: o banco aceita o grupo livre de 2 a 12 com as vagas por função zeradas e
 // recusa as combinações erradas.
-func TestLobbies_RN01_RN02_FormationChecks(t *testing.T) {
+func TestLobbies_CA01_2_RN01_RN02_FormationChecks(t *testing.T) {
 	q, _ := setup(t)
 	u, c := lobbyOwner(t, q)
 	freeLobby := func(total int16) CreateLobbyParams {

@@ -24,6 +24,8 @@
 		errors?: Record<string, string>;
 		formError?: string | null;
 		onclose: () => void;
+		/** Grupo livre: o personagem novo fica com a mesma vaga (spec grupo-livre, RN-05). */
+		free?: boolean;
 	}
 
 	let {
@@ -36,7 +38,8 @@
 		reason = '',
 		errors = {},
 		formError = null,
-		onclose
+		onclose,
+		free = false
 	}: Props = $props();
 	const uid = $props.id();
 	let dialog: HTMLDialogElement | undefined = $state();
@@ -123,7 +126,9 @@
 						><Icon name="circle-x" size={14} />{errors.reason}</span
 					>{/if}
 				<span class="hint" id="{uid}-hint"
-					>De 10 a 250 caracteres. O pedido pode esperar a vaga abrir.</span
+					>{free
+						? 'De 10 a 250 caracteres. O personagem novo fica com a mesma vaga.'
+						: 'De 10 a 250 caracteres. O pedido pode esperar a vaga abrir.'}</span
 				>
 			{:else}
 				<span class="hint"

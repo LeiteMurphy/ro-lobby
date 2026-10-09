@@ -50,7 +50,7 @@ describe('/lobbies/novo/disponiveis', () => {
 		expect(await (await GET(event(QUERY, 'tok', down))).json()).toEqual({ count: null });
 	});
 
-	it('RN-13 da grupo-livre: no grupo livre, manda a formação e o total, sem as funções', async () => {
+	it('CA-05.2 / RN-13 da grupo-livre: no grupo livre, manda a formação e o total, sem as funções', async () => {
 		const fetchFn = vi.fn(
 			async () =>
 				new Response(JSON.stringify({ count: 3 }), {

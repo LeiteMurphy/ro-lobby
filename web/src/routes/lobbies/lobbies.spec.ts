@@ -756,3 +756,55 @@ describe('/lobbies/[id] do grupo livre (spec grupo-livre, RN-10)', () => {
 		expect(html).toMatch(/<b[^>]*>1 de 12<\/b> vagas ocupadas/);
 	});
 });
+
+describe('/lobbies/[id] do grupo livre com o banco de talentos (spec grupo-livre, RN-13)', () => {
+	it('CA-05.2 / RN-13: o painel do dono fala do grupo com vaga livre, não de função', () => {
+		const talent = {
+			characterId: 'f1',
+			nick: 'Fogo',
+			classId: 'arquimago',
+			level: 200,
+			role: 'dps',
+			portrait: 'retrato-3',
+			link: null,
+			days: [3],
+			start: '19:00',
+			end: '23:00',
+			anyInstance: true,
+			instances: [],
+			discordUsername: 'caio',
+			removed: false,
+			blocked: false
+		};
+		const html = (formation: 'free' | 'roles') =>
+			render(Detalhe, {
+				props: {
+					data: {
+						user: { id: TEMPLE.owner.userId, username: 'ana', globalName: null },
+						lobby:
+							formation === 'free'
+								? {
+										...TEMPLE,
+										formation: 'free',
+										freeSlots: 12,
+										slots: { tank: 0, support: 0, dps: 0 }
+									}
+								: TEMPLE,
+						ownerClass: 'Arcebispo',
+						classNames: {},
+						characters: [],
+						isOwner: true,
+						talents: [talent],
+						now: '2026-10-06T19:40:00.000Z',
+						loginHref: '/',
+						origin: 'https://rolobby.com.br'
+					},
+					form: null,
+					params: { id: TEMPLE.id }
+				} as never
+			}).body;
+		expect(html('free')).toContain('o grupo com vaga livre');
+		expect(html('free')).not.toContain('uma função com vaga');
+		expect(html('roles')).toContain('uma função com vaga');
+	});
+});
