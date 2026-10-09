@@ -15,6 +15,8 @@ import (
 type TalentService interface {
 	SetAvailability(ctx context.Context, userID, characterID string, in talents.AvailabilityInput) (*talents.Availability, error)
 	ForLobby(ctx context.Context, userID, lobbyID string) ([]talents.Talent, error)
+	Catalog(ctx context.Context, f talents.CatalogFilter) ([]talents.Talent, error)
+	Count(ctx context.Context, userID string, in talents.CountInput) (int, error)
 }
 
 // talentsHandler serve o banco de talentos (spec banco-de-talentos).
@@ -22,8 +24,6 @@ type talentsHandler struct {
 	session charactersHandler
 	talents TalentService
 }
-
-var errNotImplemented = errors.New("banco de talentos: rota ainda não implementada")
 
 // SetAvailability liga, edita ou desliga o personagem no banco (RN-01 a RN-05).
 func (h talentsHandler) SetAvailability(ctx context.Context, req api.SetAvailabilityRequestObject) (api.SetAvailabilityResponseObject, error) {
@@ -59,12 +59,52 @@ func (h talentsHandler) SetAvailability(ctx context.Context, req api.SetAvailabi
 	return body, nil
 }
 
-func (talentsHandler) ListTalents(context.Context, api.ListTalentsRequestObject) (api.ListTalentsResponseObject, error) {
-	return nil, errNotImplemented
+// ListTalents serve o catálogo (RN-11). A sessão é opcional; o nome no Discord só sai
+// com ela (RN-12, D-05).
+func (h talentsHandler) ListTalents(ctx context.Context, req api.ListTalentsRequestObject) (api.ListTalentsResponseObject, error) {
+	_, withDiscord, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	p := req.Params
+	f := talents.CatalogFilter{InstanceID: valueOf(p.InstanceId), Day: p.Day, Time: valueOf(p.Time)}
+	if p.Role != nil {
+		f.Role = string(*p.Role)
+	}
+	list, err := h.talents.Catalog(ctx, f)
+	var invalid *talents.ValidationError
+	if errors.As(err, &invalid) {
+		return api.ListTalents422JSONResponse{InvalidJSONResponse: toAPITalentValidation(invalid)}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	body, err := toAPITalents(list, withDiscord)
+	return api.ListTalents200JSONResponse(body), err
 }
 
-func (talentsHandler) CountTalents(context.Context, api.CountTalentsRequestObject) (api.CountTalentsResponseObject, error) {
-	return nil, errNotImplemented
+// CountTalents conta a afinidade do lobby em criação (RN-10).
+func (h talentsHandler) CountTalents(ctx context.Context, req api.CountTalentsRequestObject) (api.CountTalentsResponseObject, error) {
+	userID, ok, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.CountTalents401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	p := req.Params
+	n, err := h.talents.Count(ctx, userID, talents.CountInput{
+		InstanceID: p.InstanceId, StartsAt: p.StartsAt, MinLevel: p.MinLevel,
+		Tank: p.Tank, Support: p.Support, Dps: p.Dps, CharacterID: p.CharacterId,
+	})
+	var invalid *talents.ValidationError
+	if errors.As(err, &invalid) {
+		return api.CountTalents422JSONResponse{InvalidJSONResponse: toAPITalentValidation(invalid)}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return api.CountTalents200JSONResponse{Count: n}, nil
 }
 
 // ListLobbyTalents lista quem tem afinidade com o lobby aberto do dono (RN-06 a RN-09).
