@@ -5,6 +5,8 @@ package applications
 import (
 	"errors"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // Desbloqueio pelo dono (spec candidatura-lobby, revisão de 2026-10-09).
@@ -23,8 +25,11 @@ func TestUnblock_CA06_9(t *testing.T) {
 	if err := e.svc.Unblock(t.Context(), owner.id, lid, player.chars["Fogo"]); err != nil {
 		t.Fatal(err)
 	}
-	if s := e.status(t, a.ID); s != StatusRemoved {
-		t.Errorf("histórico = %q", s)
+	var aid pgtype.UUID
+	_ = aid.Scan(a.ID)
+	if old, err := e.q.GetApplication(t.Context(), aid); err != nil || old.Status != StatusRemoved ||
+		old.Reason.String != "mudamos o horário da run" {
+		t.Errorf("histórico = %+v, %v", old, err)
 	}
 	again, err := e.svc.Apply(t.Context(), player.id, lid, ApplyInput{CharacterID: player.chars["Cura"]})
 	if err != nil || again.Status != StatusPending {
@@ -36,12 +41,15 @@ func TestUnblock_CA06_9(t *testing.T) {
 	}
 }
 
-// CA-06.9 / RN-15: em lobby cancelado, desbloquear é recusado.
+// CA-06.9 / RN-15: em lobby iniciado ou cancelado, desbloquear é recusado.
 func TestUnblock_CA06_9_NotOpen(t *testing.T) {
 	e, owner, player, lid, a := member(t)
 	if _, err := e.svc.Remove(t.Context(), owner.id, a.ID, "mudamos o horário da run", true); err != nil {
 		t.Fatal(err)
 	}
+	e.now = at(1, 21, 0) // o lobby (amanhã, 20:00) já começou
+	wantRule(t, e.svc.Unblock(t.Context(), owner.id, lid, player.chars["Cura"]), CodeNotOpen)
+	e.now = start
 	if _, err := e.lobbies.Cancel(t.Context(), owner.id, lid, "Metade do grupo não pode"); err != nil {
 		t.Fatal(err)
 	}
