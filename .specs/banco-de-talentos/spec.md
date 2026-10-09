@@ -1,6 +1,6 @@
 # Spec — Banco de talentos
 
-- Feature: `banco-de-talentos` · Nível: G · Status: Rascunho
+- Feature: `banco-de-talentos` · Nível: G · Status: Aprovada (2026-10-09)
 - Notion: (a criar na fase de Tasks)
 - Última revisão: 2026-10-09 — primeira versão
 
