@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { portraitAlt, portraitSrc } from '$lib/characters/portraits';
 	import { enhance } from '$app/forms';
 	import { ROLE_LABELS } from '$lib/home/types';
 	import type { ApiLobby } from '$lib/lobbies/api';
@@ -33,8 +34,8 @@
 			<span class="char">
 				{#if c.portrait}<img
 						class="portrait"
-						src="/portraits/{c.portrait}.svg"
-						alt=""
+						src={portraitSrc(c.portrait)}
+						alt={portraitAlt(c.portrait)}
 						width="48"
 						height="48"
 					/>{/if}

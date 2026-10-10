@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { portraitAlt, portraitSrc } from '$lib/characters/portraits';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import ApplyDialog from '$lib/applications/components/ApplyDialog.svelte';
@@ -348,8 +349,8 @@
 										>
 											{#if p.portrait}<img
 													class="portrait"
-													src="/portraits/{p.portrait}.svg"
-													alt=""
+													src={portraitSrc(p.portrait)}
+													alt={portraitAlt(p.portrait)}
 													width="52"
 													height="52"
 												/>{/if}
@@ -400,8 +401,8 @@
 											>
 												{#if p.portrait}<img
 														class="portrait"
-														src="/portraits/{p.portrait}.svg"
-														alt=""
+														src={portraitSrc(p.portrait)}
+														alt={portraitAlt(p.portrait)}
 														width="52"
 														height="52"
 													/>{/if}
@@ -451,8 +452,8 @@
 										>
 											{#if p.portrait}<img
 													class="portrait"
-													src="/portraits/{p.portrait}.svg"
-													alt=""
+													src={portraitSrc(p.portrait)}
+													alt={portraitAlt(p.portrait)}
 													width="52"
 													height="52"
 												/>{/if}
@@ -490,8 +491,8 @@
 										>
 											{#if r.to.portrait}<img
 													class="portrait"
-													src="/portraits/{r.to.portrait}.svg"
-													alt=""
+													src={portraitSrc(r.to.portrait)}
+													alt={portraitAlt(r.to.portrait)}
 													width="52"
 													height="52"
 												/>{/if}

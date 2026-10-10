@@ -125,6 +125,13 @@ describe('/talentos renderizada no servidor', () => {
 			} as never
 		}).body;
 
+	it('CA-02.2 (retrato-por-classe): o card do Maestro mostra a arte "Linha do Bardo"', () => {
+		const html = renderPage({
+			talents: [{ ...BRASA, classId: 'maestro', portrait: 'bardo' }]
+		});
+		expect(html).toMatch(/src="\/portraits\/classes\/bardo\.png" alt="Linha do Bardo"/);
+	});
+
 	it('CA-01.1 / RN-12: o card mostra classe, nível, função, dias, faixa e instâncias', () => {
 		const html = renderPage({});
 		expect(html).toContain('Brasa');

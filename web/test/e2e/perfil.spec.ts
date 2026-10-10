@@ -30,15 +30,12 @@ interface NewCharacter {
 	classId?: string;
 	level?: number;
 	role?: 'Tank' | 'Suporte' | 'Dano';
-	portrait?: string;
 	link?: string;
 }
 
 async function fillDialog(page: Page, c: NewCharacter) {
 	const d = dialog(page);
 	await expect(d).toBeVisible();
-	if (c.portrait)
-		await d.getByRole('radio', { name: new RegExp(`^${c.portrait}`) }).check({ force: true });
 	await d.getByLabel('Nick').fill(c.nick);
 	await d.getByLabel('Classe').selectOption(c.classId ?? 'guardiao-real');
 	await d.getByLabel('Nível').fill(String(c.level ?? 172));
@@ -93,24 +90,26 @@ test.describe('perfil e personagens', () => {
 		await loginAs(page, `a${s}`);
 		await expect(page.getByText('Você ainda não tem personagens')).toBeVisible();
 
-		// CA-02.1 e CA-02.2: o primeiro vira principal e fica com o retrato padrão.
+		// CA-02.1: o primeiro vira principal; o retrato é a arte da classe (retrato-por-classe).
 		await addCharacter(page, { nick: `Brasa${s}` });
 		const brasa = card(page, `Brasa${s}`);
 		await expect(brasa).toContainText('Principal');
-		await expect(brasa.getByRole('img').first()).toHaveAttribute('src', '/portraits/retrato-1.svg');
+		await expect(brasa.getByRole('img', { name: 'Linha do Templário' })).toHaveAttribute(
+			'src',
+			'/portraits/classes/templario.png'
+		);
 
 		await addCharacter(page, {
 			nick: `Lirien${s}`,
 			classId: 'arcebispo',
 			level: 178,
 			role: 'Suporte',
-			portrait: 'Retrato 3',
 			link: 'https://exemplo.com/char/123'
 		});
 		const lirien = card(page, `Lirien${s}`);
-		await expect(lirien.getByRole('img').first()).toHaveAttribute(
+		await expect(lirien.getByRole('img', { name: 'Linha do Sacerdote' })).toHaveAttribute(
 			'src',
-			'/portraits/retrato-3.svg'
+			'/portraits/classes/sacerdote.png'
 		);
 		await expect(lirien).not.toContainText('Principal');
 
@@ -189,6 +188,41 @@ test.describe('perfil e personagens', () => {
 		await expect(dialog(page).getByLabel('Nick')).toHaveValue('');
 		await expect(dialog(page).getByLabel('Classe')).toHaveValue('');
 		await expect(dialog(page).getByText('Esse nick já está em uso')).toHaveCount(0);
+	});
+
+	test('CA-01.4 / CA-01.2 (retrato-por-classe): a arte segue a classe no diálogo e na carta', async ({
+		page
+	}) => {
+		const s = rand();
+		await loginAs(page, `r${s}`);
+		await page
+			.getByRole('main')
+			.getByRole('button', { name: 'Adicionar personagem' })
+			.first()
+			.click();
+		const d = dialog(page);
+		// CA-01.4: sem a escolha de retrato; a arte aparece ao escolher a classe.
+		await expect(d.getByRole('radio', { name: /^Retrato/ })).toHaveCount(0);
+		await expect(d.getByTestId('class-art')).toContainText('Escolha a classe para ver o retrato');
+		await d.getByLabel('Classe').selectOption('paladino');
+		await expect(d.getByRole('img', { name: 'Linha do Templário' })).toBeVisible();
+		await d.getByLabel('Classe').selectOption('renegado');
+		await expect(d.getByRole('img', { name: 'Linha do Arruaceiro' })).toBeVisible();
+		await fillDialog(page, { nick: `Tem${s}`, classId: 'templario', level: 120 });
+		await d.getByRole('button', { name: 'Salvar personagem' }).click();
+		await expect(dialog(page)).toHaveCount(0);
+		await expect(
+			card(page, `Tem${s}`).getByRole('img', { name: 'Linha do Templário' })
+		).toBeVisible();
+
+		// CA-01.2: trocar para Feiticeiro troca a arte para a Linha do Sábio.
+		await (await openMenu(page, `Tem${s}`)).getByRole('menuitem', { name: 'Editar' }).click();
+		await dialog(page).getByLabel('Classe').selectOption('feiticeiro');
+		await dialog(page).getByRole('button', { name: 'Salvar personagem' }).click();
+		await expect(dialog(page)).toHaveCount(0);
+		await expect(
+			card(page, `Tem${s}`).getByRole('img', { name: 'Linha do Sábio' })
+		).toHaveAttribute('src', '/portraits/classes/sabio.png');
 	});
 
 	test('CA-03.1 / CA-05.1 / CA-04.2 / CA-04.3 / CA-04.1: editar, trocar o principal e excluir', async ({

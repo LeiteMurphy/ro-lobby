@@ -17,7 +17,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { Character, RoClassEntry } from '../api';
-	import { DEFAULT_PORTRAIT, PORTRAITS } from '../portraits';
+	import { portraitForClass } from '../portraits';
 
 	interface Props {
 		mode: 'create' | 'update';
@@ -43,11 +43,12 @@
 			classId: v?.classId ?? character?.classId ?? '',
 			level: v?.level ?? (character ? String(character.level) : ''),
 			role: v?.role ?? character?.role ?? '',
-			portrait: v?.portrait || character?.portrait || DEFAULT_PORTRAIT,
 			link: v?.link ?? character?.link ?? ''
 		};
 	})();
-	let portrait = $state(start.portrait);
+	// RN-02 da retrato-por-classe: o retrato acompanha a classe escolhida.
+	let classId = $state(start.classId);
+	const art = $derived(portraitForClass(classId, classes));
 
 	const errors = $derived(form?.errors ?? {});
 	const title = $derived(
@@ -110,17 +111,16 @@
 			{/if}
 			{#if character}<input type="hidden" name="id" value={character.id} />{/if}
 
-			<fieldset class="field">
-				<legend class="lbl">Retrato</legend>
-				<div class="picks">
-					{#each PORTRAITS as p (p.id)}
-						<label class="pick" class:on={portrait === p.id}>
-							<input type="radio" name="portrait" value={p.id} bind:group={portrait} />
-							<img src={p.src} alt={p.label} width="96" height="96" />
-						</label>
-					{/each}
+			<!-- CA-01.4 da retrato-por-classe: sem escolha; o retrato é a arte da classe. -->
+			<div class="field">
+				<span class="lbl">Retrato</span>
+				<div class="art" data-testid="class-art">
+					<img src={art.src} alt={classId ? art.label : ''} width="96" height="96" />
+					<span class="art-label"
+						>{classId ? art.label : 'Escolha a classe para ver o retrato'}</span
+					>
 				</div>
-			</fieldset>
+			</div>
 
 			<div class="field">
 				<label class="lbl" for="{uid}-nick">Nick</label>
@@ -149,15 +149,16 @@
 						class="input"
 						class:err={errors.classId}
 						name="classId"
+						bind:value={classId}
 						required
 						aria-invalid={errors.classId ? 'true' : undefined}
 						aria-describedby={errors.classId ? errId('classId') : undefined}
 					>
-						<option value="" selected={start.classId === ''}>Escolha a classe</option>
+						<option value="">Escolha a classe</option>
 						{#each groups as g (g.family)}
 							<optgroup label={g.family}>
 								{#each g.items as c (c.id)}
-									<option value={c.id} selected={c.id === start.classId}>{c.name}</option>
+									<option value={c.id}>{c.name}</option>
 								{/each}
 							</optgroup>
 						{/each}
@@ -354,39 +355,22 @@
 		font: var(--type-caption);
 		color: var(--status-error);
 	}
-	.picks {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 10px;
-	}
-	.pick {
-		position: relative;
+	.art {
 		display: flex;
-		padding: 6px;
+		align-items: center;
+		gap: 14px;
+	}
+	.art img {
+		width: 96px;
+		height: 96px;
+		flex: none;
 		border-radius: var(--radius-md);
 		border: 1px solid var(--border-default);
-		background: var(--ink-2);
-		cursor: pointer;
-	}
-	.pick.on {
-		border-color: var(--gold-line);
-		background: var(--gold-soft);
-		box-shadow: var(--shadow-glow-gold);
-	}
-	.pick:has(input:focus-visible) {
-		box-shadow: var(--focus-ring);
-	}
-	.pick input {
-		position: absolute;
-		opacity: 0;
-		pointer-events: none;
-	}
-	.pick img {
-		width: 100%;
-		height: auto;
-		aspect-ratio: 1;
-		border-radius: var(--radius-sm);
 		image-rendering: pixelated;
+	}
+	.art-label {
+		font: 600 14px/1.3 var(--font-ui);
+		color: var(--fg-2);
 	}
 	.roles {
 		display: flex;
@@ -410,9 +394,6 @@
 	@media (max-width: 520px) {
 		.row {
 			grid-template-columns: 1fr;
-		}
-		.picks {
-			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 </style>

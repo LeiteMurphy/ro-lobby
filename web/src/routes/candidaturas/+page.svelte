@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { portraitAlt, portraitSrc } from '$lib/characters/portraits';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import LeaveDialog from '$lib/applications/components/LeaveDialog.svelte';
@@ -56,8 +57,8 @@
 					<li class="row" data-testid="my-application-row">
 						{#if c}<img
 								class="portrait"
-								src="/portraits/{c.portrait}.svg"
-								alt=""
+								src={portraitSrc(c.portrait)}
+								alt={portraitAlt(c.portrait)}
 								width="52"
 								height="52"
 							/>{:else}<span class="portrait"></span>{/if}

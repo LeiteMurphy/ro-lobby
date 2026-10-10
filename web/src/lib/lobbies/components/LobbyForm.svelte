@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { portraitAlt, portraitSrc } from '$lib/characters/portraits';
 	import { enhance } from '$app/forms';
 	import type { Character, RoClassEntry } from '$lib/characters/api';
 	import { ROLE_ICONS } from '$lib/home/catalog';
@@ -420,7 +421,12 @@
 							bind:group={characterId}
 							disabled={mode === 'update'}
 						/>
-						<img src="/portraits/{c.portrait}.svg" alt="" width="34" height="34" />
+						<img
+							src={portraitSrc(c.portrait)}
+							alt={portraitAlt(c.portrait)}
+							width="34"
+							height="34"
+						/>
 						<span class="who">
 							<span class="nm"
 								>{c.nick}{#if c.isMain}<span class="badge">Principal</span>{/if}</span

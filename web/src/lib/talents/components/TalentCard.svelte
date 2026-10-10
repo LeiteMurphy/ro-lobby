@@ -26,7 +26,7 @@
 
 <!-- RN-12: retrato, nick, classe, nível, função, dias e faixa, instâncias, link e Discord. -->
 <article class="talent" aria-labelledby={headingId} data-testid="talent-card">
-	<img class="portrait" src={portrait.src} alt="" width="52" height="52" />
+	<img class="portrait" src={portrait.src} alt={portrait.label} width="52" height="52" />
 	<div class="who">
 		<div class="head">
 			<h3 class="nick" id={headingId}>{talent.nick}</h3>

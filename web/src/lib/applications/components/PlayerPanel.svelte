@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { portraitAlt, portraitSrc } from '$lib/characters/portraits';
 	import { enhance } from '$app/forms';
 	import { ROLE_LABELS } from '$lib/home/types';
 	import { fromUtcIso } from '$lib/lobbies/time';
@@ -43,8 +44,8 @@
 	<div class="head">
 		{#if person.portrait}<img
 				class="portrait"
-				src="/portraits/{person.portrait}.svg"
-				alt=""
+				src={portraitSrc(person.portrait)}
+				alt={portraitAlt(person.portrait)}
 				width="72"
 				height="72"
 			/>{/if}
