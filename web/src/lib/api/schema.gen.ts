@@ -806,7 +806,7 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title";
             /** @enum {string} */
             code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start" | "locked";
         };
@@ -839,7 +839,7 @@ export interface components {
         };
         LobbyInput: {
             /** @description ID de uma instância de GET /instances. */
-            instanceId: string;
+            instanceId?: string;
             /**
              * Format: date-time
              * @description Início em UTC; o web converte o dia e a hora de Brasília (D-04).
@@ -854,6 +854,10 @@ export interface components {
             formation?: components["schemas"]["Formation"];
             /** @description Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02). */
             freeSlots?: number;
+            /** @description Lobby sem instância; com ele, instanceId é ignorado (spec lobby-sem-instancia, RN-01). */
+            anyInstance?: boolean;
+            /** @description Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02). */
+            title?: string;
         };
         LobbyUpdate: {
             /** @description ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17). */
@@ -866,6 +870,10 @@ export interface components {
             formation?: components["schemas"]["Formation"];
             /** @description Sem formação, mantém a atual; só muda com o grupo vazio (RN-07). Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02). */
             freeSlots?: number;
+            /** @description Lobby sem instância; passa para sem instância; sem ele e sem instanceId, continua a atual (spec lobby-sem-instancia, RN-01). */
+            anyInstance?: boolean;
+            /** @description Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02). */
+            title?: string;
         };
         /**
          * @description Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
@@ -879,8 +887,9 @@ export interface components {
         /** @enum {string} */
         LobbyStatus: "open" | "started" | "cancelled";
         LobbyInstance: {
-            id: string;
-            /** @description Nome guardado na criação (D-02). */
+            /** @description Nulo no lobby sem instância (spec lobby-sem-instancia, D-02). */
+            id: string | null;
+            /** @description Nome guardado na criação (D-02), ou o título do lobby sem instância, ou "Qualquer instância". */
             name: string;
             level: number;
             /**
@@ -1638,7 +1647,9 @@ export interface operations {
     countTalents: {
         parameters: {
             query: {
-                instanceId: string;
+                instanceId?: string;
+                /** @description Lobby sem instância (spec lobby-sem-instancia, RN-07). */
+                anyInstance?: boolean;
                 startsAt: string;
                 minLevel: number;
                 tank?: number;

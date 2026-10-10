@@ -41,7 +41,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		label: d.today ? `Hoje, ${d.label}` : d.label
 	}));
 	const values: LobbyFormValues = {
-		instanceId: l.instance.id,
+		instanceId: l.instance.id ?? '',
 		date,
 		time,
 		// spec grupo-livre: a formação atual; trocando, a outra começa no padrão.
@@ -57,10 +57,13 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 	const owner = characters.ok ? characters.data.filter((c) => c.id === l.owner.characterId) : [];
 	// RN-17: a instância atual fica na lista mesmo que tenha saído do catálogo.
 	const catalog = instances.ok ? instances.data : [];
-	const current = { id: l.instance.id, name: l.instance.name, level: l.instance.level };
+	const currentId = l.instance.id;
 	return {
 		lobby: l,
-		instances: catalog.some((i) => i.id === l.instance.id) ? catalog : [current, ...catalog],
+		instances:
+			currentId === null || catalog.some((i) => i.id === currentId)
+				? catalog
+				: [{ id: currentId, name: l.instance.name, level: l.instance.level }, ...catalog],
 		characters: owner,
 		classes: classes.ok ? classes.data : [],
 		days,

@@ -530,7 +530,7 @@ func (s *Service) ListMine(ctx context.Context, userID string) ([]Mine, error) {
 		app.Status = effectiveStatus(app.Status, lobby, now)
 		out[i] = Mine{
 			Application:  app,
-			InstanceName: r.InstanceName,
+			InstanceName: instanceName(r.InstanceName),
 			StartsAt:     r.StartsAt.UTC(),
 			LobbyStatus:  lobbyStatus(lobby, now),
 			Nick:         r.Nick.String,
@@ -673,4 +673,13 @@ func parseUUID(s string) (pgtype.UUID, error) {
 
 func optionalText(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: s != ""}
+}
+
+// instanceName é o nome mostrado do lobby: a instância, o título do lobby sem instância
+// ou "Qualquer instância" (RN-04 da lobby-sem-instancia).
+func instanceName(name pgtype.Text) string {
+	if name.String == "" {
+		return lobbies.AnyInstanceName
+	}
+	return name.String
 }

@@ -338,7 +338,7 @@ ORDER BY applications.created_at DESC, applications.id DESC
 
 type ListMyApplicationsRow struct {
 	Application      Application
-	InstanceName     string
+	InstanceName     pgtype.Text
 	StartsAt         time.Time
 	LobbyCancelledAt pgtype.Timestamptz
 	Nick             pgtype.Text

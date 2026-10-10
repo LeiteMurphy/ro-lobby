@@ -264,6 +264,7 @@ const (
 	FieldErrorFieldStart       FieldErrorField = "start"
 	FieldErrorFieldStartsAt    FieldErrorField = "startsAt"
 	FieldErrorFieldTime        FieldErrorField = "time"
+	FieldErrorFieldTitle       FieldErrorField = "title"
 )
 
 // Valid indicates whether the value is a known member of the FieldErrorField enum.
@@ -312,6 +313,8 @@ func (e FieldErrorField) Valid() bool {
 	case FieldErrorFieldStartsAt:
 		return true
 	case FieldErrorFieldTime:
+		return true
+	case FieldErrorFieldTitle:
 		return true
 	default:
 		return false
@@ -883,6 +886,9 @@ type Lobby struct {
 
 // LobbyInput defines model for LobbyInput.
 type LobbyInput struct {
+	// AnyInstance Lobby sem instância; com ele, instanceId é ignorado (spec lobby-sem-instancia, RN-01).
+	AnyInstance *bool `json:"anyInstance,omitempty"`
+
 	// CharacterId Um dos personagens do Usuário da sessão.
 	CharacterId string `json:"characterId"`
 
@@ -893,8 +899,8 @@ type LobbyInput struct {
 	FreeSlots *int `json:"freeSlots,omitempty"`
 
 	// InstanceId ID de uma instância de GET /instances.
-	InstanceId string `json:"instanceId"`
-	MinLevel   int    `json:"minLevel"`
+	InstanceId *string `json:"instanceId,omitempty"`
+	MinLevel   int     `json:"minLevel"`
 
 	// Note Opcional, até 250 caracteres.
 	Note  *string `json:"note,omitempty"`
@@ -902,14 +908,18 @@ type LobbyInput struct {
 
 	// StartsAt Início em UTC; o web converte o dia e a hora de Brasília (D-04).
 	StartsAt time.Time `json:"startsAt"`
+
+	// Title Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02).
+	Title *string `json:"title,omitempty"`
 }
 
 // LobbyInstance defines model for LobbyInstance.
 type LobbyInstance struct {
-	Id    string `json:"id"`
-	Level int    `json:"level"`
+	// Id Nulo no lobby sem instância (spec lobby-sem-instancia, D-02).
+	Id    *string `json:"id"`
+	Level int     `json:"level"`
 
-	// Name Nome guardado na criação (D-02).
+	// Name Nome guardado na criação (D-02), ou o título do lobby sem instância, ou "Qualquer instância".
 	Name string `json:"name"`
 
 	// Reset Nulo se a instância saiu do catálogo.
@@ -990,6 +1000,9 @@ type LobbySwapRequest struct {
 
 // LobbyUpdate defines model for LobbyUpdate.
 type LobbyUpdate struct {
+	// AnyInstance Lobby sem instância; passa para sem instância; sem ele e sem instanceId, continua a atual (spec lobby-sem-instancia, RN-01).
+	AnyInstance *bool `json:"anyInstance,omitempty"`
+
 	// Formation Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
 	Formation *Formation `json:"formation,omitempty"`
 
@@ -1002,6 +1015,9 @@ type LobbyUpdate struct {
 	Note       *string   `json:"note,omitempty"`
 	Slots      Slots     `json:"slots"`
 	StartsAt   time.Time `json:"startsAt"`
+
+	// Title Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02).
+	Title *string `json:"title,omitempty"`
 }
 
 // MyApplication Uma candidatura do Usuário com o lobby e o personagem (RN-33).
@@ -1255,7 +1271,10 @@ type ListTalentsParams struct {
 
 // CountTalentsParams defines parameters for CountTalents.
 type CountTalentsParams struct {
-	InstanceId  string     `form:"instanceId" json:"instanceId"`
+	InstanceId *string `form:"instanceId,omitempty" json:"instanceId,omitempty"`
+
+	// AnyInstance Lobby sem instância (spec lobby-sem-instancia, RN-07).
+	AnyInstance *bool      `form:"anyInstance,omitempty" json:"anyInstance,omitempty"`
 	StartsAt    time.Time  `form:"startsAt" json:"startsAt"`
 	MinLevel    int        `form:"minLevel" json:"minLevel"`
 	Tank        *int       `form:"tank,omitempty" json:"tank,omitempty"`
@@ -2207,15 +2226,28 @@ func (siw *ServerInterfaceWrapper) CountTalents(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params CountTalentsParams
 
-	// ------------- Required query parameter "instanceId" -------------
+	// ------------- Optional query parameter "instanceId" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "instanceId", r.URL.Query(), &params.InstanceId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "instanceId", r.URL.Query(), &params.InstanceId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "instanceId"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "instanceId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "anyInstance" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "anyInstance", r.URL.Query(), &params.AnyInstance, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "anyInstance"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "anyInstance", Err: err})
 		}
 		return
 	}

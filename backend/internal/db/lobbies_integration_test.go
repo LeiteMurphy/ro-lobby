@@ -16,8 +16,8 @@ import (
 func newLobby(ownerID, characterID pgtype.UUID) CreateLobbyParams {
 	return CreateLobbyParams{
 		OwnerID:          ownerID,
-		InstanceID:       "templo-do-demonio-rei",
-		InstanceName:     "Templo do Demônio Rei",
+		InstanceID:       pgtype.Text{String: "templo-do-demonio-rei", Valid: true},
+		InstanceName:     pgtype.Text{String: "Templo do Demônio Rei", Valid: true},
 		InstanceLevel:    160,
 		StartsAt:         t0.Add(24 * time.Hour),
 		SlotsTank:        1,
@@ -56,7 +56,7 @@ func TestLobbies_RN06_RN07_RN09_RN19_ChecksRejectInvalidValues(t *testing.T) {
 		"nível mínimo 276":            func(p *CreateLobbyParams) { p.MinLevel = 276 },
 		"nível mínimo abaixo da inst": func(p *CreateLobbyParams) { p.MinLevel = 150 },
 		"função desconhecida":         func(p *CreateLobbyParams) { p.OwnerRole = "healer" },
-		"instância vazia":             func(p *CreateLobbyParams) { p.InstanceID = "" },
+		"instância vazia":             func(p *CreateLobbyParams) { p.InstanceID = pgtype.Text{String: "", Valid: true} },
 		"observação com 251":          func(p *CreateLobbyParams) { p.Note = pgtype.Text{String: strings.Repeat("a", 251), Valid: true} },
 	}
 	for name, mutate := range cases {

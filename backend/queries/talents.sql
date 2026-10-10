@@ -41,7 +41,8 @@ JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id
 WHERE a.enabled
   AND c.user_id <> sqlc.arg(exclude_user_id)
-  AND (a.any_instance OR sqlc.arg(instance_id)::text = ANY (a.instance_ids))
+  -- RN-07 da lobby-sem-instancia: lobby sem instância (instance_id vazio) aceita todos.
+  AND (sqlc.arg(instance_id)::text = '' OR a.any_instance OR sqlc.arg(instance_id)::text = ANY (a.instance_ids))
   AND ((a.start_minute < a.end_minute
         AND a.days & (1 << sqlc.arg(dow)::int) <> 0
         AND sqlc.arg(minute)::int >= a.start_minute AND sqlc.arg(minute)::int < a.end_minute)
