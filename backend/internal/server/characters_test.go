@@ -100,7 +100,7 @@ func TestClasses_CA07_1_PublicCatalog(t *testing.T) {
 	if len(got) != 82 {
 		t.Fatalf("%d classes, quer 82", len(got))
 	}
-	want := map[string]string{"id": "guardiao-real", "name": "Guardião Real", "plural": "Guardiões Reais", "tier": "terceira", "family": "Espadachim"}
+	want := map[string]string{"id": "guardiao-real", "name": "Guardião Real", "plural": "Guardiões Reais", "tier": "terceira", "family": "Espadachim", "art": "templario"}
 	if !slices.ContainsFunc(got, func(c map[string]string) bool { return reflect.DeepEqual(c, want) }) {
 		t.Errorf("Guardião Real não veio como %v", want)
 	}
@@ -117,7 +117,7 @@ func TestCharacters_RN01_ListOfSessionUser(t *testing.T) {
 	decode(t, rec.Body.Bytes(), &got)
 	want := map[string]any{
 		"id": charID, "nick": "Brasa", "classId": "guardiao-real", "level": float64(172), "role": "tank",
-		"portrait": "retrato-1", "link": nil, "isMain": true, "createdAt": "2026-10-06T12:00:00Z",
+		"portrait": "templario", "link": nil, "isMain": true, "createdAt": "2026-10-06T12:00:00Z",
 		"availability": nil,
 	}
 	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
@@ -133,7 +133,7 @@ func TestCharacters_CA02_1_Create(t *testing.T) {
 	if rec.Code != http.StatusCreated || body["nick"] != "Brasa" {
 		t.Fatalf("status %d, corpo %v", rec.Code, body)
 	}
-	want := characters.Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "support", Portrait: "retrato-3", Link: "https://exemplo.com"}
+	want := characters.Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "support", Link: "https://exemplo.com"}
 	if f.gotIn != want {
 		t.Errorf("entrada = %+v", f.gotIn)
 	}
@@ -223,5 +223,23 @@ func decode(t *testing.T, data []byte, v any) {
 	t.Helper()
 	if err := json.Unmarshal(data, v); err != nil {
 		t.Fatalf("corpo não é JSON: %v (%s)", err, data)
+	}
+}
+
+// CA-01.2 / CA-01.5 / RN-02 / RN-03 da retrato-por-classe: o retrato da resposta vem da
+// classe, qualquer que seja o retrato gravado; trocar a classe troca o retrato.
+func TestToAPICharacter_CA01_2_CA01_5_ClassPortrait(t *testing.T) {
+	c := brasa
+	c.ClassID, c.Portrait = "cardeal", "retrato-3"
+	got, err := toAPICharacter(c)
+	if err != nil || got.Portrait != "sacerdote" {
+		t.Errorf("Cardeal = %q, %v", got.Portrait, err)
+	}
+	c.ClassID = "feiticeiro"
+	if got, _ := toAPICharacter(c); got.Portrait != "sabio" {
+		t.Errorf("Feiticeiro = %q", got.Portrait)
+	}
+	if classPortrait("cardeal", "") != "" {
+		t.Error("personagem excluído ganhou retrato")
 	}
 }

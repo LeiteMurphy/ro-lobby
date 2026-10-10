@@ -281,7 +281,7 @@ func toAPISwapCharacter(c lobbies.SwapCharacter) (api.SwapCharacter, error) {
 		Role:        api.Role(c.Role),
 	}
 	if c.Portrait != "" {
-		portrait := api.SwapCharacterPortrait(c.Portrait)
+		portrait := api.SwapCharacterPortrait(classPortrait(c.ClassID, c.Portrait))
 		out.Portrait = &portrait
 	}
 	return out, nil

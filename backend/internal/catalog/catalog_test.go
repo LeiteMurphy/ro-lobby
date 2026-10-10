@@ -176,3 +176,32 @@ func TestPortraits_RN10(t *testing.T) {
 		}
 	}
 }
+
+// CA-01.1 / CA-01.3 / CA-01.6 / RN-01 / RN-04 da retrato-por-classe: toda classe do
+// catálogo tem uma arte da lista; a linha, a família e o Aprendiz seguem a tabela; classe
+// fora do catálogo fica com o retrato padrão.
+func TestArtOf_CA01_1_CA01_3_CA01_6(t *testing.T) {
+	arts := map[string]bool{}
+	for _, a := range Arts() {
+		arts[a] = true
+	}
+	if len(arts) != 27 {
+		t.Fatalf("%d artes, quer 27", len(arts))
+	}
+	for _, c := range Classes() {
+		if !arts[ArtOf(c.ID)] {
+			t.Errorf("%s sem arte (%q)", c.ID, ArtOf(c.ID))
+		}
+	}
+	cases := map[string]string{
+		"renegado": "arruaceiro", "mandraque": "arruaceiro", "feiticeiro": "sabio", "cardeal": "sacerdote",
+		"maestro": "bardo", "diva": "odalisca", "sicario": "mercenario", "gatuno": "gatuno",
+		"taekwon": "taekwon", "aprendiz": "superaprendiz", "hiperaprendiz": "superaprendiz",
+		"shiranui": "ninja", "alitea": "druida", "animista": "invocador", "classe-removida": DefaultPortrait,
+	}
+	for class, want := range cases {
+		if got := ArtOf(class); got != want {
+			t.Errorf("%s = %q, quer %q", class, got, want)
+		}
+	}
+}

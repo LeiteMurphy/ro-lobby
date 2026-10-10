@@ -19,7 +19,9 @@ const CLASS_LIST: RoClassEntry[] = CLASSES.map((c) => ({
 	name: c.name,
 	plural: c.plural,
 	tier: c.tier,
-	family: c.family
+	family: c.family,
+	// A arte vem da API (spec retrato-por-classe, D-01); aqui basta uma linha conhecida.
+	art: c.name === 'Renegado' ? 'arruaceiro' : 'templario'
 }));
 
 function character(overrides: Partial<Character>): Character {
@@ -123,6 +125,18 @@ describe('/perfil renderizada no servidor', () => {
 		expect(html).toContain('aria-haspopup="menu"');
 	});
 
+	it('CA-01.1 / CA-01.5 (retrato-por-classe): a carta mostra a arte da linha com o nome como alt', () => {
+		const html = renderPage([character({ classId: 'renegado', portrait: 'arruaceiro' })]);
+		expect(cards(html)[0]).toMatch(
+			/<img class="portrait[^"]*" src="\/portraits\/classes\/arruaceiro\.png" alt="Linha do Arruaceiro"/
+		);
+	});
+
+	it('CA-01.6 (retrato-por-classe): classe fora do catálogo mostra o Retrato 1', () => {
+		const html = renderPage([character({ classId: 'classe-removida', portrait: 'retrato-1' })]);
+		expect(cards(html)[0]).toContain('src="/portraits/retrato-1.svg"');
+	});
+
 	it('borda de RN-06: classe fora do catálogo aparece pelo id', () => {
 		expect(renderPage([character({ classId: 'classe-removida' })])).toContain('classe-removida');
 	});
@@ -147,10 +161,20 @@ describe('diálogo de personagem renderizado no servidor', () => {
 		expect(new Set(groups).size).toBe(groups.length);
 	});
 
-	it('CA-02.2 / RN-10: os 4 retratos, com o primeiro marcado por padrão', () => {
+	it('CA-01.4 (retrato-por-classe): sem a escolha de retrato, com o aviso até escolher a classe', () => {
 		const html = renderDialog({});
-		expect(html.match(/name="portrait"/g)).toHaveLength(4);
-		expect(html).toMatch(/value="retrato-1"[^>]*checked/);
+		expect(html).not.toContain('name="portrait"');
+		expect(html).toContain('data-testid="class-art"');
+		expect(html).toContain('Escolha a classe para ver o retrato');
+	});
+
+	it('CA-01.4 (retrato-por-classe): na edição, mostra a arte da classe do personagem', () => {
+		const html = renderDialog({
+			mode: 'update',
+			character: character({ classId: 'renegado', portrait: 'arruaceiro' })
+		});
+		expect(html).toMatch(/src="\/portraits\/classes\/arruaceiro\.png" alt="Linha do Arruaceiro"/);
+		expect(html).toContain('Linha do Arruaceiro');
 	});
 
 	it('CA-02.9 / RN-19: o erro aparece junto do campo e os valores voltam preenchidos', () => {
@@ -171,7 +195,6 @@ describe('diálogo de personagem renderizado no servidor', () => {
 		expect(html).toMatch(/aria-invalid="true"[^>]*aria-describedby="([^"]+-nick-err)"/);
 		expect(html).toContain('Esse nick já está em uso');
 		expect(html).toMatch(/<option value="paladino" selected/);
-		expect(html).toMatch(/value="retrato-4"[^>]*checked/);
 		expect(html).toMatch(/value="tank"[^>]*checked/);
 		expect(html).toContain('value="https://x.com"');
 	});

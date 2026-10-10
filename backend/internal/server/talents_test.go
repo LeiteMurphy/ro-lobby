@@ -110,7 +110,7 @@ func TestListLobbyTalents_CA02_1(t *testing.T) {
 	}
 	want := map[string]any{
 		"characterId": charID, "nick": "Fogo", "classId": "arquimago", "level": float64(200), "role": "dps",
-		"portrait": "retrato-2", "link": nil, "days": []any{float64(3)}, "start": "18:00", "end": "00:00",
+		"portrait": "bruxo", "link": nil, "days": []any{float64(3)}, "start": "18:00", "end": "00:00",
 		"anyInstance": true, "instances": []any{}, "discordUsername": "caio",
 		"removed": true, "blocked": false,
 	}

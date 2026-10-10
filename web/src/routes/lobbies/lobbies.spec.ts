@@ -243,6 +243,19 @@ describe('/lobbies/[id] com candidaturas (candidatura-lobby, T-05)', () => {
 		}
 	});
 
+	it('CA-02.1 (retrato-por-classe): dono e membro com a arte da linha e o nome como alt', () => {
+		const html = renderAs(null, {
+			owner: { ...TEMPLE.owner, portrait: 'sacerdote' },
+			members: [{ ...MEMBER, classId: 'sicario', portrait: 'mercenario' }]
+		});
+		expect(html).toMatch(
+			/data-testid="owner-slot"[\s\S]*?src="\/portraits\/classes\/sacerdote\.png" alt="Linha do Sacerdote"/
+		);
+		expect(html).toMatch(
+			/data-testid="member-slot"[\s\S]*?src="\/portraits\/classes\/mercenario\.png" alt="Linha do Mercenário"/
+		);
+	});
+
 	it('CA-02.1 / CA-10.1: o membro aceito ocupa a vaga e é um botão do painel', () => {
 		const html = renderAs(null, {});
 		expect(html).toMatch(

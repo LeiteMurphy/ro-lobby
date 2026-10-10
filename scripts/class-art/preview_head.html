@@ -1,0 +1,28 @@
+<title>Artes de classe</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@600&family=Nunito+Sans:wght@400;600;700&display=swap">
+<style>
+/* Galeria em grade: cada linha de classe é uma carta, como o card do personagem no perfil. */
+:root{--bg:#eef1f6;--card:#ffffff;--fg:#141a24;--muted:#5b6678;--line:#d6dce6;--accent:#b07a1c;
+--display:"Pixelify Sans","Nunito Sans",system-ui,sans-serif;--body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1017;--card:#141b25;--fg:#ece7dc;--muted:#9aa6b8;--line:#253041;--accent:#f6bb45;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1017;--card:#141b25;--fg:#ece7dc;--muted:#9aa6b8;--line:#253041;--accent:#f6bb45;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px}
+main{max-width:1100px;margin:0 auto;padding-block:28px 48px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-direction:column;gap:6px;max-width:65ch}
+h1{margin:0;font:600 30px/1.1 var(--display);color:var(--accent);text-wrap:balance}
+header p{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+figure img{display:block;width:100%;max-width:100%;height:auto;aspect-ratio:1;image-rendering:pixelated}
+figcaption{display:flex;flex-direction:column;gap:4px;padding:10px 12px 12px;min-width:0}
+figcaption b{font:600 15px/1.2 var(--display)}
+figcaption span{color:var(--muted);font-size:13px}
+code{font:12px var(--mono);color:var(--muted)}
+</style>
+<main>
+<header>
+<h1>Artes de classe</h1>
+<p>Versão 2, em 64×64: pixel art original com contorno, luz e sombra. Cada linha de classe tem um emblema do seu arquétipo (arma, cor e tema), sem copiar arte da Gravity.</p>
+<p>O retrato do personagem passa a vir da classe dele. O Aprendiz usa a arte da linha do Superaprendiz, e as primeiras classes usam a arte da família até escolher a linha.</p>
+</header>
+<div class="grid">

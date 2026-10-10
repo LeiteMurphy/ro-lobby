@@ -129,7 +129,7 @@ func TestLobbies_RN22_PublicList(t *testing.T) {
 		"pendingCount": float64(0),
 		"minLevel":     float64(160), "note": nil, "cancelReason": nil, "createdAt": "2026-10-06T19:40:00Z",
 		"owner": map[string]any{"userId": userID, "discordName": "Grimbold", "characterId": charID, "nick": "Lirien",
-			"classId": "arcebispo", "level": float64(178), "portrait": "retrato-2", "link": nil, "role": "support"},
+			"classId": "arcebispo", "level": float64(178), "portrait": "sacerdote", "link": nil, "role": "support"},
 	}
 	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got)

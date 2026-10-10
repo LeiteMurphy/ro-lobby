@@ -209,7 +209,7 @@ func TestGetLobby_D12_SwapRequestsAndBlocked(t *testing.T) {
 	_, body := call(t, newLobbiesServer(&fakeLobbies{detail: &owner}), http.MethodGet, "/lobbies/"+lobbyID, "token-valido", "")
 	want := []any{map[string]any{
 		"id": swapID, "applicationId": appID, "userId": userID, "discordName": "Bia",
-		"from":   map[string]any{"characterId": charID, "nick": "Fogo", "classId": "arquimago", "level": float64(200), "portrait": "retrato-1", "role": "dps"},
+		"from":   map[string]any{"characterId": charID, "nick": "Fogo", "classId": "arquimago", "level": float64(200), "portrait": "bruxo", "role": "dps"},
 		"to":     map[string]any{"characterId": nil, "nick": "Brasa", "classId": "guardiao-real", "level": float64(200), "portrait": nil, "role": "tank"},
 		"reason": "ninguém apareceu de tank", "createdAt": fromJSN,
 	}}

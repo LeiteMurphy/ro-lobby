@@ -694,10 +694,10 @@ export interface components {
          */
         Role: "tank" | "support" | "dps";
         /**
-         * @description Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+         * @description Retrato do personagem: a arte da linha da classe dele, em web/static/portraits/classes/ (spec retrato-por-classe, RN-01, D-02), ou o retrato-1 para classe fora do catálogo. Os retratos 2 a 4 continuam válidos na entrada antiga.
          * @enum {string}
          */
-        Portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4";
+        Portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | "superaprendiz" | "espadachim" | "cavaleiro" | "templario" | "mago" | "bruxo" | "sabio" | "gatuno" | "mercenario" | "arruaceiro" | "mercador" | "ferreiro" | "alquimista" | "novico" | "sacerdote" | "monge" | "arqueiro" | "cacador" | "bardo" | "odalisca" | "taekwon" | "mestre-taekwon" | "espiritualista" | "ninja" | "justiceiro" | "invocador" | "druida";
         /** @enum {string} */
         ClassTier: "aprendiz" | "primeira" | "segunda" | "transcendental" | "terceira" | "quarta" | "expandida";
         Class: {
@@ -719,6 +719,8 @@ export interface components {
              * @example Espadachim
              */
             family: string;
+            /** @description Arte da linha da classe (spec retrato-por-classe, RN-01). */
+            art: string;
         };
         /** @description Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422. */
         CharacterInput: {
@@ -915,7 +917,7 @@ export interface components {
              * @description Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
              * @enum {string|null}
              */
-            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | null;
+            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | "superaprendiz" | "espadachim" | "cavaleiro" | "templario" | "mago" | "bruxo" | "sabio" | "gatuno" | "mercenario" | "arruaceiro" | "mercador" | "ferreiro" | "alquimista" | "novico" | "sacerdote" | "monge" | "arqueiro" | "cacador" | "bardo" | "odalisca" | "taekwon" | "mestre-taekwon" | "espiritualista" | "ninja" | "justiceiro" | "invocador" | "druida" | null;
             /** @description Link externo do personagem do dono, para o painel do jogador (RN-31). */
             link: string | null;
             role: components["schemas"]["Role"];
@@ -1025,7 +1027,7 @@ export interface components {
             classId: string | null;
             level: number | null;
             /** @enum {string|null} */
-            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | null;
+            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | "superaprendiz" | "espadachim" | "cavaleiro" | "templario" | "mago" | "bruxo" | "sabio" | "gatuno" | "mercenario" | "arruaceiro" | "mercador" | "ferreiro" | "alquimista" | "novico" | "sacerdote" | "monge" | "arqueiro" | "cacador" | "bardo" | "odalisca" | "taekwon" | "mestre-taekwon" | "espiritualista" | "ninja" | "justiceiro" | "invocador" | "druida" | null;
             link: string | null;
             role: components["schemas"]["Role"];
             /** @description Mensagem da candidatura, só para o dono (RN-28). */
@@ -1082,7 +1084,7 @@ export interface components {
             classId: string | null;
             level: number | null;
             /** @enum {string|null} */
-            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | null;
+            portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | "superaprendiz" | "espadachim" | "cavaleiro" | "templario" | "mago" | "bruxo" | "sabio" | "gatuno" | "mercenario" | "arruaceiro" | "mercador" | "ferreiro" | "alquimista" | "novico" | "sacerdote" | "monge" | "arqueiro" | "cacador" | "bardo" | "odalisca" | "taekwon" | "mestre-taekwon" | "espiritualista" | "ninja" | "justiceiro" | "invocador" | "druida" | null;
             role: components["schemas"]["Role"];
         };
         /** @description Pedido de troca pendente, como o dono vê (D-12). */
@@ -1115,7 +1117,7 @@ export interface components {
                 classId: string;
                 level: number;
                 /** @enum {string} */
-                portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4";
+                portrait: "retrato-1" | "retrato-2" | "retrato-3" | "retrato-4" | "superaprendiz" | "espadachim" | "cavaleiro" | "templario" | "mago" | "bruxo" | "sabio" | "gatuno" | "mercenario" | "arruaceiro" | "mercador" | "ferreiro" | "alquimista" | "novico" | "sacerdote" | "monge" | "arqueiro" | "cacador" | "bardo" | "odalisca" | "taekwon" | "mestre-taekwon" | "espiritualista" | "ninja" | "justiceiro" | "invocador" | "druida";
             } | null;
         };
     };

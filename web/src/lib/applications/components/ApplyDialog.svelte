@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { portraitAlt, portraitSrc } from '$lib/characters/portraits';
 	import { onMount, untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { ROLE_LABELS } from '$lib/home/types';
@@ -79,7 +80,12 @@
 							bind:group={chosen}
 							disabled={!o.ok}
 						/>
-						<img src="/portraits/{o.character.portrait}.svg" alt="" width="36" height="36" />
+						<img
+							src={portraitSrc(o.character.portrait)}
+							alt={portraitAlt(o.character.portrait)}
+							width="36"
+							height="36"
+						/>
 						<span class="who">
 							<span class="nm">{o.character.nick}</span>
 							<span class="sub"

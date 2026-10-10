@@ -10,7 +10,13 @@ import {
 	type CharacterInput
 } from './api';
 import { fieldMessage, fieldMessages, LIMIT_MESSAGE } from './messages';
-import { DEFAULT_PORTRAIT, PORTRAITS, portraitInfo } from './portraits';
+import {
+	CLASS_ARTS,
+	DEFAULT_PORTRAIT,
+	GENERIC_PORTRAITS,
+	portraitForClass,
+	portraitInfo
+} from './portraits';
 
 const base = 'http://api.test';
 const input: CharacterInput = { nick: 'Brasa', classId: 'guardiao-real', level: 172, role: 'tank' };
@@ -124,32 +130,51 @@ describe('mensagens em pt-BR (D-07)', () => {
 	});
 });
 
-describe('retratos (RN-10, D-04, RNF-02)', () => {
+describe('retratos pela classe (spec retrato-por-classe)', () => {
 	const dir = new URL('../../../static/portraits/', import.meta.url);
+	const classDir = new URL('classes/', dir);
 
-	it('CA-02.2: 4 retratos, com o primeiro como padrão', () => {
-		expect(PORTRAITS.map((p) => p.id)).toEqual([
-			'retrato-1',
-			'retrato-2',
-			'retrato-3',
-			'retrato-4'
-		]);
-		expect(DEFAULT_PORTRAIT).toBe(PORTRAITS[0].id);
-		expect(portraitInfo('desconhecido').id).toBe('retrato-1');
+	it('CA-01.1 / RN-05: a arte da linha, com o nome da linha como texto alternativo', () => {
+		expect(portraitInfo('arruaceiro')).toEqual({
+			id: 'arruaceiro',
+			label: 'Linha do Arruaceiro',
+			src: '/portraits/classes/arruaceiro.png'
+		});
+		expect(portraitInfo('superaprendiz').label).toBe('Linha do Superaprendiz');
+		expect(portraitInfo('gatuno').label).toBe('Família Gatuno');
 	});
 
-	it('D-04: cada retrato do contrato tem um arquivo em static/portraits/, e só eles', () => {
-		for (const p of PORTRAITS) {
-			expect(p.src).toBe(`/portraits/${p.id}.svg`);
-			expect(existsSync(new URL(`${p.id}.svg`, dir))).toBe(true);
+	it('CA-01.6 / RN-04: retrato desconhecido ou vazio vira o Retrato 1', () => {
+		expect(portraitInfo('desconhecido')).toMatchObject({
+			id: DEFAULT_PORTRAIT,
+			src: '/portraits/retrato-1.svg'
+		});
+		expect(portraitInfo(null).id).toBe('retrato-1');
+		expect(portraitInfo('retrato-3').src).toBe('/portraits/retrato-3.svg');
+	});
+
+	it('CA-01.4 / RN-01: a arte da classe escolhida vem do catálogo', () => {
+		const classes = [{ id: 'renegado', art: 'arruaceiro' }];
+		expect(portraitForClass('renegado', classes).label).toBe('Linha do Arruaceiro');
+		expect(portraitForClass('', classes).id).toBe('retrato-1');
+	});
+
+	it('RNF-01 / RNF-02 / D-04: cada arte tem seu PNG de até 4 KB, e só elas', () => {
+		expect(CLASS_ARTS).toHaveLength(27);
+		expect(readdirSync(classDir).sort()).toEqual(CLASS_ARTS.map((a) => `${a}.png`).sort());
+		for (const a of CLASS_ARTS) {
+			const png = readFileSync(new URL(`${a}.png`, classDir));
+			expect(png.subarray(1, 4).toString()).toBe('PNG');
+			expect(png.length).toBeLessThanOrEqual(4096);
 		}
-		expect(readdirSync(dir).sort()).toEqual(PORTRAITS.map((p) => `${p.id}.svg`));
 	});
 
-	it('RNF-02: os SVGs não carregam nada de fora', () => {
-		for (const p of PORTRAITS) {
-			const svg = readFileSync(new URL(`${p.id}.svg`, dir), 'utf8');
-			expect(svg).not.toMatch(/(href|src)=|url\(|@import/);
+	it('RN-04: os 4 retratos genéricos continuam, sem nada de fora', () => {
+		for (const id of GENERIC_PORTRAITS) {
+			expect(existsSync(new URL(`${id}.svg`, dir))).toBe(true);
+			expect(readFileSync(new URL(`${id}.svg`, dir), 'utf8')).not.toMatch(
+				/(href|src)=|url\(|@import/
+			);
 		}
 	});
 });

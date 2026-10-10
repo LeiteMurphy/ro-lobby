@@ -186,7 +186,7 @@ func (h applicationsHandler) ListMyApplications(ctx context.Context, _ api.ListM
 				Level    int                                `json:"level"`
 				Nick     string                             `json:"nick"`
 				Portrait api.MyApplicationCharacterPortrait `json:"portrait"`
-			}{ClassId: m.ClassID, Level: m.Level, Nick: m.Nick, Portrait: api.MyApplicationCharacterPortrait(m.Portrait)}
+			}{ClassId: m.ClassID, Level: m.Level, Nick: m.Nick, Portrait: api.MyApplicationCharacterPortrait(classPortrait(m.ClassID, m.Portrait))}
 		}
 	}
 	return body, nil
@@ -246,7 +246,7 @@ func toAPIParticipant(p lobbies.Participant) (api.LobbyParticipant, error) {
 		CreatedAt:     p.CreatedAt,
 	}
 	if p.Portrait != "" {
-		portrait := api.LobbyParticipantPortrait(p.Portrait)
+		portrait := api.LobbyParticipantPortrait(classPortrait(p.ClassID, p.Portrait))
 		out.Portrait = &portrait
 	}
 	return out, nil
