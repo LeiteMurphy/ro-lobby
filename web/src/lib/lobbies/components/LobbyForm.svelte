@@ -383,7 +383,11 @@
 				/>
 				{#if errors.minLevel}<span class="hint-err" id={errId('minLevel')}
 						><Icon name="circle-x" size={14} />{errors.minLevel}</span
-					>{:else}<span class="hint">Mínimo da instância: {instance.level}</span>{/if}
+					>{:else}<span class="hint"
+						>{noInstance
+							? 'Sem instância: de 1 a 275'
+							: `Mínimo da instância: ${instance.level}`}</span
+					>{/if}
 			</div>
 			<div class="field">
 				<label class="lbl" for="{uid}-note">Observação (opcional)</label>

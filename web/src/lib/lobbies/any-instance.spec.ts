@@ -108,6 +108,8 @@ describe('formulário sem instância', () => {
 		expect(html).toMatch(/name="title"[^>]*maxlength="40"|maxlength="40"[^>]*name="title"/);
 		expect(html).toContain('Caça ao MVP');
 		expect(html).toMatch(/name="minLevel"[^>]*min="1"|min="1"[^>]*name="minLevel"/);
+		expect(html).toContain('Sem instância: de 1 a 275');
+		expect(html).not.toContain('Mínimo da instância');
 		const empty = renderForm({ ...VALUES, instanceId: NO_INSTANCE, minLevel: '1' });
 		expect(empty).toContain(ANY_INSTANCE_NAME);
 	});

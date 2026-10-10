@@ -550,7 +550,9 @@
 							<span class="hint">Nenhum jogador disponível agora.</span>
 						{:else}
 							<span class="hint"
-								>No banco de talentos, com a instância, o horário, o nível e {free
+								>No banco de talentos, com {lobby.instance.id === null
+									? 'o horário'
+									: 'a instância, o horário'}, o nível e {free
 									? 'o grupo com vaga livre'
 									: 'uma função com vaga'}. Chame pelo Discord.</span
 							>
