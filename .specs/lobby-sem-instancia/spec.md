@@ -1,7 +1,7 @@
 # Spec — Lobby sem instância
 
-- Feature: `lobby-sem-instancia` · Nível: M · Status: Rascunho
-- Notion: (a criar na fase de Tasks)
+- Feature: `lobby-sem-instancia` · Nível: M · Status: Aprovada (2026-10-09)
+- Notion: https://app.notion.com/p/3f5d4a3a5eff81bb924bcb3af470ab83
 - Última revisão: 2026-10-09 — primeira versão
 
 ## 1. Contexto
