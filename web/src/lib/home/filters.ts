@@ -2,7 +2,8 @@ import { roomFor } from './lobbies';
 import { toMinutes } from './time';
 import { ROLES, type Lobby, type Role } from './types';
 
-export type TimeRangeKey = 'any' | '18-20' | '20-22' | '22-24';
+/** 'any' ou um bloco de 2 h, como '08-10' e '22-24' (RN-12). */
+export type TimeRangeKey = string;
 
 export interface TimeRange {
 	key: TimeRangeKey;
@@ -13,13 +14,45 @@ export interface TimeRange {
 	end: number;
 }
 
-/** RN-12: faixas de horário, com o início incluído e o fim excluído. */
+const hh = (h: number) => String(h % 24).padStart(2, '0');
+
+/** RN-12: "Qualquer horário". */
+export const ANY_TIME: TimeRange = { key: 'any', label: 'Qualquer horário', start: 0, end: 1440 };
+
+/**
+ * RN-12 (revisão de 2026-10-09): o dia em blocos fixos de 2 h, com o início incluído e o
+ * fim excluído, de 00h–02h a 22h–00h.
+ */
+export const TIME_BLOCKS: readonly TimeRange[] = Array.from({ length: 12 }, (_, i) => ({
+	key: `${String(i * 2).padStart(2, '0')}-${String(i * 2 + 2).padStart(2, '0')}`,
+	label: `${hh(i * 2)}h–${hh(i * 2 + 2)}h`,
+	start: i * 120,
+	end: i * 120 + 120
+}));
+
+/** RN-12: as faixas da noite, que aparecem sempre. */
+const ALWAYS = new Set(['18-20', '20-22', '22-24']);
+
+/** As faixas que aparecem sempre: "Qualquer horário" e as três da noite. */
 export const TIME_RANGES: readonly TimeRange[] = [
-	{ key: 'any', label: 'Qualquer horário', start: 0, end: 1440 },
-	{ key: '18-20', label: '18h–20h', start: 1080, end: 1200 },
-	{ key: '20-22', label: '20h–22h', start: 1200, end: 1320 },
-	{ key: '22-24', label: '22h–00h', start: 1320, end: 1440 }
+	ANY_TIME,
+	...TIME_BLOCKS.filter((b) => ALWAYS.has(b.key))
 ];
+
+/**
+ * RN-12 (revisão de 2026-10-09): "Qualquer horário", as três da noite, os blocos em que
+ * algum lobby do dia começa (sem considerar os filtros) e o marcado, na ordem do relógio.
+ */
+export function visibleTimeRanges(
+	dayLobbies: readonly Lobby[],
+	selected: TimeRangeKey
+): TimeRange[] {
+	const used = new Set(dayLobbies.map((l) => Math.floor(toMinutes(l.time) / 120)));
+	return [
+		ANY_TIME,
+		...TIME_BLOCKS.filter((b, i) => ALWAYS.has(b.key) || used.has(i) || b.key === selected)
+	];
+}
 
 export const LEVEL_OPTIONS = [
 	{ value: '', label: 'Qualquer nível' },
@@ -42,7 +75,7 @@ export interface Filters {
 export const NO_FILTERS: Filters = { instance: '', roles: [], maxMinLevel: null, timeRange: 'any' };
 
 function inRange(lobby: Lobby, key: TimeRangeKey): boolean {
-	const range = TIME_RANGES.find((r) => r.key === key) ?? TIME_RANGES[0];
+	const range = TIME_BLOCKS.find((r) => r.key === key) ?? ANY_TIME;
 	const start = toMinutes(lobby.time);
 	return start >= range.start && start < range.end;
 }
@@ -79,7 +112,7 @@ export function timeRangeCounts(
 ): Record<TimeRangeKey, number> {
 	const passing = dayLobbies.filter((l) => matches(l, filters, { skipTime: true }));
 	return Object.fromEntries(
-		TIME_RANGES.map((r) => [r.key, passing.filter((l) => inRange(l, r.key)).length])
+		[ANY_TIME, ...TIME_BLOCKS].map((r) => [r.key, passing.filter((l) => inRange(l, r.key)).length])
 	) as Record<TimeRangeKey, number>;
 }
 
