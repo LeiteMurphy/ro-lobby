@@ -24,7 +24,7 @@
 
 ## Backend
 
-### T-01 — Lobby sem instância na API, no banco e na afinidade  [ ]
+### T-01 — Lobby sem instância na API, no banco e na afinidade  [x]
 - Cobre: US-01, US-03, RN-01, RN-02, RN-03, RN-06, RN-07, RN-08, CA-01.1 a CA-01.4 (API),
   CA-03.1 (API), CA-04.1, RNF-01, D-01 a D-03
 - Depende de: —
@@ -36,11 +36,11 @@
   provam criar sem instância com e sem título, recusar título de 41, nível de 1 até o do
   dono, trocar de instância para sem instância e de volta na edição, e afinidade com
   personagem de outra instância.
-- Commit:
+- Commit: 42363ae
 
 ## Web
 
-### T-02 — Formulário, nome no card e filtro da Home  [ ]
+### T-02 — Formulário, nome no card e filtro da Home  [x]
 - Cobre: US-01, US-02, US-03, RN-01 a RN-06, CA-01.1 a CA-01.5, CA-02.1, CA-03.1, RNF-03,
   D-04
 - Depende de: T-01
@@ -50,7 +50,7 @@
 - Pronto quando: testes de SSR e e2e provam a opção "Sem instância definida" com o título
   e o nível 1, o padrão com instância, o título no card, no detalhe e no convite, o
   filtro "Sem instância definida" e a troca na edição.
-- Commit:
+- Commit: e3a1e4a
 
 ## Matriz de cobertura
 | Critério | Tasks |
