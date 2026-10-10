@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Check from '$lib/ui/Check.svelte';
+	import { NO_INSTANCE } from '$lib/lobbies/form';
 	import Select from '$lib/ui/Select.svelte';
 	import {
 		LEVEL_OPTIONS,
@@ -35,7 +36,11 @@
 		onchange
 	}: Props = $props();
 
-	const instanceOptions = $derived(instances.map((i) => ({ value: i, label: i })));
+	// RN-05 da lobby-sem-instancia: a opção "Sem instância definida".
+	const instanceOptions = $derived([
+		{ value: NO_INSTANCE, label: 'Sem instância definida' },
+		...instances.map((i) => ({ value: i, label: i }))
+	]);
 
 	function toggleRole(role: Role, on: boolean) {
 		const roles = on ? [...filters.roles, role] : filters.roles.filter((r) => r !== role);

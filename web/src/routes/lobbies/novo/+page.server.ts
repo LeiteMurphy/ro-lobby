@@ -56,7 +56,8 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch, url }) => {
 		note: '',
 		// spec grupo-livre, RN-01 e RN-02: por função; o grupo livre começa com 12 vagas.
 		formation: 'roles',
-		freeSlots: '12'
+		freeSlots: '12',
+		title: ''
 	};
 	return {
 		characters: mine,

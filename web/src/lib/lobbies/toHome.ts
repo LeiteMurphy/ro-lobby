@@ -23,6 +23,7 @@ export function toHomeLobby(lobby: ApiLobby, classNames: ReadonlyMap<string, str
 		hostClass: classId ? (classNames.get(classId) ?? classId) : '',
 		minLevel: lobby.minLevel,
 		ownerId: lobby.owner.userId,
+		...(lobby.instance.id === null ? { anyInstance: true } : {}),
 		pendingCount: lobby.pendingCount,
 		composition: {
 			tank: { filled: lobby.occupied.tank, total: lobby.slots.tank },

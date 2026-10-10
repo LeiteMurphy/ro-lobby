@@ -904,3 +904,29 @@ describe('desbloqueio pelo painel (spec candidatura-lobby, CA-06.9)', () => {
 		});
 	});
 });
+
+describe('/lobbies/[id]/editar sem instância (spec lobby-sem-instancia, RN-06)', () => {
+	const fetchFor = (instance: unknown) =>
+		fakeFetch({
+			[`GET /lobbies/${TEMPLE.id}`]: json(200, { ...TEMPLE, instance, minLevel: 1 }),
+			'GET /characters': json(200, [LIRIEN]),
+			'GET /classes': json(200, []),
+			'GET /instances': json(200, [])
+		}).fn;
+
+	it('CA-03.1 / RN-06: abre com "Sem instância definida" e o título; o padrão vira vazio', async () => {
+		const withTitle = (await editar.load(
+			editLoad(ANA, fakeCookies('t'), fetchFor({ id: null, name: 'Farm', level: 1, reset: null }))
+		)) as { values: { instanceId: string; title: string }; instances: unknown[] };
+		expect(withTitle.values).toMatchObject({ instanceId: '__none__', title: 'Farm' });
+		expect(withTitle.instances).toEqual([]);
+		const noTitle = (await editar.load(
+			editLoad(
+				ANA,
+				fakeCookies('t'),
+				fetchFor({ id: null, name: 'Qualquer instância', level: 1, reset: null })
+			)
+		)) as { values: { title: string } };
+		expect(noTitle.values.title).toBe('');
+	});
+});

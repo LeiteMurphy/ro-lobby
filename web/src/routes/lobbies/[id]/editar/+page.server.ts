@@ -7,7 +7,13 @@ import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
 import { buildDays } from '$lib/home/days';
 import { zonedNow } from '$lib/home/time';
 import { getLobby, listInstances, updateLobby } from '$lib/lobbies/api';
-import { readLobbyForm, toLobbyUpdate, type LobbyFormValues } from '$lib/lobbies/form';
+import {
+	ANY_INSTANCE_NAME,
+	NO_INSTANCE,
+	readLobbyForm,
+	toLobbyUpdate,
+	type LobbyFormValues
+} from '$lib/lobbies/form';
 import { lobbyConflictMessage, lobbyFieldMessages } from '$lib/lobbies/messages';
 import { fromUtcIso } from '$lib/lobbies/time';
 import type { Actions, PageServerLoad } from './$types';
@@ -41,7 +47,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		label: d.today ? `Hoje, ${d.label}` : d.label
 	}));
 	const values: LobbyFormValues = {
-		instanceId: l.instance.id ?? '',
+		// spec lobby-sem-instancia, RN-06: sem instância, o título (vazio se era o padrão).
+		instanceId: l.instance.id ?? NO_INSTANCE,
 		date,
 		time,
 		// spec grupo-livre: a formação atual; trocando, a outra começa no padrão.
@@ -52,7 +59,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		characterId: l.owner.characterId ?? '',
 		note: l.note ?? '',
 		formation: l.formation,
-		freeSlots: String(l.freeSlots ?? 12)
+		freeSlots: String(l.freeSlots ?? 12),
+		title: l.instance.id === null && l.instance.name !== ANY_INSTANCE_NAME ? l.instance.name : ''
 	};
 	const owner = characters.ok ? characters.data.filter((c) => c.id === l.owner.characterId) : [];
 	// RN-17: a instância atual fica na lista mesmo que tenha saído do catálogo.

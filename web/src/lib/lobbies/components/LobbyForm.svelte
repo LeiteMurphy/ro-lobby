@@ -8,7 +8,7 @@
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { FieldError } from '$lib/api/request';
 	import type { Instance } from '../api';
-	import { startsAt, type LobbyFormValues } from '../form';
+	import { ANY_INSTANCE_NAME, NO_INSTANCE, startsAt, type LobbyFormValues } from '../form';
 
 	export interface DayOption {
 		date: string;
@@ -70,7 +70,14 @@
 		{ label: 'Nível 130 ou mais', items: instances.filter((i) => i.level >= HIGH_LEVEL) },
 		{ label: 'Nível menor', items: instances.filter((i) => i.level < HIGH_LEVEL) }
 	]);
-	const instance = $derived(instances.find((i) => i.id === instanceId) ?? { name: '', level: 1 });
+	// spec lobby-sem-instancia: sem instância, o título (ou "Qualquer instância") e nível 1.
+	let title = $state(start.title);
+	const noInstance = $derived(instanceId === NO_INSTANCE);
+	const instance = $derived(
+		noInstance
+			? { name: title.trim() || ANY_INSTANCE_NAME, level: 1 }
+			: (instances.find((i) => i.id === instanceId) ?? { name: '', level: 1 })
+	);
 	const character = $derived(characters.find((c) => c.id === characterId));
 	const className = (id: string) => classes.find((c) => c.id === id)?.name ?? id;
 	const total = $derived(slots.tank + slots.support + slots.dps);
@@ -78,7 +85,8 @@
 	// RN-07: o nível mínimo padrão é o da instância; ao trocar de instância, ele volta para o
 	// nível de entrada da nova.
 	function onInstanceChange() {
-		const level = instances.find((i) => i.id === instanceId)?.level;
+		// RN-03 da lobby-sem-instancia: sem instância, o nível mínimo começa em 1.
+		const level = noInstance ? 1 : instances.find((i) => i.id === instanceId)?.level;
 		if (level) minLevel = String(level);
 	}
 
@@ -120,7 +128,8 @@
 		const start = startsAt({ date, time });
 		if (mode !== 'create' || !instanceId || !start || !characterId) return null;
 		return new URLSearchParams({
-			instanceId,
+			// RN-07 da lobby-sem-instancia: sem instância, aceita qualquer uma.
+			...(noInstance ? { anyInstance: 'true' } : { instanceId }),
 			startsAt: start,
 			minLevel: String(Number(minLevel) || instance.level),
 			characterId,
@@ -186,6 +195,8 @@
 			>
 				<!-- Na edição já há uma instância; a opção vazia só existe na criação (RN-17). -->
 				{#if mode === 'create'}<option value="">Escolha a instância</option>{/if}
+				<!-- spec lobby-sem-instancia, RN-01: grupo que não é de uma instância. -->
+				<option value={NO_INSTANCE}>Sem instância definida</option>
 				{#each groups as g (g.label)}
 					<optgroup label={g.label}>
 						{#each g.items as i (i.id)}
@@ -198,6 +209,29 @@
 					><Icon name="circle-x" size={14} />{errors.instanceId}</span
 				>{/if}
 		</div>
+
+		{#if noInstance}
+			<!-- spec lobby-sem-instancia, RN-02: título opcional, até 40 caracteres. -->
+			<div class="field">
+				<label class="lbl" for="{uid}-title">Título (opcional)</label>
+				<input
+					id="{uid}-title"
+					class="input"
+					class:err={errors.title}
+					name="title"
+					maxlength="40"
+					placeholder={ANY_INSTANCE_NAME}
+					bind:value={title}
+					aria-invalid={errors.title ? 'true' : undefined}
+					aria-describedby={describe('title')}
+				/>
+				{#if errors.title}<span class="hint-err" id={errId('title')}
+						><Icon name="circle-x" size={14} />{errors.title}</span
+					>{:else}<span class="hint"
+						>Por exemplo, "Caça ao MVP". Vazio, aparece "{ANY_INSTANCE_NAME}".</span
+					>{/if}
+			</div>
+		{/if}
 
 		<div class="row2">
 			<div class="field">

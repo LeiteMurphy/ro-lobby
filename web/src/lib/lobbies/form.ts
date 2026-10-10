@@ -5,6 +5,15 @@ import type { FieldError } from '$lib/api/request';
 import type { LobbyInput, LobbyUpdate } from './api';
 import { isTime, toUtcIso } from './time';
 
+/**
+ * Valor do campo de instância para "Sem instância definida" (spec lobby-sem-instancia,
+ * RN-01, D-04); também é o valor do filtro de instância da Home.
+ */
+export const NO_INSTANCE = '__none__';
+
+/** RN-02 da lobby-sem-instancia: nome do lobby sem instância e sem título. */
+export const ANY_INSTANCE_NAME = 'Qualquer instância';
+
 /** Valores como o Usuário digitou, para voltar ao formulário num erro (RN-19). */
 export interface LobbyFormValues {
 	instanceId: string;
@@ -19,6 +28,8 @@ export interface LobbyFormValues {
 	/** spec grupo-livre, RN-01 e RN-02: formação e, no grupo livre, o total de vagas. */
 	formation: 'roles' | 'free';
 	freeSlots: string;
+	/** spec lobby-sem-instancia, RN-02: título do lobby sem instância. */
+	title: string;
 }
 
 export function readLobbyForm(data: FormData): LobbyFormValues {
@@ -34,7 +45,8 @@ export function readLobbyForm(data: FormData): LobbyFormValues {
 		characterId: text('characterId'),
 		note: String(data.get('note') ?? ''),
 		formation: text('formation') === 'free' ? 'free' : 'roles',
-		freeSlots: text('freeSlots')
+		freeSlots: text('freeSlots'),
+		title: String(data.get('title') ?? '')
 	};
 }
 
@@ -51,6 +63,13 @@ export function startsAt(v: Pick<LobbyFormValues, 'date' | 'time'>): string | nu
 	return /^\d{4}-\d{2}-\d{2}$/.test(v.date) && isTime(v.time)
 		? toUtcIso({ date: v.date, time: v.time })
 		: null;
+}
+
+/** RN-01 da lobby-sem-instancia: a instância do catálogo, ou sem instância com o título. */
+function instance(v: LobbyFormValues) {
+	return v.instanceId === NO_INSTANCE
+		? { anyInstance: true, title: v.title.trim() }
+		: { instanceId: v.instanceId };
 }
 
 function base(v: LobbyFormValues) {
@@ -72,12 +91,12 @@ export function toLobbyInput(v: LobbyFormValues): Parsed<LobbyInput> {
 	if (!start) return { ok: false, fields: [{ field: 'startsAt', code: 'invalid' }] };
 	return {
 		ok: true,
-		input: { instanceId: v.instanceId, characterId: v.characterId, startsAt: start, ...base(v) }
+		input: { ...instance(v), characterId: v.characterId, startsAt: start, ...base(v) }
 	};
 }
 
 export function toLobbyUpdate(v: LobbyFormValues): Parsed<LobbyUpdate> {
 	const start = startsAt(v);
 	if (!start) return { ok: false, fields: [{ field: 'startsAt', code: 'invalid' }] };
-	return { ok: true, input: { instanceId: v.instanceId, startsAt: start, ...base(v) } };
+	return { ok: true, input: { ...instance(v), startsAt: start, ...base(v) } };
 }
