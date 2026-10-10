@@ -250,7 +250,7 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 		body.Instance.Reset = &reset
 	}
 	if l.Owner.Portrait != "" {
-		portrait := api.LobbyOwnerPortrait(l.Owner.Portrait)
+		portrait := api.LobbyOwnerPortrait(classPortrait(l.Owner.ClassID, l.Owner.Portrait))
 		body.Owner.Portrait = &portrait
 	}
 	if l.Owner.CharacterID != "" {

@@ -210,7 +210,7 @@ func TestListMine_CA03_1(t *testing.T) {
 	first := body[0]
 	if first["application"].(map[string]any)["reason"] != "já temos suporte" ||
 		!reflect.DeepEqual(first["lobby"], map[string]any{"instanceName": "Templo do Demônio Rei", "startsAt": "2026-10-07T23:00:00Z", "status": "open"}) ||
-		!reflect.DeepEqual(first["character"], map[string]any{"nick": "Lirien", "classId": "arcebispo", "level": float64(178), "portrait": "retrato-2"}) {
+		!reflect.DeepEqual(first["character"], map[string]any{"nick": "Lirien", "classId": "arcebispo", "level": float64(178), "portrait": "sacerdote"}) {
 		t.Errorf("primeira = %v", first)
 	}
 	if body[1]["character"] != nil || body[1]["application"].(map[string]any)["characterId"] != nil {
@@ -234,7 +234,7 @@ func TestGetLobby_D06_Viewer(t *testing.T) {
 	}
 	wantMember := map[string]any{
 		"applicationId": appID, "userId": userID, "discordName": nil, "characterId": charID, "nick": "Brasa",
-		"classId": "guardiao-real", "level": float64(200), "portrait": "retrato-3", "link": "https://ragnaplace.com/brasa",
+		"classId": "guardiao-real", "level": float64(200), "portrait": "templario", "link": "https://ragnaplace.com/brasa",
 		"role": "tank", "message": nil, "createdAt": "2026-10-06T20:00:00Z",
 	}
 	if !reflect.DeepEqual(body["members"], []any{wantMember}) {

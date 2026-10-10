@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/api"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/catalog"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/talents"
 )
 
@@ -145,7 +146,7 @@ func toAPITalents(list []talents.Talent, withDiscord bool) ([]api.Talent, error)
 		}
 		out[i] = api.Talent{
 			CharacterId: id, Nick: t.Nick, ClassId: t.ClassID, Level: t.Level, Role: api.Role(t.Role),
-			Portrait: api.Portrait(t.Portrait), Days: t.Days, Start: t.Start, End: t.End,
+			Portrait: api.Portrait(catalog.ArtOf(t.ClassID)), Days: t.Days, Start: t.Start, End: t.End,
 			AnyInstance: t.AnyInstance, Instances: instances, Removed: t.Removed, Blocked: t.Blocked,
 		}
 		if t.Link != "" {

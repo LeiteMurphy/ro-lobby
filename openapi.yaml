@@ -1106,17 +1106,18 @@ components:
       description: Função do personagem (RN-08).
     Portrait:
       type: string
-      enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+      enum: [retrato-1, retrato-2, retrato-3, retrato-4, superaprendiz, espadachim, cavaleiro, templario, mago, bruxo, sabio, gatuno, mercenario, arruaceiro, mercador, ferreiro, alquimista, novico, sacerdote, monge, arqueiro, cacador, bardo, odalisca, taekwon, mestre-taekwon, espiritualista, ninja, justiceiro, invocador, druida]
       description: >
-        Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em
-        web/static/portraits/.
+        Retrato do personagem: a arte da linha da classe dele, em
+        web/static/portraits/classes/ (spec retrato-por-classe, RN-01, D-02), ou o retrato-1
+        para classe fora do catálogo. Os retratos 2 a 4 continuam válidos na entrada antiga.
     ClassTier:
       type: string
       enum: [aprendiz, primeira, segunda, transcendental, terceira, quarta, expandida]
     Class:
       type: object
       additionalProperties: false
-      required: [id, name, plural, tier, family]
+      required: [id, name, plural, tier, family, art]
       properties:
         id:
           type: string
@@ -1135,6 +1136,9 @@ components:
           type: string
           description: Classe de 1ª (ou a base, nas expandidas) de onde a linha sai.
           example: Espadachim
+        art:
+          type: string
+          description: Arte da linha da classe (spec retrato-por-classe, RN-01).
     CharacterInput:
       type: object
       required: [nick, classId, level, role]
@@ -1490,7 +1494,7 @@ components:
           nullable: true
         portrait:
           type: string
-          enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+          enum: [retrato-1, retrato-2, retrato-3, retrato-4, superaprendiz, espadachim, cavaleiro, templario, mago, bruxo, sabio, gatuno, mercenario, arruaceiro, mercador, ferreiro, alquimista, novico, sacerdote, monge, arqueiro, cacador, bardo, odalisca, taekwon, mestre-taekwon, espiritualista, ninja, justiceiro, invocador, druida]
           nullable: true
           description: Retrato do personagem do dono (RN-15); nulo se ele foi excluído.
         link:
@@ -1697,7 +1701,7 @@ components:
           nullable: true
         portrait:
           type: string
-          enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+          enum: [retrato-1, retrato-2, retrato-3, retrato-4, superaprendiz, espadachim, cavaleiro, templario, mago, bruxo, sabio, gatuno, mercenario, arruaceiro, mercador, ferreiro, alquimista, novico, sacerdote, monge, arqueiro, cacador, bardo, odalisca, taekwon, mestre-taekwon, espiritualista, ninja, justiceiro, invocador, druida]
           nullable: true
         link:
           type: string
@@ -1800,7 +1804,7 @@ components:
           nullable: true
         portrait:
           type: string
-          enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+          enum: [retrato-1, retrato-2, retrato-3, retrato-4, superaprendiz, espadachim, cavaleiro, templario, mago, bruxo, sabio, gatuno, mercenario, arruaceiro, mercador, ferreiro, alquimista, novico, sacerdote, monge, arqueiro, cacador, bardo, odalisca, taekwon, mestre-taekwon, espiritualista, ninja, justiceiro, invocador, druida]
           nullable: true
         role:
           $ref: "#/components/schemas/Role"
@@ -1866,4 +1870,4 @@ components:
               type: integer
             portrait:
               type: string
-              enum: [retrato-1, retrato-2, retrato-3, retrato-4]
+              enum: [retrato-1, retrato-2, retrato-3, retrato-4, superaprendiz, espadachim, cavaleiro, templario, mago, bruxo, sabio, gatuno, mercenario, arruaceiro, mercador, ferreiro, alquimista, novico, sacerdote, monge, arqueiro, cacador, bardo, odalisca, taekwon, mestre-taekwon, espiritualista, ninja, justiceiro, invocador, druida]

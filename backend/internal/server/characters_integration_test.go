@@ -59,7 +59,7 @@ func TestCharactersFlowIntegration_CA02_3_CA03_3_CA04_3(t *testing.T) {
 
 	// CA-02.1: o primeiro personagem nasce principal.
 	rec, brasa := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"Brasa","classId":"guardiao-real","level":172,"role":"tank"}`)
-	if rec.Code != http.StatusCreated || brasa["isMain"] != true || brasa["portrait"] != "retrato-1" {
+	if rec.Code != http.StatusCreated || brasa["isMain"] != true || brasa["portrait"] != "templario" {
 		t.Fatalf("criar Brasa: status %d, corpo %v", rec.Code, brasa)
 	}
 	rec, lirien := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"Lirien","classId":"arcebispo","level":178,"role":"support","portrait":"retrato-2"}`)

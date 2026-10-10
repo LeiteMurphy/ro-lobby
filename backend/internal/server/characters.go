@@ -49,7 +49,7 @@ func (charactersHandler) ListClasses(context.Context, api.ListClassesRequestObje
 	classes := catalog.Classes()
 	body := make(api.ListClasses200JSONResponse, len(classes))
 	for i, c := range classes {
-		body[i] = api.Class{Id: c.ID, Name: c.Name, Plural: c.Plural, Tier: api.ClassTier(c.Tier), Family: c.Family}
+		body[i] = api.Class{Id: c.ID, Name: c.Name, Plural: c.Plural, Tier: api.ClassTier(c.Tier), Family: c.Family, Art: catalog.ArtOf(c.ID)}
 	}
 	return body, nil
 }
@@ -169,9 +169,7 @@ func toInput(body *api.CharacterInput) characters.Input {
 		return characters.Input{}
 	}
 	in := characters.Input{Nick: body.Nick, ClassID: body.ClassId, Level: body.Level, Role: string(body.Role)}
-	if body.Portrait != nil {
-		in.Portrait = string(*body.Portrait)
-	}
+	// D-03 da retrato-por-classe: o retrato vem da classe; o campo da entrada é ignorado.
 	if body.Link != nil {
 		in.Link = *body.Link
 	}
@@ -189,7 +187,7 @@ func toAPICharacter(c characters.Character) (api.Character, error) {
 		ClassId:   c.ClassID,
 		Level:     c.Level,
 		Role:      api.Role(c.Role),
-		Portrait:  api.Portrait(c.Portrait),
+		Portrait:  api.Portrait(catalog.ArtOf(c.ClassID)), // RN-02 da retrato-por-classe
 		IsMain:    c.IsMain,
 		CreatedAt: c.CreatedAt,
 	}
@@ -209,4 +207,13 @@ func toAPIValidation(e *characters.ValidationError) api.InvalidJSONResponse {
 		fields[i] = api.FieldError{Field: api.FieldErrorField(f.Field), Code: api.FieldErrorCode(f.Code)}
 	}
 	return api.InvalidJSONResponse{Error: api.ValidationErrorErrorValidation, Fields: fields}
+}
+
+// classPortrait é o retrato da classe (RN-02 da retrato-por-classe). Retrato vazio quer
+// dizer personagem excluído, que continua sem retrato.
+func classPortrait(classID, portrait string) string {
+	if portrait == "" {
+		return ""
+	}
+	return catalog.ArtOf(classID)
 }

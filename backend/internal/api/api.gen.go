@@ -425,15 +425,86 @@ func (e LobbyInstanceReset) Valid() bool {
 
 // Defines values for LobbyOwnerPortrait.
 const (
-	LobbyOwnerPortraitRetrato1 LobbyOwnerPortrait = "retrato-1"
-	LobbyOwnerPortraitRetrato2 LobbyOwnerPortrait = "retrato-2"
-	LobbyOwnerPortraitRetrato3 LobbyOwnerPortrait = "retrato-3"
-	LobbyOwnerPortraitRetrato4 LobbyOwnerPortrait = "retrato-4"
+	LobbyOwnerPortraitAlquimista     LobbyOwnerPortrait = "alquimista"
+	LobbyOwnerPortraitArqueiro       LobbyOwnerPortrait = "arqueiro"
+	LobbyOwnerPortraitArruaceiro     LobbyOwnerPortrait = "arruaceiro"
+	LobbyOwnerPortraitBardo          LobbyOwnerPortrait = "bardo"
+	LobbyOwnerPortraitBruxo          LobbyOwnerPortrait = "bruxo"
+	LobbyOwnerPortraitCacador        LobbyOwnerPortrait = "cacador"
+	LobbyOwnerPortraitCavaleiro      LobbyOwnerPortrait = "cavaleiro"
+	LobbyOwnerPortraitDruida         LobbyOwnerPortrait = "druida"
+	LobbyOwnerPortraitEspadachim     LobbyOwnerPortrait = "espadachim"
+	LobbyOwnerPortraitEspiritualista LobbyOwnerPortrait = "espiritualista"
+	LobbyOwnerPortraitFerreiro       LobbyOwnerPortrait = "ferreiro"
+	LobbyOwnerPortraitGatuno         LobbyOwnerPortrait = "gatuno"
+	LobbyOwnerPortraitInvocador      LobbyOwnerPortrait = "invocador"
+	LobbyOwnerPortraitJusticeiro     LobbyOwnerPortrait = "justiceiro"
+	LobbyOwnerPortraitMago           LobbyOwnerPortrait = "mago"
+	LobbyOwnerPortraitMercador       LobbyOwnerPortrait = "mercador"
+	LobbyOwnerPortraitMercenario     LobbyOwnerPortrait = "mercenario"
+	LobbyOwnerPortraitMestreTaekwon  LobbyOwnerPortrait = "mestre-taekwon"
+	LobbyOwnerPortraitMonge          LobbyOwnerPortrait = "monge"
+	LobbyOwnerPortraitNinja          LobbyOwnerPortrait = "ninja"
+	LobbyOwnerPortraitNovico         LobbyOwnerPortrait = "novico"
+	LobbyOwnerPortraitOdalisca       LobbyOwnerPortrait = "odalisca"
+	LobbyOwnerPortraitRetrato1       LobbyOwnerPortrait = "retrato-1"
+	LobbyOwnerPortraitRetrato2       LobbyOwnerPortrait = "retrato-2"
+	LobbyOwnerPortraitRetrato3       LobbyOwnerPortrait = "retrato-3"
+	LobbyOwnerPortraitRetrato4       LobbyOwnerPortrait = "retrato-4"
+	LobbyOwnerPortraitSabio          LobbyOwnerPortrait = "sabio"
+	LobbyOwnerPortraitSacerdote      LobbyOwnerPortrait = "sacerdote"
+	LobbyOwnerPortraitSuperaprendiz  LobbyOwnerPortrait = "superaprendiz"
+	LobbyOwnerPortraitTaekwon        LobbyOwnerPortrait = "taekwon"
+	LobbyOwnerPortraitTemplario      LobbyOwnerPortrait = "templario"
 )
 
 // Valid indicates whether the value is a known member of the LobbyOwnerPortrait enum.
 func (e LobbyOwnerPortrait) Valid() bool {
 	switch e {
+	case LobbyOwnerPortraitAlquimista:
+		return true
+	case LobbyOwnerPortraitArqueiro:
+		return true
+	case LobbyOwnerPortraitArruaceiro:
+		return true
+	case LobbyOwnerPortraitBardo:
+		return true
+	case LobbyOwnerPortraitBruxo:
+		return true
+	case LobbyOwnerPortraitCacador:
+		return true
+	case LobbyOwnerPortraitCavaleiro:
+		return true
+	case LobbyOwnerPortraitDruida:
+		return true
+	case LobbyOwnerPortraitEspadachim:
+		return true
+	case LobbyOwnerPortraitEspiritualista:
+		return true
+	case LobbyOwnerPortraitFerreiro:
+		return true
+	case LobbyOwnerPortraitGatuno:
+		return true
+	case LobbyOwnerPortraitInvocador:
+		return true
+	case LobbyOwnerPortraitJusticeiro:
+		return true
+	case LobbyOwnerPortraitMago:
+		return true
+	case LobbyOwnerPortraitMercador:
+		return true
+	case LobbyOwnerPortraitMercenario:
+		return true
+	case LobbyOwnerPortraitMestreTaekwon:
+		return true
+	case LobbyOwnerPortraitMonge:
+		return true
+	case LobbyOwnerPortraitNinja:
+		return true
+	case LobbyOwnerPortraitNovico:
+		return true
+	case LobbyOwnerPortraitOdalisca:
+		return true
 	case LobbyOwnerPortraitRetrato1:
 		return true
 	case LobbyOwnerPortraitRetrato2:
@@ -442,6 +513,16 @@ func (e LobbyOwnerPortrait) Valid() bool {
 		return true
 	case LobbyOwnerPortraitRetrato4:
 		return true
+	case LobbyOwnerPortraitSabio:
+		return true
+	case LobbyOwnerPortraitSacerdote:
+		return true
+	case LobbyOwnerPortraitSuperaprendiz:
+		return true
+	case LobbyOwnerPortraitTaekwon:
+		return true
+	case LobbyOwnerPortraitTemplario:
+		return true
 	default:
 		return false
 	}
@@ -449,15 +530,86 @@ func (e LobbyOwnerPortrait) Valid() bool {
 
 // Defines values for LobbyParticipantPortrait.
 const (
-	LobbyParticipantPortraitRetrato1 LobbyParticipantPortrait = "retrato-1"
-	LobbyParticipantPortraitRetrato2 LobbyParticipantPortrait = "retrato-2"
-	LobbyParticipantPortraitRetrato3 LobbyParticipantPortrait = "retrato-3"
-	LobbyParticipantPortraitRetrato4 LobbyParticipantPortrait = "retrato-4"
+	LobbyParticipantPortraitAlquimista     LobbyParticipantPortrait = "alquimista"
+	LobbyParticipantPortraitArqueiro       LobbyParticipantPortrait = "arqueiro"
+	LobbyParticipantPortraitArruaceiro     LobbyParticipantPortrait = "arruaceiro"
+	LobbyParticipantPortraitBardo          LobbyParticipantPortrait = "bardo"
+	LobbyParticipantPortraitBruxo          LobbyParticipantPortrait = "bruxo"
+	LobbyParticipantPortraitCacador        LobbyParticipantPortrait = "cacador"
+	LobbyParticipantPortraitCavaleiro      LobbyParticipantPortrait = "cavaleiro"
+	LobbyParticipantPortraitDruida         LobbyParticipantPortrait = "druida"
+	LobbyParticipantPortraitEspadachim     LobbyParticipantPortrait = "espadachim"
+	LobbyParticipantPortraitEspiritualista LobbyParticipantPortrait = "espiritualista"
+	LobbyParticipantPortraitFerreiro       LobbyParticipantPortrait = "ferreiro"
+	LobbyParticipantPortraitGatuno         LobbyParticipantPortrait = "gatuno"
+	LobbyParticipantPortraitInvocador      LobbyParticipantPortrait = "invocador"
+	LobbyParticipantPortraitJusticeiro     LobbyParticipantPortrait = "justiceiro"
+	LobbyParticipantPortraitMago           LobbyParticipantPortrait = "mago"
+	LobbyParticipantPortraitMercador       LobbyParticipantPortrait = "mercador"
+	LobbyParticipantPortraitMercenario     LobbyParticipantPortrait = "mercenario"
+	LobbyParticipantPortraitMestreTaekwon  LobbyParticipantPortrait = "mestre-taekwon"
+	LobbyParticipantPortraitMonge          LobbyParticipantPortrait = "monge"
+	LobbyParticipantPortraitNinja          LobbyParticipantPortrait = "ninja"
+	LobbyParticipantPortraitNovico         LobbyParticipantPortrait = "novico"
+	LobbyParticipantPortraitOdalisca       LobbyParticipantPortrait = "odalisca"
+	LobbyParticipantPortraitRetrato1       LobbyParticipantPortrait = "retrato-1"
+	LobbyParticipantPortraitRetrato2       LobbyParticipantPortrait = "retrato-2"
+	LobbyParticipantPortraitRetrato3       LobbyParticipantPortrait = "retrato-3"
+	LobbyParticipantPortraitRetrato4       LobbyParticipantPortrait = "retrato-4"
+	LobbyParticipantPortraitSabio          LobbyParticipantPortrait = "sabio"
+	LobbyParticipantPortraitSacerdote      LobbyParticipantPortrait = "sacerdote"
+	LobbyParticipantPortraitSuperaprendiz  LobbyParticipantPortrait = "superaprendiz"
+	LobbyParticipantPortraitTaekwon        LobbyParticipantPortrait = "taekwon"
+	LobbyParticipantPortraitTemplario      LobbyParticipantPortrait = "templario"
 )
 
 // Valid indicates whether the value is a known member of the LobbyParticipantPortrait enum.
 func (e LobbyParticipantPortrait) Valid() bool {
 	switch e {
+	case LobbyParticipantPortraitAlquimista:
+		return true
+	case LobbyParticipantPortraitArqueiro:
+		return true
+	case LobbyParticipantPortraitArruaceiro:
+		return true
+	case LobbyParticipantPortraitBardo:
+		return true
+	case LobbyParticipantPortraitBruxo:
+		return true
+	case LobbyParticipantPortraitCacador:
+		return true
+	case LobbyParticipantPortraitCavaleiro:
+		return true
+	case LobbyParticipantPortraitDruida:
+		return true
+	case LobbyParticipantPortraitEspadachim:
+		return true
+	case LobbyParticipantPortraitEspiritualista:
+		return true
+	case LobbyParticipantPortraitFerreiro:
+		return true
+	case LobbyParticipantPortraitGatuno:
+		return true
+	case LobbyParticipantPortraitInvocador:
+		return true
+	case LobbyParticipantPortraitJusticeiro:
+		return true
+	case LobbyParticipantPortraitMago:
+		return true
+	case LobbyParticipantPortraitMercador:
+		return true
+	case LobbyParticipantPortraitMercenario:
+		return true
+	case LobbyParticipantPortraitMestreTaekwon:
+		return true
+	case LobbyParticipantPortraitMonge:
+		return true
+	case LobbyParticipantPortraitNinja:
+		return true
+	case LobbyParticipantPortraitNovico:
+		return true
+	case LobbyParticipantPortraitOdalisca:
+		return true
 	case LobbyParticipantPortraitRetrato1:
 		return true
 	case LobbyParticipantPortraitRetrato2:
@@ -465,6 +617,16 @@ func (e LobbyParticipantPortrait) Valid() bool {
 	case LobbyParticipantPortraitRetrato3:
 		return true
 	case LobbyParticipantPortraitRetrato4:
+		return true
+	case LobbyParticipantPortraitSabio:
+		return true
+	case LobbyParticipantPortraitSacerdote:
+		return true
+	case LobbyParticipantPortraitSuperaprendiz:
+		return true
+	case LobbyParticipantPortraitTaekwon:
+		return true
+	case LobbyParticipantPortraitTemplario:
 		return true
 	default:
 		return false
@@ -494,15 +656,86 @@ func (e LobbyStatus) Valid() bool {
 
 // Defines values for MyApplicationCharacterPortrait.
 const (
-	MyApplicationCharacterPortraitRetrato1 MyApplicationCharacterPortrait = "retrato-1"
-	MyApplicationCharacterPortraitRetrato2 MyApplicationCharacterPortrait = "retrato-2"
-	MyApplicationCharacterPortraitRetrato3 MyApplicationCharacterPortrait = "retrato-3"
-	MyApplicationCharacterPortraitRetrato4 MyApplicationCharacterPortrait = "retrato-4"
+	MyApplicationCharacterPortraitAlquimista     MyApplicationCharacterPortrait = "alquimista"
+	MyApplicationCharacterPortraitArqueiro       MyApplicationCharacterPortrait = "arqueiro"
+	MyApplicationCharacterPortraitArruaceiro     MyApplicationCharacterPortrait = "arruaceiro"
+	MyApplicationCharacterPortraitBardo          MyApplicationCharacterPortrait = "bardo"
+	MyApplicationCharacterPortraitBruxo          MyApplicationCharacterPortrait = "bruxo"
+	MyApplicationCharacterPortraitCacador        MyApplicationCharacterPortrait = "cacador"
+	MyApplicationCharacterPortraitCavaleiro      MyApplicationCharacterPortrait = "cavaleiro"
+	MyApplicationCharacterPortraitDruida         MyApplicationCharacterPortrait = "druida"
+	MyApplicationCharacterPortraitEspadachim     MyApplicationCharacterPortrait = "espadachim"
+	MyApplicationCharacterPortraitEspiritualista MyApplicationCharacterPortrait = "espiritualista"
+	MyApplicationCharacterPortraitFerreiro       MyApplicationCharacterPortrait = "ferreiro"
+	MyApplicationCharacterPortraitGatuno         MyApplicationCharacterPortrait = "gatuno"
+	MyApplicationCharacterPortraitInvocador      MyApplicationCharacterPortrait = "invocador"
+	MyApplicationCharacterPortraitJusticeiro     MyApplicationCharacterPortrait = "justiceiro"
+	MyApplicationCharacterPortraitMago           MyApplicationCharacterPortrait = "mago"
+	MyApplicationCharacterPortraitMercador       MyApplicationCharacterPortrait = "mercador"
+	MyApplicationCharacterPortraitMercenario     MyApplicationCharacterPortrait = "mercenario"
+	MyApplicationCharacterPortraitMestreTaekwon  MyApplicationCharacterPortrait = "mestre-taekwon"
+	MyApplicationCharacterPortraitMonge          MyApplicationCharacterPortrait = "monge"
+	MyApplicationCharacterPortraitNinja          MyApplicationCharacterPortrait = "ninja"
+	MyApplicationCharacterPortraitNovico         MyApplicationCharacterPortrait = "novico"
+	MyApplicationCharacterPortraitOdalisca       MyApplicationCharacterPortrait = "odalisca"
+	MyApplicationCharacterPortraitRetrato1       MyApplicationCharacterPortrait = "retrato-1"
+	MyApplicationCharacterPortraitRetrato2       MyApplicationCharacterPortrait = "retrato-2"
+	MyApplicationCharacterPortraitRetrato3       MyApplicationCharacterPortrait = "retrato-3"
+	MyApplicationCharacterPortraitRetrato4       MyApplicationCharacterPortrait = "retrato-4"
+	MyApplicationCharacterPortraitSabio          MyApplicationCharacterPortrait = "sabio"
+	MyApplicationCharacterPortraitSacerdote      MyApplicationCharacterPortrait = "sacerdote"
+	MyApplicationCharacterPortraitSuperaprendiz  MyApplicationCharacterPortrait = "superaprendiz"
+	MyApplicationCharacterPortraitTaekwon        MyApplicationCharacterPortrait = "taekwon"
+	MyApplicationCharacterPortraitTemplario      MyApplicationCharacterPortrait = "templario"
 )
 
 // Valid indicates whether the value is a known member of the MyApplicationCharacterPortrait enum.
 func (e MyApplicationCharacterPortrait) Valid() bool {
 	switch e {
+	case MyApplicationCharacterPortraitAlquimista:
+		return true
+	case MyApplicationCharacterPortraitArqueiro:
+		return true
+	case MyApplicationCharacterPortraitArruaceiro:
+		return true
+	case MyApplicationCharacterPortraitBardo:
+		return true
+	case MyApplicationCharacterPortraitBruxo:
+		return true
+	case MyApplicationCharacterPortraitCacador:
+		return true
+	case MyApplicationCharacterPortraitCavaleiro:
+		return true
+	case MyApplicationCharacterPortraitDruida:
+		return true
+	case MyApplicationCharacterPortraitEspadachim:
+		return true
+	case MyApplicationCharacterPortraitEspiritualista:
+		return true
+	case MyApplicationCharacterPortraitFerreiro:
+		return true
+	case MyApplicationCharacterPortraitGatuno:
+		return true
+	case MyApplicationCharacterPortraitInvocador:
+		return true
+	case MyApplicationCharacterPortraitJusticeiro:
+		return true
+	case MyApplicationCharacterPortraitMago:
+		return true
+	case MyApplicationCharacterPortraitMercador:
+		return true
+	case MyApplicationCharacterPortraitMercenario:
+		return true
+	case MyApplicationCharacterPortraitMestreTaekwon:
+		return true
+	case MyApplicationCharacterPortraitMonge:
+		return true
+	case MyApplicationCharacterPortraitNinja:
+		return true
+	case MyApplicationCharacterPortraitNovico:
+		return true
+	case MyApplicationCharacterPortraitOdalisca:
+		return true
 	case MyApplicationCharacterPortraitRetrato1:
 		return true
 	case MyApplicationCharacterPortraitRetrato2:
@@ -511,6 +744,16 @@ func (e MyApplicationCharacterPortrait) Valid() bool {
 		return true
 	case MyApplicationCharacterPortraitRetrato4:
 		return true
+	case MyApplicationCharacterPortraitSabio:
+		return true
+	case MyApplicationCharacterPortraitSacerdote:
+		return true
+	case MyApplicationCharacterPortraitSuperaprendiz:
+		return true
+	case MyApplicationCharacterPortraitTaekwon:
+		return true
+	case MyApplicationCharacterPortraitTemplario:
+		return true
 	default:
 		return false
 	}
@@ -518,15 +761,86 @@ func (e MyApplicationCharacterPortrait) Valid() bool {
 
 // Defines values for Portrait.
 const (
-	PortraitRetrato1 Portrait = "retrato-1"
-	PortraitRetrato2 Portrait = "retrato-2"
-	PortraitRetrato3 Portrait = "retrato-3"
-	PortraitRetrato4 Portrait = "retrato-4"
+	PortraitAlquimista     Portrait = "alquimista"
+	PortraitArqueiro       Portrait = "arqueiro"
+	PortraitArruaceiro     Portrait = "arruaceiro"
+	PortraitBardo          Portrait = "bardo"
+	PortraitBruxo          Portrait = "bruxo"
+	PortraitCacador        Portrait = "cacador"
+	PortraitCavaleiro      Portrait = "cavaleiro"
+	PortraitDruida         Portrait = "druida"
+	PortraitEspadachim     Portrait = "espadachim"
+	PortraitEspiritualista Portrait = "espiritualista"
+	PortraitFerreiro       Portrait = "ferreiro"
+	PortraitGatuno         Portrait = "gatuno"
+	PortraitInvocador      Portrait = "invocador"
+	PortraitJusticeiro     Portrait = "justiceiro"
+	PortraitMago           Portrait = "mago"
+	PortraitMercador       Portrait = "mercador"
+	PortraitMercenario     Portrait = "mercenario"
+	PortraitMestreTaekwon  Portrait = "mestre-taekwon"
+	PortraitMonge          Portrait = "monge"
+	PortraitNinja          Portrait = "ninja"
+	PortraitNovico         Portrait = "novico"
+	PortraitOdalisca       Portrait = "odalisca"
+	PortraitRetrato1       Portrait = "retrato-1"
+	PortraitRetrato2       Portrait = "retrato-2"
+	PortraitRetrato3       Portrait = "retrato-3"
+	PortraitRetrato4       Portrait = "retrato-4"
+	PortraitSabio          Portrait = "sabio"
+	PortraitSacerdote      Portrait = "sacerdote"
+	PortraitSuperaprendiz  Portrait = "superaprendiz"
+	PortraitTaekwon        Portrait = "taekwon"
+	PortraitTemplario      Portrait = "templario"
 )
 
 // Valid indicates whether the value is a known member of the Portrait enum.
 func (e Portrait) Valid() bool {
 	switch e {
+	case PortraitAlquimista:
+		return true
+	case PortraitArqueiro:
+		return true
+	case PortraitArruaceiro:
+		return true
+	case PortraitBardo:
+		return true
+	case PortraitBruxo:
+		return true
+	case PortraitCacador:
+		return true
+	case PortraitCavaleiro:
+		return true
+	case PortraitDruida:
+		return true
+	case PortraitEspadachim:
+		return true
+	case PortraitEspiritualista:
+		return true
+	case PortraitFerreiro:
+		return true
+	case PortraitGatuno:
+		return true
+	case PortraitInvocador:
+		return true
+	case PortraitJusticeiro:
+		return true
+	case PortraitMago:
+		return true
+	case PortraitMercador:
+		return true
+	case PortraitMercenario:
+		return true
+	case PortraitMestreTaekwon:
+		return true
+	case PortraitMonge:
+		return true
+	case PortraitNinja:
+		return true
+	case PortraitNovico:
+		return true
+	case PortraitOdalisca:
+		return true
 	case PortraitRetrato1:
 		return true
 	case PortraitRetrato2:
@@ -534,6 +848,16 @@ func (e Portrait) Valid() bool {
 	case PortraitRetrato3:
 		return true
 	case PortraitRetrato4:
+		return true
+	case PortraitSabio:
+		return true
+	case PortraitSacerdote:
+		return true
+	case PortraitSuperaprendiz:
+		return true
+	case PortraitTaekwon:
+		return true
+	case PortraitTemplario:
 		return true
 	default:
 		return false
@@ -563,15 +887,86 @@ func (e Role) Valid() bool {
 
 // Defines values for SwapCharacterPortrait.
 const (
-	SwapCharacterPortraitRetrato1 SwapCharacterPortrait = "retrato-1"
-	SwapCharacterPortraitRetrato2 SwapCharacterPortrait = "retrato-2"
-	SwapCharacterPortraitRetrato3 SwapCharacterPortrait = "retrato-3"
-	SwapCharacterPortraitRetrato4 SwapCharacterPortrait = "retrato-4"
+	SwapCharacterPortraitAlquimista     SwapCharacterPortrait = "alquimista"
+	SwapCharacterPortraitArqueiro       SwapCharacterPortrait = "arqueiro"
+	SwapCharacterPortraitArruaceiro     SwapCharacterPortrait = "arruaceiro"
+	SwapCharacterPortraitBardo          SwapCharacterPortrait = "bardo"
+	SwapCharacterPortraitBruxo          SwapCharacterPortrait = "bruxo"
+	SwapCharacterPortraitCacador        SwapCharacterPortrait = "cacador"
+	SwapCharacterPortraitCavaleiro      SwapCharacterPortrait = "cavaleiro"
+	SwapCharacterPortraitDruida         SwapCharacterPortrait = "druida"
+	SwapCharacterPortraitEspadachim     SwapCharacterPortrait = "espadachim"
+	SwapCharacterPortraitEspiritualista SwapCharacterPortrait = "espiritualista"
+	SwapCharacterPortraitFerreiro       SwapCharacterPortrait = "ferreiro"
+	SwapCharacterPortraitGatuno         SwapCharacterPortrait = "gatuno"
+	SwapCharacterPortraitInvocador      SwapCharacterPortrait = "invocador"
+	SwapCharacterPortraitJusticeiro     SwapCharacterPortrait = "justiceiro"
+	SwapCharacterPortraitMago           SwapCharacterPortrait = "mago"
+	SwapCharacterPortraitMercador       SwapCharacterPortrait = "mercador"
+	SwapCharacterPortraitMercenario     SwapCharacterPortrait = "mercenario"
+	SwapCharacterPortraitMestreTaekwon  SwapCharacterPortrait = "mestre-taekwon"
+	SwapCharacterPortraitMonge          SwapCharacterPortrait = "monge"
+	SwapCharacterPortraitNinja          SwapCharacterPortrait = "ninja"
+	SwapCharacterPortraitNovico         SwapCharacterPortrait = "novico"
+	SwapCharacterPortraitOdalisca       SwapCharacterPortrait = "odalisca"
+	SwapCharacterPortraitRetrato1       SwapCharacterPortrait = "retrato-1"
+	SwapCharacterPortraitRetrato2       SwapCharacterPortrait = "retrato-2"
+	SwapCharacterPortraitRetrato3       SwapCharacterPortrait = "retrato-3"
+	SwapCharacterPortraitRetrato4       SwapCharacterPortrait = "retrato-4"
+	SwapCharacterPortraitSabio          SwapCharacterPortrait = "sabio"
+	SwapCharacterPortraitSacerdote      SwapCharacterPortrait = "sacerdote"
+	SwapCharacterPortraitSuperaprendiz  SwapCharacterPortrait = "superaprendiz"
+	SwapCharacterPortraitTaekwon        SwapCharacterPortrait = "taekwon"
+	SwapCharacterPortraitTemplario      SwapCharacterPortrait = "templario"
 )
 
 // Valid indicates whether the value is a known member of the SwapCharacterPortrait enum.
 func (e SwapCharacterPortrait) Valid() bool {
 	switch e {
+	case SwapCharacterPortraitAlquimista:
+		return true
+	case SwapCharacterPortraitArqueiro:
+		return true
+	case SwapCharacterPortraitArruaceiro:
+		return true
+	case SwapCharacterPortraitBardo:
+		return true
+	case SwapCharacterPortraitBruxo:
+		return true
+	case SwapCharacterPortraitCacador:
+		return true
+	case SwapCharacterPortraitCavaleiro:
+		return true
+	case SwapCharacterPortraitDruida:
+		return true
+	case SwapCharacterPortraitEspadachim:
+		return true
+	case SwapCharacterPortraitEspiritualista:
+		return true
+	case SwapCharacterPortraitFerreiro:
+		return true
+	case SwapCharacterPortraitGatuno:
+		return true
+	case SwapCharacterPortraitInvocador:
+		return true
+	case SwapCharacterPortraitJusticeiro:
+		return true
+	case SwapCharacterPortraitMago:
+		return true
+	case SwapCharacterPortraitMercador:
+		return true
+	case SwapCharacterPortraitMercenario:
+		return true
+	case SwapCharacterPortraitMestreTaekwon:
+		return true
+	case SwapCharacterPortraitMonge:
+		return true
+	case SwapCharacterPortraitNinja:
+		return true
+	case SwapCharacterPortraitNovico:
+		return true
+	case SwapCharacterPortraitOdalisca:
+		return true
 	case SwapCharacterPortraitRetrato1:
 		return true
 	case SwapCharacterPortraitRetrato2:
@@ -579,6 +974,16 @@ func (e SwapCharacterPortrait) Valid() bool {
 	case SwapCharacterPortraitRetrato3:
 		return true
 	case SwapCharacterPortraitRetrato4:
+		return true
+	case SwapCharacterPortraitSabio:
+		return true
+	case SwapCharacterPortraitSacerdote:
+		return true
+	case SwapCharacterPortraitSuperaprendiz:
+		return true
+	case SwapCharacterPortraitTaekwon:
+		return true
+	case SwapCharacterPortraitTemplario:
 		return true
 	default:
 		return false
@@ -730,7 +1135,7 @@ type Character struct {
 	Link         *string            `json:"link"`
 	Nick         string             `json:"nick"`
 
-	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+	// Portrait Retrato do personagem: a arte da linha da classe dele, em web/static/portraits/classes/ (spec retrato-por-classe, RN-01, D-02), ou o retrato-1 para classe fora do catálogo. Os retratos 2 a 4 continuam válidos na entrada antiga.
 	Portrait Portrait `json:"portrait"`
 
 	// Role Função do personagem (RN-08).
@@ -751,7 +1156,7 @@ type CharacterInput struct {
 	// Nick 1 a 24 caracteres depois de tirar os espaços das pontas.
 	Nick string `json:"nick"`
 
-	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+	// Portrait Retrato do personagem: a arte da linha da classe dele, em web/static/portraits/classes/ (spec retrato-por-classe, RN-01, D-02), ou o retrato-1 para classe fora do catálogo. Os retratos 2 a 4 continuam válidos na entrada antiga.
 	Portrait *Portrait `json:"portrait,omitempty"`
 
 	// Role Função do personagem (RN-08).
@@ -760,6 +1165,9 @@ type CharacterInput struct {
 
 // Class defines model for Class.
 type Class struct {
+	// Art Arte da linha da classe (spec retrato-por-classe, RN-01).
+	Art string `json:"art"`
+
 	// Family Classe de 1ª (ou a base, nas expandidas) de onde a linha sai.
 	//
 	// Example: Espadachim
@@ -1047,7 +1455,7 @@ type OwnerCharacterInput struct {
 	CharacterId string `json:"characterId"`
 }
 
-// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+// Portrait Retrato do personagem: a arte da linha da classe dele, em web/static/portraits/classes/ (spec retrato-por-classe, RN-01, D-02), ou o retrato-1 para classe fora do catálogo. Os retratos 2 a 4 continuam válidos na entrada antiga.
 type Portrait string
 
 // RejectInput defines model for RejectInput.
@@ -1149,7 +1557,7 @@ type Talent struct {
 	Link            *string          `json:"link"`
 	Nick            string           `json:"nick"`
 
-	// Portrait Retrato da lista do RO Lobby (RN-10, D-04). Cada valor tem um arquivo em web/static/portraits/.
+	// Portrait Retrato do personagem: a arte da linha da classe dele, em web/static/portraits/classes/ (spec retrato-por-classe, RN-01, D-02), ou o retrato-1 para classe fora do catálogo. Os retratos 2 a 4 continuam válidos na entrada antiga.
 	Portrait Portrait `json:"portrait"`
 
 	// Removed A pessoa já foi removida deste lobby (RN-13); sempre false fora do painel do dono.

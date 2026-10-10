@@ -157,6 +157,111 @@ func ClassByID(id string) (Class, bool) {
 	return c, ok
 }
 
+// Arts são as artes de linha de classe, na ordem da tabela da spec retrato-por-classe
+// (tasks.md, seção 6). Cada uma tem um arquivo em web/static/portraits/classes/.
+var arts = []string{"superaprendiz", "espadachim", "cavaleiro", "templario", "mago", "bruxo", "sabio", "gatuno", "mercenario", "arruaceiro", "mercador", "ferreiro", "alquimista", "novico", "sacerdote", "monge", "arqueiro", "cacador", "bardo", "odalisca", "taekwon", "mestre-taekwon", "espiritualista", "ninja", "justiceiro", "invocador", "druida"}
+
+// classArt liga cada classe à arte da linha dela, ou da família para a primeira classe;
+// o Aprendiz usa a do Superaprendiz (RN-01 da retrato-por-classe).
+var classArt = map[string]string{
+	"aprendiz":             "superaprendiz",
+	"superaprendiz":        "superaprendiz",
+	"superaprendiz-ex":     "superaprendiz",
+	"hiperaprendiz":        "superaprendiz",
+	"espadachim":           "espadachim",
+	"cavaleiro":            "cavaleiro",
+	"lorde":                "cavaleiro",
+	"cavaleiro-runico":     "cavaleiro",
+	"cavaleiro-draconiano": "cavaleiro",
+	"templario":            "templario",
+	"paladino":             "templario",
+	"guardiao-real":        "templario",
+	"guardiao-imperial":    "templario",
+	"mago":                 "mago",
+	"bruxo":                "bruxo",
+	"arquimago":            "bruxo",
+	"arcano":               "bruxo",
+	"magus":                "bruxo",
+	"sabio":                "sabio",
+	"professor":            "sabio",
+	"feiticeiro":           "sabio",
+	"elementalista":        "sabio",
+	"gatuno":               "gatuno",
+	"mercenario":           "mercenario",
+	"algoz":                "mercenario",
+	"sicario":              "mercenario",
+	"executor":             "mercenario",
+	"arruaceiro":           "arruaceiro",
+	"desordeiro":           "arruaceiro",
+	"renegado":             "arruaceiro",
+	"mandraque":            "arruaceiro",
+	"mercador":             "mercador",
+	"ferreiro":             "ferreiro",
+	"mestre-ferreiro":      "ferreiro",
+	"mecanico":             "ferreiro",
+	"engenheiro":           "ferreiro",
+	"alquimista":           "alquimista",
+	"criador":              "alquimista",
+	"bioquimico":           "alquimista",
+	"cientista":            "alquimista",
+	"novico":               "novico",
+	"sacerdote":            "sacerdote",
+	"sumo-sacerdote":       "sacerdote",
+	"arcebispo":            "sacerdote",
+	"cardeal":              "sacerdote",
+	"monge":                "monge",
+	"mestre":               "monge",
+	"shura":                "monge",
+	"inquisidor":           "monge",
+	"arqueiro":             "arqueiro",
+	"cacador":              "cacador",
+	"atirador-de-elite":    "cacador",
+	"sentinela":            "cacador",
+	"falcao-do-vento":      "cacador",
+	"bardo":                "bardo",
+	"menestrel":            "bardo",
+	"trovador":             "bardo",
+	"maestro":              "bardo",
+	"odalisca":             "odalisca",
+	"cigana":               "odalisca",
+	"musa":                 "odalisca",
+	"diva":                 "odalisca",
+	"taekwon":              "taekwon",
+	"mestre-taekwon":       "mestre-taekwon",
+	"mestre-estelar":       "mestre-taekwon",
+	"mestre-celestial":     "mestre-taekwon",
+	"espiritualista":       "espiritualista",
+	"ceifador-de-almas":    "espiritualista",
+	"asceta-das-almas":     "espiritualista",
+	"ninja":                "ninja",
+	"kagerou":              "ninja",
+	"oboro":                "ninja",
+	"shinkiro":             "ninja",
+	"shiranui":             "ninja",
+	"justiceiro":           "justiceiro",
+	"insurgente":           "justiceiro",
+	"guerrilheiro":         "justiceiro",
+	"invocador":            "invocador",
+	"animista":             "invocador",
+	"druida":               "druida",
+	"karnos":               "druida",
+	"alitea":               "druida",
+}
+
+// Arts devolve uma cópia da lista de artes de classe.
+func Arts() []string {
+	return append([]string(nil), arts...)
+}
+
+// ArtOf devolve a arte da classe, ou o retrato padrão para classe fora do catálogo
+// (RN-01 e RN-04 da retrato-por-classe).
+func ArtOf(classID string) string {
+	if art, ok := classArt[classID]; ok {
+		return art
+	}
+	return DefaultPortrait
+}
+
 // DefaultPortrait é o retrato de quem não escolhe nenhum (RN-10).
 const DefaultPortrait = "retrato-1"
 
