@@ -1,7 +1,7 @@
 # Spec — Retrato pela classe
 
-- Feature: `retrato-por-classe` · Nível: M · Status: Rascunho
-- Notion: (a criar na fase de Tasks)
+- Feature: `retrato-por-classe` · Nível: M · Status: Aprovada
+- Notion: [Épico Retrato pela classe](https://app.notion.com/p/3f5d4a3a5eff8164a870f238ec447500)
 - Última revisão: 2026-10-09 — primeira versão
 - Artes aprovadas: prévia "Artes de classe" (versão 3), 27 PNG em 64×64
 

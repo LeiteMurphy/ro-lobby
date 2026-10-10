@@ -1,7 +1,7 @@
 # Tasks — Retrato pela classe
 
 - Spec: `./spec.md` · Design: não há (nível M; as decisões técnicas ficam abaixo)
-- Notion: (a preencher)
+- Notion: [Épico Retrato pela classe](https://app.notion.com/p/3f5d4a3a5eff8164a870f238ec447500)
 - Branch: `feature/retrato-por-classe`
 
 ## Decisões técnicas
@@ -23,7 +23,7 @@
 
 ## Backend
 
-### T-01 — Arte da classe no catálogo e em toda resposta com personagem  [ ]
+### T-01 — Arte da classe no catálogo e em toda resposta com personagem  [x]
 - Cobre: US-01, US-02, RN-01 a RN-05, CA-01.1, CA-01.2, CA-01.3, CA-01.5, CA-01.6, CA-02.1,
   CA-02.2 (API), D-01 a D-03
 - Depende de: —
@@ -33,12 +33,12 @@
 - Pronto quando: testes provam que toda classe do catálogo tem uma arte da lista, a
   tabela da seção 6, a classe fora do catálogo em `retrato-1`, e o `portrait` pela classe
   nas respostas de personagem, lobby, troca, talentos e candidaturas.
-- Commit:
+- Commit: `9ae85b0`
 
 ## Web
 
-### T-02 — Artes no web, fim da escolha de retrato  [ ]
-- Cobre: US-01, US-02, RN-02, RN-05, RN-06, CA-01.1, CA-01.4, CA-02.1, CA-02.2, RNF-01,
+### T-02 — Artes no web, fim da escolha de retrato  [x]
+- Cobre: US-01, US-02, RN-02, RN-05, RN-06, CA-01.1, CA-01.2 (e2e), CA-01.4, CA-02.1, CA-02.2, RNF-01,
   RNF-02, D-04
 - Depende de: T-01
 - Paralelizável: não
@@ -48,13 +48,13 @@
   alternativo, que o diálogo não tem mais a escolha de retrato e mostra a arte da classe
   escolhida, que trocar a classe troca a arte, e que o lobby e o banco de talentos mostram
   as artes; cada PNG tem no máximo 4 KB.
-- Commit:
+- Commit: `1c5da8c`
 
 ## Matriz de cobertura
 | Critério | Tasks |
 |---|---|
 | CA-01.1 | T-01, T-02 |
-| CA-01.2 | T-01 |
+| CA-01.2 | T-01, T-02 |
 | CA-01.3 | T-01 |
 | CA-01.4 | T-02 |
 | CA-01.5 | T-01 |
@@ -94,4 +94,9 @@
 | `druida` | druida, karnos, alitea |
 
 ## Descobertas
-- (nenhuma)
+- D-01 ficou como um mapa `classArt` no pacote `catalog`, ao lado da lista de classes, em
+  vez de um campo `Art` em cada classe: a tabela da seção 6 fica legível num lugar só. O
+  efeito é o mesmo (`catalog.ArtOf`, `art` em `GET /classes`).
+- RN-05 pede o nome da linha como texto alternativo em todo lugar. As listas (lobby,
+  candidaturas, trocas, formulário) usavam `alt=""`; agora usam `portraitAlt`, que dá o
+  nome da linha.
