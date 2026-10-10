@@ -27,7 +27,8 @@ JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id
 WHERE a.enabled
   AND c.user_id <> $2
-  AND (a.any_instance OR $3::text = ANY (a.instance_ids))
+  -- RN-07 da lobby-sem-instancia: lobby sem instância (instance_id vazio) aceita todos.
+  AND ($3::text = '' OR a.any_instance OR $3::text = ANY (a.instance_ids))
   AND ((a.start_minute < a.end_minute
         AND a.days & (1 << $4::int) <> 0
         AND $5::int >= a.start_minute AND $5::int < a.end_minute)

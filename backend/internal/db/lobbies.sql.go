@@ -87,8 +87,8 @@ RETURNING id
 
 type CreateLobbyParams struct {
 	OwnerID          pgtype.UUID
-	InstanceID       string
-	InstanceName     string
+	InstanceID       pgtype.Text
+	InstanceName     pgtype.Text
 	InstanceLevel    int16
 	StartsAt         time.Time
 	SlotsTank        int16
@@ -384,8 +384,8 @@ WHERE id = $12
 `
 
 type UpdateLobbyParams struct {
-	InstanceID    string
-	InstanceName  string
+	InstanceID    pgtype.Text
+	InstanceName  pgtype.Text
 	InstanceLevel int16
 	StartsAt      time.Time
 	SlotsTank     int16

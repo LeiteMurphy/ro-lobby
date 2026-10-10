@@ -8,7 +8,7 @@ import type { RequestHandler } from './$types';
 // navegador não fala com a API; este endpoint repassa a sessão do cookie. Sem sessão ou
 // sem resposta, devolve count null e a prévia esconde a linha.
 
-const FIELDS = ['instanceId', 'startsAt', 'minLevel', 'characterId'];
+const FIELDS = ['startsAt', 'minLevel', 'characterId'];
 // Por função, as três vagas; no grupo livre (RN-13 da grupo-livre), o total.
 const ROLE_FIELDS = ['tank', 'support', 'dps'];
 
@@ -16,12 +16,18 @@ export const GET: RequestHandler = async ({ url, cookies, fetch }) => {
 	const token = cookies.get(SESSION_COOKIE);
 	const q = url.searchParams;
 	const free = q.get('formation') === 'free';
-	const needed = [...FIELDS, ...(free ? ['freeSlots'] : ROLE_FIELDS)];
+	// spec lobby-sem-instancia, RN-07: sem instância, anyInstance no lugar do instanceId.
+	const anyInstance = q.get('anyInstance') === 'true';
+	const needed = [
+		...FIELDS,
+		...(anyInstance ? [] : ['instanceId']),
+		...(free ? ['freeSlots'] : ROLE_FIELDS)
+	];
 	if (!token || needed.some((f) => !q.get(f))) return json({ count: null });
 	const result = await countTalents(
 		{ fetchFn: fetch, apiBaseUrl: authConfig().apiBaseUrl, token },
 		{
-			instanceId: q.get('instanceId') ?? '',
+			...(anyInstance ? { anyInstance: true } : { instanceId: q.get('instanceId') ?? '' }),
 			startsAt: q.get('startsAt') ?? '',
 			minLevel: Number(q.get('minLevel')),
 			characterId: q.get('characterId') ?? '',

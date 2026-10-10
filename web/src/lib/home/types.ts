@@ -32,6 +32,8 @@ export interface Lobby {
 	 * por função.
 	 */
 	free?: Slots;
+	/** Lobby sem instância (spec lobby-sem-instancia, RN-05): `instance` é o título. */
+	anyInstance?: boolean;
 	/** Usuário dono do lobby, para o selo de pendentes (RN-34 da candidatura-lobby). */
 	ownerId?: string;
 	/** Candidaturas pendentes (RN-28 da candidatura-lobby). */

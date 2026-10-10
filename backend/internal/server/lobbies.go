@@ -90,7 +90,9 @@ func (h lobbiesHandler) CreateLobby(ctx context.Context, req api.CreateLobbyRequ
 	in := lobbies.Input{}
 	if b := req.Body; b != nil {
 		in = lobbies.Input{
-			InstanceID:  b.InstanceId,
+			InstanceID:  deref(b.InstanceId),
+			AnyInstance: valueOf(b.AnyInstance),
+			Title:       deref(b.Title),
 			StartsAt:    b.StartsAt,
 			Slots:       fromAPISlots(b.Slots),
 			MinLevel:    b.MinLevel,
@@ -127,7 +129,10 @@ func (h lobbiesHandler) UpdateLobby(ctx context.Context, req api.UpdateLobbyRequ
 	}
 	in := lobbies.UpdateInput{}
 	if b := req.Body; b != nil {
-		in = lobbies.UpdateInput{InstanceID: deref(b.InstanceId), StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel, Note: deref(b.Note), FreeSlots: valueOf(b.FreeSlots)}
+		in = lobbies.UpdateInput{
+			InstanceID: deref(b.InstanceId), StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel,
+			Note: deref(b.Note), FreeSlots: valueOf(b.FreeSlots), AnyInstance: valueOf(b.AnyInstance), Title: deref(b.Title),
+		}
 		if b.Formation != nil {
 			in.Formation = string(*b.Formation)
 		}
@@ -212,7 +217,7 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 	body := api.Lobby{
 		Id: id,
 		Instance: api.LobbyInstance{
-			Id:    l.InstanceID,
+			Id:    optional(l.InstanceID),
 			Name:  l.InstanceName,
 			Level: l.InstanceLevel,
 		},

@@ -457,7 +457,7 @@ func (e *env) ownLobby(t *testing.T, userID, characterID string, role string, st
 	_ = uid.Scan(userID)
 	_ = cid.Scan(characterID)
 	id, err := q.CreateLobby(t.Context(), db.CreateLobbyParams{
-		OwnerID: uid, InstanceID: "templo-do-demonio-rei", InstanceName: "Templo do Demônio Rei",
+		OwnerID: uid, InstanceID: pgtype.Text{String: "templo-do-demonio-rei", Valid: true}, InstanceName: pgtype.Text{String: "Templo do Demônio Rei", Valid: true},
 		InstanceLevel: 160, StartsAt: startsAt, SlotsTank: 1, SlotsSupport: 2, SlotsDps: 3,
 		MinLevel: 160, OwnerCharacterID: cid, OwnerRole: role, Now: e.clock,
 	})

@@ -46,7 +46,8 @@ const VALUES: LobbyFormValues = {
 	characterId: 'c1',
 	note: '',
 	formation: 'roles',
-	freeSlots: '12'
+	freeSlots: '12',
+	title: ''
 };
 
 describe('vagas do grupo livre', () => {

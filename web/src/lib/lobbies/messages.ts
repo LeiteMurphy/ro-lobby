@@ -17,13 +17,15 @@ const MESSAGES: Partial<Record<Field, Partial<Record<Code, string>> & { fallback
 	},
 	minLevel: {
 		above_owner: 'Seu personagem precisa ter o nível mínimo',
-		fallback: 'Entre o nível da instância e 275'
+		fallback: 'Entre o nível da instância (ou 1, sem instância) e 275'
 	},
 	characterId: {
 		level_too_low: 'Seu personagem precisa ter o nível mínimo',
 		fallback: 'Escolha um dos seus personagens'
 	},
 	note: { fallback: 'Use até 250 caracteres' },
+	// spec lobby-sem-instancia, RN-02.
+	title: { fallback: 'Use até 40 caracteres' },
 	// spec grupo-livre, RN-02, RN-06 e RN-07.
 	freeSlots: {
 		below_occupied: 'O grupo já tem mais gente que isso',

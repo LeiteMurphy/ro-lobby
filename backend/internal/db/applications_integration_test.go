@@ -187,7 +187,7 @@ func TestApplications_RN33_ListMine(t *testing.T) {
 	f := appSetup(t)
 	a := f.apply(t)
 	mine, err := f.q.ListMyApplications(t.Context(), f.player.ID)
-	if err != nil || len(mine) != 1 || mine[0].InstanceName != "Templo do Demônio Rei" || mine[0].Nick.String != "Brasa" {
+	if err != nil || len(mine) != 1 || mine[0].InstanceName.String != "Templo do Demônio Rei" || mine[0].Nick.String != "Brasa" {
 		t.Fatalf("minhas = %+v, %v", mine, err)
 	}
 	last, err := f.q.GetUserApplicationInLobby(t.Context(), GetUserApplicationInLobbyParams{LobbyID: f.lobby, UserID: f.player.ID})

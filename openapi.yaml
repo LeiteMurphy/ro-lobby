@@ -329,9 +329,13 @@ paths:
       parameters:
         - name: instanceId
           in: query
-          required: true
           schema:
             type: string
+        - name: anyInstance
+          in: query
+          description: Lobby sem instância (spec lobby-sem-instancia, RN-07).
+          schema:
+            type: boolean
         - name: startsAt
           in: query
           required: true
@@ -1316,7 +1320,7 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots, title]
         code:
           type: string
           enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start, locked]
@@ -1366,7 +1370,7 @@ components:
           type: integer
     LobbyInput:
       type: object
-      required: [instanceId, startsAt, slots, minLevel, characterId]
+      required: [startsAt, slots, minLevel, characterId]
       properties:
         instanceId:
           type: string
@@ -1390,6 +1394,12 @@ components:
         freeSlots:
           type: integer
           description: Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
+        anyInstance:
+          type: boolean
+          description: Lobby sem instância; com ele, instanceId é ignorado (spec lobby-sem-instancia, RN-01).
+        title:
+          type: string
+          description: Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02).
     LobbyUpdate:
       type: object
       required: [startsAt, slots, minLevel]
@@ -1411,6 +1421,12 @@ components:
         freeSlots:
           type: integer
           description: Sem formação, mantém a atual; só muda com o grupo vazio (RN-07). Grupo livre, de 2 a 12 vagas; com ele, slots vai zerado (spec grupo-livre, RN-02).
+        anyInstance:
+          type: boolean
+          description: Lobby sem instância; passa para sem instância; sem ele e sem instanceId, continua a atual (spec lobby-sem-instancia, RN-01).
+        title:
+          type: string
+          description: Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02).
     Formation:
       type: string
       enum: [roles, free]
@@ -1432,9 +1448,11 @@ components:
       properties:
         id:
           type: string
+          nullable: true
+          description: Nulo no lobby sem instância (spec lobby-sem-instancia, D-02).
         name:
           type: string
-          description: Nome guardado na criação (D-02).
+          description: Nome guardado na criação (D-02), ou o título do lobby sem instância, ou "Qualquer instância".
         level:
           type: integer
         reset:

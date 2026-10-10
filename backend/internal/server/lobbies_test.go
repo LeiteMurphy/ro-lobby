@@ -244,3 +244,18 @@ func TestCharacters_CA06_4_InOpenLobbyIs409(t *testing.T) {
 		}
 	}
 }
+
+// CA-01.1 / D-02 da lobby-sem-instancia: no lobby sem instância, instance.id vai nulo e
+// instance.name traz o título, com nível 1 e sem retorno.
+func TestToAPILobby_CA01_1_AnyInstance(t *testing.T) {
+	l := temple
+	l.InstanceID, l.InstanceName, l.InstanceLevel, l.InstanceReset = "", "Caça ao MVP", 1, ""
+	l.AnyInstance, l.Title = true, "Caça ao MVP"
+	got, err := toAPILobby(l)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Instance.Id != nil || got.Instance.Name != "Caça ao MVP" || got.Instance.Level != 1 || got.Instance.Reset != nil {
+		t.Errorf("instância = %+v", got.Instance)
+	}
+}

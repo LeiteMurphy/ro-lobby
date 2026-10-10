@@ -54,7 +54,9 @@ export function unblockInLobby(call: Call, lobbyId: string, characterId: string)
 }
 
 export interface CountInput {
-	instanceId: string;
+	/** A instância do catálogo; no lobby sem instância, anyInstance (RN-07 da lobby-sem-instancia). */
+	instanceId?: string;
+	anyInstance?: boolean;
 	startsAt: string;
 	minLevel: number;
 	characterId: string;

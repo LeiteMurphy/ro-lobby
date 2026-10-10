@@ -62,8 +62,8 @@ type CharacterAvailability struct {
 type Lobby struct {
 	ID               pgtype.UUID
 	OwnerID          pgtype.UUID
-	InstanceID       string
-	InstanceName     string
+	InstanceID       pgtype.Text
+	InstanceName     pgtype.Text
 	InstanceLevel    int16
 	StartsAt         time.Time
 	SlotsTank        int16

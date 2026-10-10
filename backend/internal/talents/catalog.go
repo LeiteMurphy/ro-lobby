@@ -89,6 +89,9 @@ type CountInput struct {
 	Support     int
 	Dps         int
 	CharacterID string
+	// AnyInstance: lobby sem instância; InstanceID é ignorado (RN-07 da
+	// lobby-sem-instancia).
+	AnyInstance bool
 	// Formation e FreeSlots: no grupo livre, o total de vagas do formulário (RN-13 da
 	// grupo-livre); Tank, Support e Dps ficam de fora.
 	Formation string
@@ -103,7 +106,9 @@ func (s *Service) Count(ctx context.Context, userID string, in CountInput) (int,
 		return 0, fmt.Errorf("talents: id de usuário inválido: %w", err)
 	}
 	var errs []FieldError
-	if _, ok := catalog.InstanceByID(in.InstanceID); !ok {
+	if in.AnyInstance {
+		in.InstanceID = ""
+	} else if _, ok := catalog.InstanceByID(in.InstanceID); !ok {
 		errs = append(errs, FieldError{FieldInstanceID, CodeInvalid})
 	}
 	cid, cidErr := parseUUID(in.CharacterID)

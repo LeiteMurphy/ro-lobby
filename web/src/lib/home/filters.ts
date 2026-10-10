@@ -1,3 +1,4 @@
+import { NO_INSTANCE } from '$lib/lobbies/form';
 import { roomFor } from './lobbies';
 import { toMinutes } from './time';
 import { ROLES, type Lobby, type Role } from './types';
@@ -87,7 +88,7 @@ export function matches(
 	options: { skipTime?: boolean } = {}
 ): boolean {
 	return (
-		(!filters.instance || lobby.instance === filters.instance) &&
+		instanceMatches(lobby, filters.instance) &&
 		(filters.roles.length === 0 || filters.roles.some((role) => roomFor(lobby, role) > 0)) &&
 		(filters.maxMinLevel === null || lobby.minLevel <= filters.maxMinLevel) &&
 		(options.skipTime === true || inRange(lobby, filters.timeRange))
@@ -128,7 +129,20 @@ export function activeFilterCount(filters: Filters): number {
 
 /** Instâncias que aparecem no filtro, em ordem alfabética. */
 export function instanceOptions(lobbies: readonly Lobby[]): string[] {
-	return [...new Set(lobbies.map((l) => l.instance))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+	// RN-05 da lobby-sem-instancia: os títulos livres não viram opção de instância.
+	return [...new Set(lobbies.filter((l) => !l.anyInstance).map((l) => l.instance))].sort((a, b) =>
+		a.localeCompare(b, 'pt-BR')
+	);
+}
+
+/**
+ * RN-12; RN-05 da lobby-sem-instancia: "Sem instância definida" traz só os lobbies sem
+ * instância, e uma instância do catálogo não traz eles.
+ */
+function instanceMatches(lobby: Lobby, instance: string): boolean {
+	if (!instance) return true;
+	if (instance === NO_INSTANCE) return lobby.anyInstance === true;
+	return !lobby.anyInstance && lobby.instance === instance;
 }
 
 /** RN-17: qual estado vazio mostrar, se algum. */

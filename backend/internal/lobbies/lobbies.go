@@ -24,6 +24,11 @@ import (
 const (
 	// MaxSlots é o total de vagas de um lobby (RN-06, P-01 da candidatura-lobby).
 	MaxSlots = 12
+	// MaxTitle é o tamanho do título do lobby sem instância (RN-02 da lobby-sem-instancia).
+	MaxTitle = 40
+	// AnyInstanceName é o nome do lobby sem instância e sem título (RN-02).
+	AnyInstanceName = "Qualquer instância"
+
 	// MinFreeSlots é o mínimo de vagas de um grupo livre: o dono e mais um (RN-02 da
 	// grupo-livre).
 	MinFreeSlots = 2
@@ -81,6 +86,7 @@ const (
 	FieldNote        = "note"
 	FieldReason      = "reason"
 	FieldFormation   = "formation"
+	FieldTitle       = "title"
 	FieldFreeSlots   = "freeSlots"
 
 	CodeRequired      = "required"
@@ -149,6 +155,10 @@ type Input struct {
 	// FreeSlots é o total de vagas e Slots fica zerado (RN-01, RN-02 da grupo-livre).
 	Formation string
 	FreeSlots int
+	// AnyInstance cria sem instância, com Title opcional; InstanceID é ignorado
+	// (RN-01, RN-02 da lobby-sem-instancia).
+	AnyInstance bool
+	Title       string
 }
 
 // UpdateInput é o que o dono muda ao editar; o personagem fica (RN-17). InstanceID vazio
@@ -162,6 +172,10 @@ type UpdateInput struct {
 	// Formation vazia mantém a atual (RN-07 da grupo-livre).
 	Formation string
 	FreeSlots int
+	// AnyInstance passa para "sem instância" com Title (RN-06 da lobby-sem-instancia).
+	// Sem ele e sem InstanceID, a instância (ou o título) atual continua.
+	AnyInstance bool
+	Title       string
 }
 
 // Owner é o dono com o personagem dele. CharacterID e os dados do personagem ficam vazios
@@ -196,6 +210,10 @@ type Lobby struct {
 	// Formation e FreeSlots: a formação e, no grupo livre, o total de vagas.
 	Formation string
 	FreeSlots int
+	// AnyInstance: lobby sem instância; InstanceID fica vazio, Title é o título digitado e
+	// InstanceName é o título ou AnyInstanceName (RN-04 da lobby-sem-instancia).
+	AnyInstance bool
+	Title       string
 	// PendingCount é a quantidade de candidaturas pendentes, pública (RN-28).
 	PendingCount int
 	MinLevel     int
@@ -272,17 +290,28 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 	now := s.Now().UTC()
 
 	var errs []FieldError
-	instance, ok := catalog.InstanceByID(in.InstanceID)
-	switch {
-	case in.InstanceID == "":
-		errs = append(errs, FieldError{FieldInstanceID, CodeRequired})
-	case !ok:
-		errs = append(errs, FieldError{FieldInstanceID, CodeInvalid})
+	target, ok := instanceTarget{}, true
+	if in.AnyInstance {
+		var titleErrs []FieldError
+		target, titleErrs = anyInstance(in.Title)
+		errs = append(errs, titleErrs...)
+	} else {
+		instance, inCatalog := catalog.InstanceByID(in.InstanceID)
+		switch {
+		case in.InstanceID == "":
+			errs = append(errs, FieldError{FieldInstanceID, CodeRequired})
+			ok = false
+		case !inCatalog:
+			errs = append(errs, FieldError{FieldInstanceID, CodeInvalid})
+			ok = false
+		default:
+			target = fromCatalog(instance)
+		}
 	}
 	errs = append(errs, checkStart(in.StartsAt, now)...)
 	formation, slotErrs := checkFormation(in.Formation, in.Slots, in.FreeSlots)
 	errs = append(errs, slotErrs...)
-	if ok && (in.MinLevel < instance.Level || in.MinLevel > MaxLevel) {
+	if ok && (in.MinLevel < int(target.level) || in.MinLevel > MaxLevel) {
 		errs = append(errs, FieldError{FieldMinLevel, CodeInvalid})
 	}
 	note, noteErrs := checkNote(in.Note)
@@ -324,9 +353,9 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 		}
 		id, err := q.CreateLobby(ctx, db.CreateLobbyParams{
 			OwnerID:          uid,
-			InstanceID:       instance.ID,
-			InstanceName:     instance.Name,
-			InstanceLevel:    int16(instance.Level), //nolint:gosec // catálogo: 1..275
+			InstanceID:       target.id,
+			InstanceName:     target.name,
+			InstanceLevel:    target.level,
 			StartsAt:         in.StartsAt.UTC(),
 			SlotsTank:        int16(in.Slots.Tank),    //nolint:gosec // checkSlots: 0..12
 			SlotsSupport:     int16(in.Slots.Support), //nolint:gosec // checkSlots: 0..12
@@ -366,6 +395,12 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 
 	var errs []FieldError
 	instance, inCatalog := catalog.InstanceByID(in.InstanceID)
+	var anyTarget instanceTarget
+	if in.AnyInstance {
+		var titleErrs []FieldError
+		anyTarget, titleErrs = anyInstance(in.Title)
+		errs = append(errs, titleErrs...)
+	}
 	errs = append(errs, checkStart(in.StartsAt, now)...)
 	if in.Formation != "" {
 		_, slotErrs := checkFormation(in.Formation, in.Slots, in.FreeSlots)
@@ -388,12 +423,17 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 		}
 		// RN-17: sem instância ou com a mesma, vale a gravada, mesmo que tenha saído do
 		// catálogo; outra precisa estar no catálogo.
+		// RN-06 da lobby-sem-instancia: AnyInstance passa para sem instância, com o título.
 		instanceID, instanceName, instanceLevel := current.Lobby.InstanceID, current.Lobby.InstanceName, current.Lobby.InstanceLevel
-		if in.InstanceID != "" && in.InstanceID != current.Lobby.InstanceID {
+		switch {
+		case in.AnyInstance:
+			instanceID, instanceName, instanceLevel = anyTarget.id, anyTarget.name, anyTarget.level
+		case in.InstanceID != "" && in.InstanceID != current.Lobby.InstanceID.String:
 			if !inCatalog {
 				return fieldError(FieldInstanceID, CodeInvalid)
 			}
-			instanceID, instanceName, instanceLevel = instance.ID, instance.Name, int16(instance.Level) //nolint:gosec // catálogo: 1..275
+			t := fromCatalog(instance)
+			instanceID, instanceName, instanceLevel = t.id, t.name, t.level
 		}
 		if in.MinLevel < int(instanceLevel) {
 			return fieldError(FieldMinLevel, CodeInvalid) // RN-07
@@ -564,6 +604,32 @@ func dayOf(t time.Time) time.Time {
 	return time.Date(y, m, d, 0, 0, 0, 0, Location)
 }
 
+// instanceTarget é a instância que vai para o banco: do catálogo, ou nula com o título
+// (D-01 da lobby-sem-instancia).
+type instanceTarget struct {
+	id    pgtype.Text
+	name  pgtype.Text
+	level int16
+}
+
+func fromCatalog(i catalog.Instance) instanceTarget {
+	return instanceTarget{
+		id:    pgtype.Text{String: i.ID, Valid: true},
+		name:  pgtype.Text{String: i.Name, Valid: true},
+		level: int16(i.Level), //nolint:gosec // catálogo: 1..275
+	}
+}
+
+// anyInstance confere o título (até 40 caracteres, sem espaço nas pontas; vazio fica
+// nulo) e devolve o lobby sem instância, de nível 1 (RN-02, RN-03 da lobby-sem-instancia).
+func anyInstance(title string) (instanceTarget, []FieldError) {
+	title = strings.TrimSpace(title)
+	if utf8.RuneCountInString(title) > MaxTitle {
+		return instanceTarget{level: 1}, []FieldError{{FieldTitle, CodeTooLong}}
+	}
+	return instanceTarget{name: pgtype.Text{String: title, Valid: title != ""}, level: 1}, nil
+}
+
 // HasRoom diz se o lobby tem vaga para um personagem da função: no grupo livre, vaga no
 // total, de qualquer função; por função, vaga na função (RN-03 e RN-04 da grupo-livre).
 func HasRoom(l Lobby, role string) bool {
@@ -686,9 +752,10 @@ func (s *Service) toLobby(l db.Lobby, o owner, c counts) Lobby {
 	}
 	out := Lobby{
 		ID:            l.ID.String(),
-		InstanceID:    l.InstanceID,
-		InstanceName:  l.InstanceName,
+		InstanceID:    l.InstanceID.String,
+		InstanceName:  l.InstanceName.String,
 		InstanceLevel: int(l.InstanceLevel),
+		AnyInstance:   !l.InstanceID.Valid,
 		StartsAt:      l.StartsAt.UTC(),
 		Status:        status,
 		Slots:         Slots{Tank: int(l.SlotsTank), Support: int(l.SlotsSupport), Dps: int(l.SlotsDps)},
@@ -707,7 +774,13 @@ func (s *Service) toLobby(l db.Lobby, o owner, c counts) Lobby {
 	if o.globalName.Valid && o.globalName.String != "" {
 		out.Owner.DiscordName = o.globalName.String
 	}
-	if i, ok := catalog.InstanceByID(l.InstanceID); ok {
+	if out.AnyInstance {
+		// RN-02 / RN-04 da lobby-sem-instancia: o título, ou "Qualquer instância".
+		out.Title = l.InstanceName.String
+		if out.Title == "" {
+			out.InstanceName = AnyInstanceName
+		}
+	} else if i, ok := catalog.InstanceByID(l.InstanceID.String); ok {
 		out.InstanceReset = string(i.Reset)
 	}
 	// D-01: o dono ocupa a vaga da função dele (P-02); os membros aceitos somam (D-03 da

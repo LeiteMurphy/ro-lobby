@@ -71,4 +71,21 @@ describe('/lobbies/novo/disponiveis', () => {
 			freeSlots: '12'
 		});
 	});
+
+	it('CA-04.1 / RN-07 da lobby-sem-instancia: sem instância, manda anyInstance no lugar do instanceId', async () => {
+		const fetchFn = vi.fn(
+			async () =>
+				new Response(JSON.stringify({ count: 1 }), {
+					status: 200,
+					headers: { 'content-type': 'application/json' }
+				})
+		) as unknown as typeof fetch;
+		const query =
+			'anyInstance=true&startsAt=2026-10-07T23%3A00%3A00Z&minLevel=1&tank=1&support=2&dps=3&characterId=c1';
+		expect(await (await GET(event(query, 'tok', fetchFn))).json()).toEqual({ count: 1 });
+		const [url] = (fetchFn as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+		const params = new URL(String(url)).searchParams;
+		expect(params.get('anyInstance')).toBe('true');
+		expect(params.has('instanceId')).toBe(false);
+	});
 });
