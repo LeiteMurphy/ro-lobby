@@ -74,6 +74,15 @@ describe('disponibilidade no perfil', () => {
 			props: { character, instances: INSTANCES, form, onclose: () => {} } as never
 		}).body;
 
+	it('CA-02.1 (talentos-filtros) / RN-02: os dias do diálogo aparecem com maiúscula, de Seg a Dom', () => {
+		const html = renderDialog({ ...LIRIEN, availability: null });
+		const chips = [...html.matchAll(/<span aria-hidden="true"[^>]*>([^<]+)<\/span>/g)].map(
+			(m) => m[1]
+		);
+		expect(chips).toEqual(['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']);
+		expect(html).toContain('aria-label="Segunda"');
+	});
+
 	it('CA-01.4: reabre com os dias, a faixa e as instâncias guardados, mesmo desligado', () => {
 		const html = renderDialog({
 			...LIRIEN,
