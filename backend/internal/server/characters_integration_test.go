@@ -58,17 +58,17 @@ func TestCharactersFlowIntegration_CA02_3_CA03_3_CA04_3(t *testing.T) {
 	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), nil, nil, nil)
 
 	// CA-02.1: o primeiro personagem nasce principal.
-	rec, brasa := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"Brasa","classId":"guardiao-real","level":172,"role":"tank"}`)
+	rec, brasa := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"Brasa","classId":"guardiao-real","level":172,"role":"tank","server":"freya"}`)
 	if rec.Code != http.StatusCreated || brasa["isMain"] != true || brasa["portrait"] != "templario" {
 		t.Fatalf("criar Brasa: status %d, corpo %v", rec.Code, brasa)
 	}
-	rec, lirien := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"Lirien","classId":"arcebispo","level":178,"role":"support","portrait":"retrato-2"}`)
+	rec, lirien := call(t, h, http.MethodPost, "/characters", ana, `{"nick":"Lirien","classId":"arcebispo","level":178,"role":"support","server":"freya","portrait":"retrato-2"}`)
 	if rec.Code != http.StatusCreated || lirien["isMain"] != false {
 		t.Fatalf("criar Lirien: status %d, corpo %v", rec.Code, lirien)
 	}
 
 	// CA-02.3: o nick é recusado para outro Usuário.
-	rec, body := call(t, h, http.MethodPost, "/characters", bia, `{"nick":"BRASA","classId":"paladino","level":99,"role":"tank"}`)
+	rec, body := call(t, h, http.MethodPost, "/characters", bia, `{"nick":"BRASA","classId":"paladino","level":99,"role":"tank","server":"freya"}`)
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("nick repetido: status %d, corpo %v", rec.Code, body)
 	}
@@ -82,7 +82,7 @@ func TestCharactersFlowIntegration_CA02_3_CA03_3_CA04_3(t *testing.T) {
 	// CA-03.3: a bia não edita, não exclui e não marca o personagem da ana.
 	lirienPath := "/characters/" + lirien["id"].(string)
 	for _, r := range []struct{ method, path, body string }{
-		{http.MethodPut, lirienPath, `{"nick":"Roubado","classId":"aprendiz","level":1,"role":"dps"}`},
+		{http.MethodPut, lirienPath, `{"nick":"Roubado","classId":"aprendiz","level":1,"role":"dps","server":"freya"}`},
 		{http.MethodDelete, lirienPath, ""},
 		{http.MethodPut, lirienPath + "/main", ""},
 	} {

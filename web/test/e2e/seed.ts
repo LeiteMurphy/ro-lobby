@@ -47,9 +47,16 @@ export interface SeedCharacter {
 export function createCharacter(
 	request: APIRequestContext,
 	token: string,
-	c: { nick: string; classId: string; level: number; role: 'tank' | 'support' | 'dps' }
+	c: {
+		nick: string;
+		classId: string;
+		level: number;
+		role: 'tank' | 'support' | 'dps';
+		server?: 'freya' | 'nidhogg';
+	}
 ) {
-	return post<SeedCharacter>(request, token, '/characters', c);
+	// Sem servidor, o personagem fica em Freya (spec servidor, RN-02).
+	return post<SeedCharacter>(request, token, '/characters', { server: 'freya', ...c });
 }
 
 export function createLobby(

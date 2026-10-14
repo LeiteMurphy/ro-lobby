@@ -59,6 +59,7 @@ const character = (over: Partial<Character>): Character => ({
 	isMain: false,
 	createdAt: '',
 	availability: null,
+	server: 'freya',
 	...over
 });
 

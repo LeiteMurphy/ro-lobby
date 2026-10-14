@@ -19,7 +19,13 @@ import {
 } from './portraits';
 
 const base = 'http://api.test';
-const input: CharacterInput = { nick: 'Brasa', classId: 'guardiao-real', level: 172, role: 'tank' };
+const input: CharacterInput = {
+	nick: 'Brasa',
+	classId: 'guardiao-real',
+	level: 172,
+	role: 'tank',
+	server: 'freya'
+};
 
 function fakeFetch(status: number, body?: unknown) {
 	return vi.fn<typeof fetch>(async () =>

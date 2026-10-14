@@ -36,6 +36,7 @@ function character(overrides: Partial<Character>): Character {
 		isMain: false,
 		createdAt: '2026-10-06T12:00:00Z',
 		availability: null,
+		server: 'freya',
 		...overrides
 	};
 }

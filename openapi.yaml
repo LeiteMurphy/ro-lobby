@@ -118,6 +118,22 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Class"
+  /servers:
+    get:
+      operationId: listServers
+      summary: Catálogo de servidores
+      description: >
+        Os servidores do Ragnarok LATAM, Freya e Nidhogg, nesta ordem (spec servidor, RN-01).
+        Não exige sessão.
+      responses:
+        "200":
+          description: Todos os servidores do catálogo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Server"
   /characters:
     get:
       operationId: listCharacters
@@ -1139,9 +1155,23 @@ components:
         art:
           type: string
           description: Arte da linha da classe (spec retrato-por-classe, RN-01).
+    ServerId:
+      type: string
+      enum: [freya, nidhogg]
+      description: Servidor do Ragnarok LATAM (spec servidor, RN-01).
+    Server:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          $ref: "#/components/schemas/ServerId"
+        name:
+          type: string
+          example: Nidhogg
     CharacterInput:
       type: object
-      required: [nick, classId, level, role]
+      required: [nick, classId, level, role, server]
       description: >
         Dados de um personagem. A API valida todos os campos (RNF-04), com as regras
         RN-04 a RN-10; um valor fora delas volta 422.
@@ -1162,10 +1192,15 @@ components:
         link:
           type: string
           description: Opcional; https:// e até 300 caracteres. Vazio fica sem link.
+        server:
+          type: string
+          description: >
+            ID de um servidor de GET /servers (spec servidor, RN-02). Fora do catálogo volta
+            422. Com o personagem num lobby aberto, mudar o servidor volta 409 (RN-04).
     Character:
       type: object
       additionalProperties: false
-      required: [id, nick, classId, level, role, portrait, link, isMain, createdAt, availability]
+      required: [id, nick, classId, level, role, portrait, link, isMain, createdAt, availability, server]
       properties:
         id:
           type: string
@@ -1193,6 +1228,8 @@ components:
           allOf:
             - $ref: "#/components/schemas/Availability"
           nullable: true
+        server:
+          $ref: "#/components/schemas/ServerId"
     AvailabilityInput:
       type: object
       additionalProperties: false
@@ -1324,7 +1361,7 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots, title]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots, title, server]
         code:
           type: string
           enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start, locked]

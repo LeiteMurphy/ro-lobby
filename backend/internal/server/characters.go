@@ -54,6 +54,16 @@ func (charactersHandler) ListClasses(context.Context, api.ListClassesRequestObje
 	return body, nil
 }
 
+// ListServers serve o catálogo de servidores, sem sessão (spec servidor, RN-01, CA-01.1).
+func (charactersHandler) ListServers(context.Context, api.ListServersRequestObject) (api.ListServersResponseObject, error) {
+	servers := catalog.Servers()
+	body := make(api.ListServers200JSONResponse, len(servers))
+	for i, s := range servers {
+		body[i] = api.Server{Id: api.ServerId(s.ID), Name: s.Name}
+	}
+	return body, nil
+}
+
 // ListCharacters devolve os personagens do Usuário da sessão (RN-01, RN-17).
 func (h charactersHandler) ListCharacters(ctx context.Context, _ api.ListCharactersRequestObject) (api.ListCharactersResponseObject, error) {
 	userID, ok, err := h.currentUser(ctx)
@@ -168,7 +178,7 @@ func toInput(body *api.CharacterInput) characters.Input {
 	if body == nil {
 		return characters.Input{}
 	}
-	in := characters.Input{Nick: body.Nick, ClassID: body.ClassId, Level: body.Level, Role: string(body.Role)}
+	in := characters.Input{Nick: body.Nick, ClassID: body.ClassId, Level: body.Level, Role: string(body.Role), Server: body.Server}
 	// D-03 da retrato-por-classe: o retrato vem da classe; o campo da entrada é ignorado.
 	if body.Link != nil {
 		in.Link = *body.Link
@@ -190,6 +200,7 @@ func toAPICharacter(c characters.Character) (api.Character, error) {
 		Portrait:  api.Portrait(catalog.ArtOf(c.ClassID)), // RN-02 da retrato-por-classe
 		IsMain:    c.IsMain,
 		CreatedAt: c.CreatedAt,
+		Server:    api.ServerId(c.Server),
 	}
 	if c.Link != "" {
 		body.Link = &c.Link

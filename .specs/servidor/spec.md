@@ -128,7 +128,7 @@ Then o personagem é salvo com o servidor Nidhogg
 CA-01.3 — Servidor obrigatório  [US-01, RN-02]
 Given um Usuário logado
 When ele cria um personagem sem servidor, ou com um código fora do catálogo
-Then a API responde 400 com o erro no campo server
+Then a API responde 422 com o erro no campo server
   And o formulário mostra "Escolha o servidor" junto do campo
 
 CA-01.4 — Mesmo nick em servidores diferentes  [US-01, RN-03]
@@ -139,13 +139,13 @@ Then o personagem é criado
 CA-01.5 — Nick repetido no mesmo servidor  [US-01, RN-03]
 Given um personagem "Brasa" em Freya de qualquer Usuário
 When alguém cria ou edita outro personagem para "brasa" em Freya
-Then a API responde 400 com o erro taken no campo nick
+Then a API responde 422 com o erro taken no campo nick
   And o formulário mostra "Esse nick já está em uso nesse servidor"
 
 CA-01.6 — Mudar de servidor e colidir com um nick  [US-01, RN-03, RN-04]
 Given "Brasa" em Freya e outro "Brasa" em Nidhogg
 When o dono do de Freya edita o servidor para Nidhogg
-Then a API responde 400 com o erro taken no campo nick
+Then a API responde 422 com o erro taken no campo nick
   And o personagem continua em Freya
 
 CA-01.7 — Editar o servidor  [US-01, RN-04]

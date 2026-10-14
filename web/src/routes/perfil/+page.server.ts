@@ -68,6 +68,7 @@ export interface FormValues {
 	role: string;
 	portrait: string;
 	link: string;
+	server: string;
 }
 
 function readValues(data: FormData): FormValues {
@@ -78,7 +79,8 @@ function readValues(data: FormData): FormValues {
 		level: text('level'),
 		role: text('role'),
 		portrait: text('portrait'),
-		link: text('link')
+		link: text('link'),
+		server: text('server')
 	};
 }
 
@@ -91,7 +93,8 @@ function toInput(v: FormValues): CharacterInput {
 		level: v.level.trim() !== '' && Number.isInteger(level) ? level : 0,
 		role: v.role as Role,
 		...(v.portrait ? { portrait: v.portrait as Portrait } : {}),
-		link: v.link
+		link: v.link,
+		server: v.server
 	};
 }
 

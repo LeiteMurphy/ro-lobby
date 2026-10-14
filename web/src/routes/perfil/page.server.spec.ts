@@ -66,7 +66,8 @@ const BRASA_FORM = {
 	level: '172',
 	role: 'tank',
 	portrait: '',
-	link: ''
+	link: '',
+	server: 'nidhogg'
 };
 
 type LoadEvent = Parameters<typeof load>[0];
@@ -114,7 +115,7 @@ describe('load de /perfil', () => {
 });
 
 describe('actions de /perfil', () => {
-	it('CA-02.1: criar manda os campos para a API', async () => {
+	it('CA-02.1 / CA-01.2 (servidor): criar manda os campos para a API, com o servidor', async () => {
 		const { fn, calls } = fakeFetch({ 'POST /characters': json(201, { id: 'c1' }) });
 		const result = await actions.create(
 			actionEvent(form({ ...BRASA_FORM, link: 'https://exemplo.com' }), fakeCookies('tok'), fn)
@@ -125,7 +126,8 @@ describe('actions de /perfil', () => {
 			classId: 'guardiao-real',
 			level: 172,
 			role: 'tank',
-			link: 'https://exemplo.com'
+			link: 'https://exemplo.com',
+			server: 'nidhogg'
 		});
 		expect(calls[0].auth).toBe('Bearer tok');
 	});

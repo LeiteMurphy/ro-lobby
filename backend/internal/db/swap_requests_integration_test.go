@@ -27,6 +27,7 @@ func swapSetup(t *testing.T) swapFixture {
 	toChar, err := f.q.CreateCharacter(t.Context(), CreateCharacterParams{
 		UserID: f.player.ID, Nick: "Faisca", ClassID: "arcebispo", Level: 200, Role: "support",
 		Portrait: "retrato-1", Now: t0,
+		Server: "freya",
 	})
 	if err != nil {
 		t.Fatal(err)

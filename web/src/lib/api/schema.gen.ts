@@ -104,6 +104,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catálogo de servidores
+         * @description Os servidores do Ragnarok LATAM, Freya e Nidhogg, nesta ordem (spec servidor, RN-01). Não exige sessão.
+         */
+        get: operations["listServers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/characters": {
         parameters: {
             query?: never;
@@ -722,6 +742,16 @@ export interface components {
             /** @description Arte da linha da classe (spec retrato-por-classe, RN-01). */
             art: string;
         };
+        /**
+         * @description Servidor do Ragnarok LATAM (spec servidor, RN-01).
+         * @enum {string}
+         */
+        ServerId: "freya" | "nidhogg";
+        Server: {
+            id: components["schemas"]["ServerId"];
+            /** @example Nidhogg */
+            name: string;
+        };
         /** @description Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422. */
         CharacterInput: {
             /** @description 1 a 24 caracteres depois de tirar os espaços das pontas. */
@@ -734,6 +764,8 @@ export interface components {
             portrait?: components["schemas"]["Portrait"];
             /** @description Opcional; https:// e até 300 caracteres. Vazio fica sem link. */
             link?: string;
+            /** @description ID de um servidor de GET /servers (spec servidor, RN-02). Fora do catálogo volta 422. Com o personagem num lobby aberto, mudar o servidor volta 409 (RN-04). */
+            server: string;
         };
         Character: {
             /** Format: uuid */
@@ -749,6 +781,7 @@ export interface components {
             createdAt: string;
             /** @description Disponibilidade no banco de talentos; null se nunca entrou (spec banco-de-talentos, CA-01.4). */
             availability: components["schemas"]["Availability"] | null;
+            server: components["schemas"]["ServerId"];
         };
         AvailabilityInput: {
             enabled: boolean;
@@ -808,7 +841,7 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title" | "server";
             /** @enum {string} */
             code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start" | "locked";
         };
@@ -1419,6 +1452,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Class"][];
+                };
+            };
+        };
+    };
+    listServers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Todos os servidores do catálogo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Server"][];
                 };
             };
         };

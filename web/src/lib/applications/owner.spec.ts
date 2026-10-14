@@ -166,6 +166,7 @@ describe('diálogos do dono', () => {
 			isMain: false,
 			createdAt: '',
 			availability: null,
+			server: 'freya',
 			...over
 		});
 		const html = render(SwapDialog, {

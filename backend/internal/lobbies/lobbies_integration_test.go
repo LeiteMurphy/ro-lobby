@@ -83,7 +83,7 @@ func (e *env) user(t *testing.T, discordID string, chars ...string) who {
 		_, _ = fmt.Sscan(parts[2], &level)
 		c, err := e.q.CreateCharacter(t.Context(), db.CreateCharacterParams{
 			UserID: u.ID, Nick: nick, ClassID: class, Level: level, Role: role,
-			Portrait: "retrato-1", IsMain: i == 0, Now: now,
+			Portrait: "retrato-1", IsMain: i == 0, Now: now, Server: serverOf(parts, 4),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -519,4 +519,13 @@ func TestGet_RN01_InstanceLeftCatalog(t *testing.T) {
 	if err != nil || got.InstanceID != "instancia-removida" || got.InstanceName != "Templo do Demônio Rei" {
 		t.Errorf("editado = %+v, %v", got, err)
 	}
+}
+
+// serverOf lê o servidor opcional na posição i da especificação do personagem; sem ele, o
+// personagem fica em Freya (spec servidor, RN-15).
+func serverOf(parts []string, i int) string {
+	if len(parts) > i {
+		return parts[i]
+	}
+	return "freya"
 }

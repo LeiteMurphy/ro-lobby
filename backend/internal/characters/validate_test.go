@@ -8,7 +8,7 @@ import (
 )
 
 func valid() Input {
-	return Input{Nick: "Brasa", ClassID: "guardiao-real", Level: 172, Role: "tank"}
+	return Input{Nick: "Brasa", ClassID: "guardiao-real", Level: 172, Role: "tank", Server: "freya"}
 }
 
 func fieldErrors(t *testing.T, err error) []FieldError {
@@ -64,6 +64,9 @@ func TestValidate_CA02_4_to_CA02_7_FieldErrors(t *testing.T) {
 		{"D-09 link sem host", func(in *Input) { in.Link = "https://" }, FieldError{FieldLink, CodeInvalid}},
 		{"D-09 link com usuário", func(in *Input) { in.Link = "https://eu:senha@exemplo.com" }, FieldError{FieldLink, CodeInvalid}},
 		{"D-09 link com espaço", func(in *Input) { in.Link = "https://exemplo.com/a b" }, FieldError{FieldLink, CodeInvalid}},
+		{"CA-01.3 (servidor) sem servidor", func(in *Input) { in.Server = "" }, FieldError{FieldServer, CodeRequired}},
+		{"CA-01.3 (servidor) servidor fora do catálogo", func(in *Input) { in.Server = "thor" }, FieldError{FieldServer, CodeInvalid}},
+		{"CA-01.3 (servidor) servidor pelo nome", func(in *Input) { in.Server = "Freya" }, FieldError{FieldServer, CodeInvalid}},
 		{"RN-09 link com 301 caracteres", func(in *Input) { in.Link = "https://exemplo.com/" + strings.Repeat("a", 281) }, FieldError{FieldLink, CodeTooLong}},
 	}
 	for _, c := range cases {
@@ -84,7 +87,7 @@ func TestValidate_RN19_ReportsAllFields(t *testing.T) {
 	got := fieldErrors(t, err)
 	want := []FieldError{
 		{FieldNick, CodeRequired}, {FieldClassID, CodeRequired}, {FieldLevel, CodeInvalid},
-		{FieldRole, CodeRequired}, {FieldLink, CodeInvalid},
+		{FieldRole, CodeRequired}, {FieldLink, CodeInvalid}, {FieldServer, CodeRequired},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("erros = %v, quer %v", got, want)
@@ -94,9 +97,9 @@ func TestValidate_RN19_ReportsAllFields(t *testing.T) {
 // RN-04, RN-07, RN-09: os limites são aceitos.
 func TestValidate_RN04_RN07_RN09_AcceptsLimits(t *testing.T) {
 	for _, in := range []Input{
-		{Nick: strings.Repeat("ã", 24), ClassID: "aprendiz", Level: 1, Role: "dps", Portrait: "retrato-4"},
-		{Nick: "B", ClassID: "animista", Level: 275, Role: "support", Link: "https://exemplo.com/" + strings.Repeat("a", 280)},
-		{Nick: "Faísca", ClassID: "feiticeiro", Level: 165, Role: "dps", Link: "  https://exemplo.com/char/123  "},
+		{Nick: strings.Repeat("ã", 24), ClassID: "aprendiz", Level: 1, Role: "dps", Portrait: "retrato-4", Server: "nidhogg"},
+		{Nick: "B", ClassID: "animista", Level: 275, Role: "support", Link: "https://exemplo.com/" + strings.Repeat("a", 280), Server: "freya"},
+		{Nick: "Faísca", ClassID: "feiticeiro", Level: 165, Role: "dps", Link: "  https://exemplo.com/char/123  ", Server: "freya"},
 	} {
 		if _, err := Validate(in); err != nil {
 			t.Errorf("%+v: %v", in, err)

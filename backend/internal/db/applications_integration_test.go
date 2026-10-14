@@ -33,6 +33,7 @@ func appSetup(t *testing.T) appFixture {
 	char, err := q.CreateCharacter(t.Context(), CreateCharacterParams{
 		UserID: player.ID, Nick: "Brasa", ClassID: "guardiao-real", Level: 200, Role: "tank",
 		Portrait: "retrato-3", IsMain: true, Now: t0,
+		Server: "freya",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -142,7 +143,7 @@ func TestApplications_D03_LobbyCountsAndExpire(t *testing.T) {
 	}
 
 	other := upsert(t, f.q, "3", "cai", "", t0)
-	c, err := f.q.CreateCharacter(t.Context(), CreateCharacterParams{UserID: other.ID, Nick: "Fa", ClassID: "feiticeiro", Level: 200, Role: "dps", Portrait: "retrato-1", IsMain: true, Now: t0})
+	c, err := f.q.CreateCharacter(t.Context(), CreateCharacterParams{UserID: other.ID, Nick: "Fa", ClassID: "feiticeiro", Level: 200, Role: "dps", Portrait: "retrato-1", IsMain: true, Now: t0, Server: "freya"})
 	if err != nil {
 		t.Fatal(err)
 	}

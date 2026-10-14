@@ -1,10 +1,10 @@
 -- name: CreateLobby :one
 INSERT INTO lobbies (owner_id, instance_id, instance_name, instance_level, starts_at,
     slots_tank, slots_support, slots_dps, min_level, owner_character_id, owner_role, note, created_at,
-    formation, free_slots)
+    formation, free_slots, server)
 VALUES (@owner_id, @instance_id, @instance_name, @instance_level, @starts_at,
     @slots_tank, @slots_support, @slots_dps, @min_level, @owner_character_id, @owner_role, @note, @now,
-    COALESCE(NULLIF(@formation::text, ''), 'roles'), sqlc.narg(free_slots))
+    COALESCE(NULLIF(@formation::text, ''), 'roles'), sqlc.narg(free_slots), @server)
 RETURNING id;
 
 -- name: GetLobby :one

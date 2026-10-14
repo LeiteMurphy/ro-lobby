@@ -25,6 +25,7 @@ const character = (over: Partial<Character>): Character => ({
 	isMain: false,
 	createdAt: '',
 	availability: null,
+	server: 'freya',
 	...over
 });
 const FOGO = character({ id: 'fogo', nick: 'Fogo', role: 'dps' });

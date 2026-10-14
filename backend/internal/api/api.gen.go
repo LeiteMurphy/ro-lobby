@@ -260,6 +260,7 @@ const (
 	FieldErrorFieldPortrait    FieldErrorField = "portrait"
 	FieldErrorFieldReason      FieldErrorField = "reason"
 	FieldErrorFieldRole        FieldErrorField = "role"
+	FieldErrorFieldServer      FieldErrorField = "server"
 	FieldErrorFieldSlots       FieldErrorField = "slots"
 	FieldErrorFieldStart       FieldErrorField = "start"
 	FieldErrorFieldStartsAt    FieldErrorField = "startsAt"
@@ -305,6 +306,8 @@ func (e FieldErrorField) Valid() bool {
 	case FieldErrorFieldReason:
 		return true
 	case FieldErrorFieldRole:
+		return true
+	case FieldErrorFieldServer:
 		return true
 	case FieldErrorFieldSlots:
 		return true
@@ -885,6 +888,24 @@ func (e Role) Valid() bool {
 	}
 }
 
+// Defines values for ServerId.
+const (
+	ServerIdFreya   ServerId = "freya"
+	ServerIdNidhogg ServerId = "nidhogg"
+)
+
+// Valid indicates whether the value is a known member of the ServerId enum.
+func (e ServerId) Valid() bool {
+	switch e {
+	case ServerIdFreya:
+		return true
+	case ServerIdNidhogg:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SwapCharacterPortrait.
 const (
 	SwapCharacterPortraitAlquimista     SwapCharacterPortrait = "alquimista"
@@ -1140,6 +1161,9 @@ type Character struct {
 
 	// Role Função do personagem (RN-08).
 	Role Role `json:"role"`
+
+	// Server Servidor do Ragnarok LATAM (spec servidor, RN-01).
+	Server ServerId `json:"server"`
 }
 
 // CharacterInput Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422.
@@ -1161,6 +1185,9 @@ type CharacterInput struct {
 
 	// Role Função do personagem (RN-08).
 	Role Role `json:"role"`
+
+	// Server ID de um servidor de GET /servers (spec servidor, RN-02). Fora do catálogo volta 422. Com o personagem num lobby aberto, mudar o servidor volta 409 (RN-04).
+	Server string `json:"server"`
 }
 
 // Class defines model for Class.
@@ -1475,6 +1502,18 @@ type RemoveInput struct {
 
 // Role Função do personagem (RN-08).
 type Role string
+
+// Server defines model for Server.
+type Server struct {
+	// Id Servidor do Ragnarok LATAM (spec servidor, RN-01).
+	Id ServerId `json:"id"`
+
+	// Name Example: Nidhogg
+	Name string `json:"name"`
+}
+
+// ServerId Servidor do Ragnarok LATAM (spec servidor, RN-01).
+type ServerId string
 
 // SessionCreated defines model for SessionCreated.
 type SessionCreated struct {
@@ -1818,6 +1857,9 @@ type ServerInterface interface {
 	// ListMyApplications Minhas candidaturas
 	// (GET /me/applications)
 	ListMyApplications(w http.ResponseWriter, r *http.Request)
+	// ListServers Catálogo de servidores
+	// (GET /servers)
+	ListServers(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request)
@@ -2461,6 +2503,20 @@ func (siw *ServerInterfaceWrapper) ListMyApplications(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListServers operation middleware
+func (siw *ServerInterfaceWrapper) ListServers(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListServers(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteSession operation middleware
 func (siw *ServerInterfaceWrapper) DeleteSession(w http.ResponseWriter, r *http.Request) {
 
@@ -2900,6 +2956,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetMe)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/session", wrapper.DeleteSession)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/classes", wrapper.ListClasses)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/servers", wrapper.ListServers)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/characters", wrapper.ListCharacters)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/characters", wrapper.CreateCharacter)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/characters/{id}", wrapper.DeleteCharacter)
@@ -4506,6 +4563,27 @@ func (response ListMyApplications401JSONResponse) VisitListMyApplicationsRespons
 	return err
 }
 
+type ListServersRequestObject struct {
+}
+
+type ListServersResponseObject interface {
+	VisitListServersResponse(w http.ResponseWriter) error
+}
+
+type ListServers200JSONResponse []Server
+
+func (response ListServers200JSONResponse) VisitListServersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteSessionRequestObject struct {
 }
 
@@ -4903,6 +4981,9 @@ type StrictServerInterface interface {
 	// ListMyApplications Minhas candidaturas
 	// (GET /me/applications)
 	ListMyApplications(ctx context.Context, request ListMyApplicationsRequestObject) (ListMyApplicationsResponseObject, error)
+	// ListServers Catálogo de servidores
+	// (GET /servers)
+	ListServers(ctx context.Context, request ListServersRequestObject) (ListServersResponseObject, error)
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
@@ -5730,6 +5811,30 @@ func (sh *strictHandler) ListMyApplications(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListMyApplicationsResponseObject); ok {
 		if err := validResponse.VisitListMyApplicationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListServers operation middleware
+func (sh *strictHandler) ListServers(w http.ResponseWriter, r *http.Request) {
+	var request ListServersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListServers(ctx, request.(ListServersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListServers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListServersResponseObject); ok {
+		if err := validResponse.VisitListServersResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

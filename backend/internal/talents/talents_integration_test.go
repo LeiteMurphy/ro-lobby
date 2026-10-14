@@ -95,7 +95,7 @@ func (e *env) user(t *testing.T, name string, chars ...string) who {
 		_, _ = fmt.Sscan(parts[2], &level)
 		c, err := e.q.CreateCharacter(t.Context(), db.CreateCharacterParams{
 			UserID: u.ID, Nick: parts[0], ClassID: parts[1], Level: level, Role: parts[3],
-			Portrait: "retrato-1", IsMain: i == 0, Now: now,
+			Portrait: "retrato-1", IsMain: i == 0, Now: now, Server: serverOf(parts, 4),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -213,4 +213,13 @@ func TestSetAvailability_CA01_5_OtherUser(t *testing.T) {
 	if list, _ := e.chars.List(t.Context(), bia.userID); list[0].Availability != nil {
 		t.Errorf("mudou o de outro: %+v", list[0].Availability)
 	}
+}
+
+// serverOf lê o servidor opcional na posição i da especificação do personagem; sem ele, o
+// personagem fica em Freya (spec servidor, RN-15).
+func serverOf(parts []string, i int) string {
+	if len(parts) > i {
+		return parts[i]
+	}
+	return "freya"
 }

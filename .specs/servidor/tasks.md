@@ -6,7 +6,7 @@
 
 ## Backend
 
-### T-01 — Servidor no personagem: migração, catálogo e regras  [ ]
+### T-01 — Servidor no personagem: migração, catálogo e regras  [x]
 - Cobre: US-01, RN-01, RN-02, RN-03, RN-04, RN-15, CA-01.1, CA-01.3 (API), CA-01.4,
   CA-01.5 (API), CA-01.6, CA-01.7, CA-01.8 (API), CA-06.7, RNF-01, RNF-02, RNF-03
 - Depende de: —
@@ -180,5 +180,14 @@
 Sem lacunas: todos os 35 critérios da spec têm task.
 
 ## Descobertas
+- 2026-10-14 — A spec dizia 400 nos erros de campo (CA-01.3, CA-01.5, CA-01.6), mas a API
+  responde 422 em toda validação desde a `personagens`. A spec foi corrigida para 422; o
+  comportamento não muda.
+- 2026-10-14 — T-01 já grava o servidor do personagem do dono no lobby criado, porque a
+  coluna `lobbies.server` nasce obrigatória na mesma migração. Os testes da RN-06 e da
+  RN-07 ficam na T-03.
+- 2026-10-14 — Entre a T-01 e a T-05, o formulário do perfil ainda não tem o campo
+  servidor, então criar personagem pela tela responde "servidor obrigatório". O e2e do
+  perfil volta a passar na T-05. O seed do e2e já manda Freya.
 - 2026-10-14 — A migração passa de `00007` (rascunho) para `00010`; a `discord-bot` fica
   com a `00011`.

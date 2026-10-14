@@ -101,9 +101,9 @@ func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
 	f := newFlow(t)
 	h := f.h
 	ana, bia, caio, duda := f.session(t, "1", "Ana"), f.session(t, "2", "Bia"), f.session(t, "3", "Caio"), f.session(t, "4", "Duda")
-	host := f.character(t, ana, `{"nick":"Anfitria","classId":"arcebispo","level":200,"role":"support"}`)
-	brasa := f.character(t, bia, `{"nick":"Brasa","classId":"guardiao-real","level":200,"role":"tank","link":"https://ragnaplace.com/brasa"}`)
-	fogo := f.character(t, caio, `{"nick":"Fogo","classId":"arquimago","level":200,"role":"dps"}`)
+	host := f.character(t, ana, `{"nick":"Anfitria","classId":"arcebispo","level":200,"role":"support","server":"freya"}`)
+	brasa := f.character(t, bia, `{"nick":"Brasa","classId":"guardiao-real","level":200,"role":"tank","server":"freya","link":"https://ragnaplace.com/brasa"}`)
+	fogo := f.character(t, caio, `{"nick":"Fogo","classId":"arquimago","level":200,"role":"dps","server":"freya"}`)
 	path, day := f.lobby(t, ana, host)
 
 	// Candidaturas de Bia (com mensagem) e Caio.
@@ -224,7 +224,7 @@ func TestApplicationsFlowIntegration_CA03_7_CA03_8_CA10_2_CA10_3(t *testing.T) {
 	}
 
 	// CA-09.1: o personagem aceito fica com nível travado.
-	if rec, got := call(t, h, http.MethodPut, "/characters/"+brasa, bia, `{"nick":"Brasa","classId":"guardiao-real","level":201,"role":"tank"}`); rec.Code != http.StatusConflict || got["error"] != "character_in_open_lobby" {
+	if rec, got := call(t, h, http.MethodPut, "/characters/"+brasa, bia, `{"nick":"Brasa","classId":"guardiao-real","level":201,"role":"tank","server":"freya"}`); rec.Code != http.StatusConflict || got["error"] != "character_in_open_lobby" {
 		t.Errorf("mudar nível do membro: %d %v", rec.Code, got)
 	}
 }

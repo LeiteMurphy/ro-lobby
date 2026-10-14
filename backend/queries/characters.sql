@@ -7,8 +7,8 @@ SELECT id FROM users WHERE id = @user_id FOR UPDATE;
 SELECT count(*) FROM characters WHERE user_id = @user_id;
 
 -- name: CreateCharacter :one
-INSERT INTO characters (user_id, nick, class_id, level, role, portrait, link, is_main, created_at)
-VALUES (@user_id, @nick, @class_id, @level, @role, @portrait, @link, @is_main, @now)
+INSERT INTO characters (user_id, nick, class_id, level, role, portrait, link, is_main, created_at, server)
+VALUES (@user_id, @nick, @class_id, @level, @role, @portrait, @link, @is_main, @now, @server)
 RETURNING *;
 
 -- name: ListCharacters :many
@@ -21,7 +21,7 @@ ORDER BY is_main DESC, created_at, seq;
 -- D-08: filtra pelo dono; personagem de outro Usuário não volta nada (RN-02).
 UPDATE characters
 SET nick = @nick, class_id = @class_id, level = @level, role = @role,
-    portrait = @portrait, link = @link
+    portrait = @portrait, link = @link, server = @server
 WHERE id = @id AND user_id = @user_id
 RETURNING *;
 

@@ -24,6 +24,7 @@ func newCharacter(userID pgtype.UUID, nick string) CreateCharacterParams {
 		Role:     "tank",
 		Portrait: "retrato-1",
 		Now:      t0,
+		Server:   "freya",
 	}
 }
 
@@ -60,8 +61,8 @@ func TestCharacters_CA07_3_NickUniqueIgnoringCase(t *testing.T) {
 			t.Fatalf("criar %q: %v", c.first, err)
 		}
 		_, err := q.CreateCharacter(t.Context(), newCharacter(bia.ID, c.second))
-		if pgCode(err) != "23505" || pgConstraint(err) != "characters_nick_key" {
-			t.Errorf("%q depois de %q: err = %v, quer violação de characters_nick_key", c.second, c.first, err)
+		if pgCode(err) != "23505" || pgConstraint(err) != "characters_server_nick_key" {
+			t.Errorf("%q depois de %q: err = %v, quer violação de characters_server_nick_key", c.second, c.first, err)
 		}
 	}
 }

@@ -367,6 +367,7 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 			Now:              now,
 			Formation:        formation,
 			FreeSlots:        freeSlotsParam(formation, in.FreeSlots),
+			Server:           character.Server, // RN-06 da spec servidor
 		})
 		if err != nil {
 			return err
