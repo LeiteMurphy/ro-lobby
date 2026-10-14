@@ -1,7 +1,7 @@
 # Spec — Filtros do banco de talentos e listagens com maiúscula
 
 - Feature: `talentos-filtros` · Nível: P · Status: Aprovada (2026-10-14)
-- Notion: (task única, criada na execução)
+- Notion: https://app.notion.com/p/3f9d4a3a5eff8100a555f25ef45c2597
 - Última revisão: 2026-10-14 — primeira versão
 
 ## 1. Contexto
