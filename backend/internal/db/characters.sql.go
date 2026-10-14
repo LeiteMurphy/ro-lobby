@@ -21,6 +21,25 @@ func (q *Queries) ClearMain(ctx context.Context, userID pgtype.UUID) error {
 	return err
 }
 
+const confirmCharacterServer = `-- name: ConfirmCharacterServer :execrows
+UPDATE characters SET server_to_confirm = false WHERE id = $1 AND user_id = $2
+`
+
+type ConfirmCharacterServerParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+// RN-16 da servidor: "Está certo" tira o personagem da conferência; de outro Usuário não
+// muda nada.
+func (q *Queries) ConfirmCharacterServer(ctx context.Context, arg ConfirmCharacterServerParams) (int64, error) {
+	result, err := q.db.Exec(ctx, confirmCharacterServer, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const countCharacters = `-- name: CountCharacters :one
 SELECT count(*) FROM characters WHERE user_id = $1
 `
@@ -223,7 +242,9 @@ func (q *Queries) SetMain(ctx context.Context, arg SetMainParams) (int64, error)
 const updateCharacter = `-- name: UpdateCharacter :one
 UPDATE characters
 SET nick = $1, class_id = $2, level = $3, role = $4,
-    portrait = $5, link = $6, server = $7
+    portrait = $5, link = $6, server = $7,
+    -- RN-16 da servidor: salvar a edição confirma o servidor.
+    server_to_confirm = false
 WHERE id = $8 AND user_id = $9
 RETURNING id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at, server, server_to_confirm
 `

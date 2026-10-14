@@ -198,6 +198,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/characters/{id}/confirm-server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirma o servidor de um personagem migrado
+         * @description Tira o personagem da conferência (spec servidor, RN-16). Personagem já conferido continua conferido. Personagem de outro Usuário responde 404.
+         */
+        post: operations["confirmCharacterServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/characters/{id}/availability": {
         parameters: {
             query?: never;
@@ -782,6 +805,8 @@ export interface components {
             /** @description Disponibilidade no banco de talentos; null se nunca entrou (spec banco-de-talentos, CA-01.4). */
             availability: components["schemas"]["Availability"] | null;
             server: components["schemas"]["ServerId"];
+            /** @description Personagem que já existia antes do servidor e que o dono ainda não conferiu (spec servidor, RN-15, RN-16). */
+            serverToConfirm: boolean;
         };
         AvailabilityInput: {
             enabled: boolean;
@@ -1631,6 +1656,29 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Personagem marcado como principal. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    confirmCharacterServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personagem conferido. */
             204: {
                 headers: {
                     [name: string]: unknown;

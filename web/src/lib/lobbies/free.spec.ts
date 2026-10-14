@@ -34,7 +34,8 @@ const char = (id: string, role: Character['role'], level: number): Character => 
 	isMain: false,
 	createdAt: '',
 	availability: null,
-	server: 'freya'
+	server: 'freya',
+	serverToConfirm: false
 });
 const VALUES: LobbyFormValues = {
 	instanceId: 'templo-do-demonio-rei',

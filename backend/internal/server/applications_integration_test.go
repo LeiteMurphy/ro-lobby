@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/applications"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/auth"
@@ -28,8 +29,9 @@ import (
 // CA-03.7, CA-03.8, CA-10.2, CA-10.3, RN-28, RN-29, RN-32, D-06, D-07).
 // flow é a API inteira sobre um banco descartável, com sessões criadas direto no banco.
 type flow struct {
-	h http.Handler
-	q *db.Queries
+	h    http.Handler
+	q    *db.Queries
+	pool *pgxpool.Pool
 }
 
 func newFlow(t *testing.T) flow {
@@ -53,7 +55,7 @@ func newFlow(t *testing.T) flow {
 	}
 	t.Cleanup(pool.Close)
 	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), lobbies.NewService(pool), applications.NewService(pool), talents.NewService(pool))
-	return flow{h: h, q: db.New(pool)}
+	return flow{h: h, q: db.New(pool), pool: pool}
 }
 
 // session cria o Usuário com o nome do Discord e devolve o token de uma sessão dele.

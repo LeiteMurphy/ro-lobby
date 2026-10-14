@@ -21,9 +21,16 @@ ORDER BY is_main DESC, created_at, seq;
 -- D-08: filtra pelo dono; personagem de outro Usuário não volta nada (RN-02).
 UPDATE characters
 SET nick = @nick, class_id = @class_id, level = @level, role = @role,
-    portrait = @portrait, link = @link, server = @server
+    portrait = @portrait, link = @link, server = @server,
+    -- RN-16 da servidor: salvar a edição confirma o servidor.
+    server_to_confirm = false
 WHERE id = @id AND user_id = @user_id
 RETURNING *;
+
+-- name: ConfirmCharacterServer :execrows
+-- RN-16 da servidor: "Está certo" tira o personagem da conferência; de outro Usuário não
+-- muda nada.
+UPDATE characters SET server_to_confirm = false WHERE id = @id AND user_id = @user_id;
 
 -- name: DeleteCharacter :one
 -- Devolve se o excluído era o principal, para passar a vez ao mais antigo (RN-14).

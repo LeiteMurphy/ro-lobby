@@ -59,6 +59,11 @@ func (f *fakeChars) SetMain(_ context.Context, userID, id string) error {
 	return f.err
 }
 
+func (f *fakeChars) ConfirmServer(_ context.Context, userID, id string) error {
+	f.gotUser, f.gotID = userID, id
+	return f.err
+}
+
 func newCharsServer(f *fakeChars) http.Handler {
 	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, f, nil, nil, nil)
 }
@@ -71,6 +76,8 @@ var characterRoutes = []struct{ method, path, body string }{
 	{http.MethodPut, "/characters/" + charID, brasaJSON},
 	{http.MethodDelete, "/characters/" + charID, ""},
 	{http.MethodPut, "/characters/" + charID + "/main", ""},
+	// CA-06.2 / CA-06.6 (servidor): "Está certo" segue as mesmas regras de sessão e dono.
+	{http.MethodPost, "/characters/" + charID + "/confirm-server", ""},
 }
 
 // CA-07.2 / RN-01: sem sessão (ou com sessão inválida), toda rota de personagem responde
@@ -134,7 +141,7 @@ func TestCharacters_RN01_ListOfSessionUser(t *testing.T) {
 	want := map[string]any{
 		"id": charID, "nick": "Brasa", "classId": "guardiao-real", "level": float64(172), "role": "tank",
 		"portrait": "templario", "link": nil, "isMain": true, "createdAt": "2026-10-06T12:00:00Z",
-		"availability": nil, "server": "nidhogg",
+		"availability": nil, "server": "nidhogg", "serverToConfirm": false,
 	}
 	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got)

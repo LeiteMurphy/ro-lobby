@@ -20,7 +20,8 @@ const LIRIEN: Character = {
 	isMain: true,
 	createdAt: '',
 	availability: null,
-	server: 'freya'
+	server: 'freya',
+	serverToConfirm: false
 };
 const INSTANCES = [
 	{ id: 'templo-do-demonio-rei', name: 'Templo do Demônio Rei', level: 160 },

@@ -1164,6 +1164,9 @@ type Character struct {
 
 	// Server Servidor do Ragnarok LATAM (spec servidor, RN-01).
 	Server ServerId `json:"server"`
+
+	// ServerToConfirm Personagem que já existia antes do servidor e que o dono ainda não conferiu (spec servidor, RN-15, RN-16).
+	ServerToConfirm bool `json:"serverToConfirm"`
 }
 
 // CharacterInput Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422.
@@ -1812,6 +1815,9 @@ type ServerInterface interface {
 	// SetAvailability Liga, edita ou desliga o personagem no banco de talentos
 	// (PUT /characters/{id}/availability)
 	SetAvailability(w http.ResponseWriter, r *http.Request, id CharacterId)
+	// ConfirmCharacterServer Confirma o servidor de um personagem migrado
+	// (POST /characters/{id}/confirm-server)
+	ConfirmCharacterServer(w http.ResponseWriter, r *http.Request, id CharacterId)
 	// SetMainCharacter Torna o personagem o principal
 	// (PUT /characters/{id}/main)
 	SetMainCharacter(w http.ResponseWriter, r *http.Request, id CharacterId)
@@ -2156,6 +2162,32 @@ func (siw *ServerInterfaceWrapper) SetAvailability(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetAvailability(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfirmCharacterServer operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmCharacterServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CharacterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmCharacterServer(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2962,6 +2994,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/characters/{id}", wrapper.DeleteCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}", wrapper.UpdateCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/main", wrapper.SetMainCharacter)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/characters/{id}/confirm-server", wrapper.ConfirmCharacterServer)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/availability", wrapper.SetAvailability)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/talents", wrapper.ListTalents)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/talents/count", wrapper.CountTalents)
@@ -3793,6 +3826,50 @@ func (response SetAvailability422JSONResponse) VisitSetAvailabilityResponse(w ht
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCharacterServerRequestObject struct {
+	Id CharacterId `json:"id"`
+}
+
+type ConfirmCharacterServerResponseObject interface {
+	VisitConfirmCharacterServerResponse(w http.ResponseWriter) error
+}
+
+type ConfirmCharacterServer204Response struct {
+}
+
+func (response ConfirmCharacterServer204Response) VisitConfirmCharacterServerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ConfirmCharacterServer401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response ConfirmCharacterServer401JSONResponse) VisitConfirmCharacterServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCharacterServer404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ConfirmCharacterServer404JSONResponse) VisitConfirmCharacterServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -4936,6 +5013,9 @@ type StrictServerInterface interface {
 	// SetAvailability Liga, edita ou desliga o personagem no banco de talentos
 	// (PUT /characters/{id}/availability)
 	SetAvailability(ctx context.Context, request SetAvailabilityRequestObject) (SetAvailabilityResponseObject, error)
+	// ConfirmCharacterServer Confirma o servidor de um personagem migrado
+	// (POST /characters/{id}/confirm-server)
+	ConfirmCharacterServer(ctx context.Context, request ConfirmCharacterServerRequestObject) (ConfirmCharacterServerResponseObject, error)
 	// SetMainCharacter Torna o personagem o principal
 	// (PUT /characters/{id}/main)
 	SetMainCharacter(ctx context.Context, request SetMainCharacterRequestObject) (SetMainCharacterResponseObject, error)
@@ -5391,6 +5471,32 @@ func (sh *strictHandler) SetAvailability(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetAvailabilityResponseObject); ok {
 		if err := validResponse.VisitSetAvailabilityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmCharacterServer operation middleware
+func (sh *strictHandler) ConfirmCharacterServer(w http.ResponseWriter, r *http.Request, id CharacterId) {
+	var request ConfirmCharacterServerRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmCharacterServer(ctx, request.(ConfirmCharacterServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmCharacterServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmCharacterServerResponseObject); ok {
+		if err := validResponse.VisitConfirmCharacterServerResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

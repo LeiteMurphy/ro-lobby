@@ -30,7 +30,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3f9d4a3a5eff812c9aebe6ecfafeeefd
 
-### T-02 — Conferir o servidor dos personagens migrados (API)  [P] [ ]
+### T-02 — Conferir o servidor dos personagens migrados (API)  [P] [x]
 - Cobre: US-06, RN-15, RN-16, CA-06.2 (API), CA-06.3 (API), CA-06.4 (API), CA-06.5,
   CA-06.6
 - Depende de: T-01

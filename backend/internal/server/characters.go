@@ -20,6 +20,7 @@ type CharacterService interface {
 	Update(ctx context.Context, userID, id string, in characters.Input) (characters.Character, error)
 	Delete(ctx context.Context, userID, id string) error
 	SetMain(ctx context.Context, userID, id string) error
+	ConfirmServer(ctx context.Context, userID, id string) error
 }
 
 type charactersHandler struct {
@@ -174,6 +175,26 @@ func (h charactersHandler) SetMainCharacter(ctx context.Context, req api.SetMain
 	return api.SetMainCharacter204Response{}, nil
 }
 
+// ConfirmCharacterServer tira o personagem da conferência do servidor (spec servidor,
+// RN-16, CA-06.2, CA-06.6).
+func (h charactersHandler) ConfirmCharacterServer(ctx context.Context, req api.ConfirmCharacterServerRequestObject) (api.ConfirmCharacterServerResponseObject, error) {
+	userID, ok, err := h.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.ConfirmCharacterServer401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	err = h.chars.ConfirmServer(ctx, userID, req.Id)
+	switch {
+	case errors.Is(err, characters.ErrNotFound):
+		return api.ConfirmCharacterServer404JSONResponse{NotFoundJSONResponse: api.NotFoundJSONResponse(notFound)}, nil
+	case err != nil:
+		return nil, err
+	}
+	return api.ConfirmCharacterServer204Response{}, nil
+}
+
 func toInput(body *api.CharacterInput) characters.Input {
 	if body == nil {
 		return characters.Input{}
@@ -201,6 +222,8 @@ func toAPICharacter(c characters.Character) (api.Character, error) {
 		IsMain:    c.IsMain,
 		CreatedAt: c.CreatedAt,
 		Server:    api.ServerId(c.Server),
+
+		ServerToConfirm: c.ServerToConfirm,
 	}
 	if c.Link != "" {
 		body.Link = &c.Link

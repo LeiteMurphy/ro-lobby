@@ -255,6 +255,27 @@ func (s *Service) checkNotInOpenLobby(ctx context.Context, q *db.Queries, cid pg
 	return nil
 }
 
+// ConfirmServer tira o personagem do Usuário da conferência do servidor (RN-16 da spec
+// servidor). Confirmar de novo não muda nada.
+func (s *Service) ConfirmServer(ctx context.Context, userID, id string) error {
+	uid, err := parseUUID(userID)
+	if err != nil {
+		return fmt.Errorf("characters: id de usuário inválido: %w", err)
+	}
+	cid, err := parseUUID(id)
+	if err != nil {
+		return ErrNotFound
+	}
+	n, err := s.queries.ConfirmCharacterServer(ctx, db.ConfirmCharacterServerParams{ID: cid, UserID: uid})
+	if err != nil {
+		return fmt.Errorf("characters: confirmar servidor: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound // RN-02: inexistente ou de outro Usuário
+	}
+	return nil
+}
+
 // Delete exclui o personagem do Usuário. Se era o principal, o mais antigo que sobrar
 // vira o principal (RN-14).
 func (s *Service) Delete(ctx context.Context, userID, id string) error {
