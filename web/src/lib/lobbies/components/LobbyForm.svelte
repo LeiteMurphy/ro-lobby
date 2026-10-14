@@ -110,6 +110,8 @@
 		instance: instance.name || 'Escolha a instância',
 		host: character?.nick ?? '—',
 		hostClass: character ? className(character.classId) : '',
+		// RN-06 da spec servidor: a prévia acompanha o servidor do personagem escolhido.
+		...(character ? { server: character.server } : {}),
 		minLevel: Number(minLevel) || instance.level,
 		composition: {
 			tank: { filled: character?.role === 'tank' ? 1 : 0, total: slots.tank },

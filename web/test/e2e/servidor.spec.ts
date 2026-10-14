@@ -86,4 +86,67 @@ test.describe('servidor do jogo', () => {
 		await ana.getByRole('radio', { name: new RegExp(`Nid${s}`) }).check({ force: true });
 		await expect(ana.getByTestId('lobby-server')).toContainText('O lobby fica em Nidhogg');
 	});
+
+	test('CA-04.1 a CA-04.5 / CA-02.4: filtro "Servidor" na Home, com o servidor no card', async ({
+		page,
+		request
+	}) => {
+		test.slow();
+		await page.setViewportSize({ width: 1280, height: 900 });
+		const s = rand();
+		const fre = await apiLogin(request, `fre${s}`);
+		const nid = await apiLogin(request, `nid${s}`);
+		const make = async (token: string, server: 'freya' | 'nidhogg', nick: string, time: string) => {
+			const c = await createCharacter(request, token, {
+				nick,
+				classId: 'arcebispo',
+				level: 250,
+				role: 'support',
+				server
+			});
+			await createLobby(request, token, {
+				instanceId: 'templo-do-demonio-rei',
+				day: 12,
+				time,
+				characterId: c.id,
+				minLevel: 160
+			});
+		};
+		await make(fre, 'freya', `FreA${s}`, '19:00');
+		await make(fre, 'freya', `FreB${s}`, '22:00');
+		await make(nid, 'nidhogg', `NidA${s}`, '20:00');
+
+		await page.goto('/');
+		await page.getByRole('tablist', { name: 'Dias' }).getByRole('tab').nth(12).click();
+		const cards = page.getByTestId('lobby-card');
+		const sidebar = page.getByRole('complementary', { name: 'Filtros' });
+		const filter = sidebar.getByTestId('server-filter');
+
+		// CA-04.1: começa em Todos, com as contagens do dia.
+		await expect(filter.getByRole('radio', { name: /Todos/ })).toBeChecked();
+		await expect(filter).toContainText(/Todos\s*3/);
+		await expect(filter).toContainText(/Freya\s*2/);
+		await expect(filter).toContainText(/Nidhogg\s*1/);
+		await expect(cards).toHaveCount(3);
+
+		// CA-04.2 / CA-02.4: só o de Nidhogg, com o servidor no card.
+		await filter.getByText('Nidhogg', { exact: true }).click();
+		await expect(cards).toHaveCount(1);
+		await expect(cards.first().getByTestId('lobby-card-server')).toHaveText('Nidhogg');
+
+		// CA-04.3 / RN-14: o destaque respeita o servidor escolhido.
+		await expect(page.getByTestId('featured-server')).toHaveText('Nidhogg');
+
+		// CA-04.4: "Limpar" volta para Todos.
+		await sidebar.getByRole('button', { name: 'Limpar' }).click();
+		await expect(filter.getByRole('radio', { name: /Todos/ })).toBeChecked();
+		await expect(cards).toHaveCount(3);
+
+		// CA-04.5: recarregar volta para Todos.
+		await filter.getByText('Freya', { exact: true }).click();
+		await expect(cards).toHaveCount(2);
+		await page.reload();
+		await page.getByRole('tablist', { name: 'Dias' }).getByRole('tab').nth(12).click();
+		await expect(filter.getByRole('radio', { name: /Todos/ })).toBeChecked();
+	});
 });

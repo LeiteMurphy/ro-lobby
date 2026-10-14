@@ -1,3 +1,4 @@
+import type { ServerId } from '$lib/catalog/servers';
 import { NO_INSTANCE } from '$lib/lobbies/form';
 import { roomFor } from './lobbies';
 import { toMinutes } from './time';
@@ -71,9 +72,32 @@ export interface Filters {
 	/** Nível mínimo escolhido ("Até Nv N"), ou null para qualquer nível. */
 	maxMinLevel: number | null;
 	timeRange: TimeRangeKey;
+	/** Servidor escolhido, ou '' para Todos (RN-12 da spec servidor). */
+	server: ServerId | '';
 }
 
-export const NO_FILTERS: Filters = { instance: '', roles: [], maxMinLevel: null, timeRange: 'any' };
+export const NO_FILTERS: Filters = {
+	instance: '',
+	roles: [],
+	maxMinLevel: null,
+	timeRange: 'any',
+	server: ''
+};
+
+/**
+ * RN-14 da spec servidor: o servidor escolhido recorta os lobbies antes de tudo; o seletor
+ * de dias, as contagens, as faixas e o destaque usam o recorte.
+ */
+export function byServer(lobbies: readonly Lobby[], server: Filters['server']): Lobby[] {
+	return server ? lobbies.filter((l) => l.server === server) : [...lobbies];
+}
+
+/** RN-13 da spec servidor: lobbies do dia em cada servidor, sem os outros filtros. */
+export function serverCounts(dayLobbies: readonly Lobby[]): Record<Filters['server'], number> {
+	const counts: Record<Filters['server'], number> = { '': dayLobbies.length, freya: 0, nidhogg: 0 };
+	for (const l of dayLobbies) if (l.server) counts[l.server]++;
+	return counts;
+}
 
 function inRange(lobby: Lobby, key: TimeRangeKey): boolean {
 	const range = TIME_BLOCKS.find((r) => r.key === key) ?? ANY_TIME;
@@ -88,6 +112,7 @@ export function matches(
 	options: { skipTime?: boolean } = {}
 ): boolean {
 	return (
+		(filters.server === '' || lobby.server === filters.server) &&
 		instanceMatches(lobby, filters.instance) &&
 		(filters.roles.length === 0 || filters.roles.some((role) => roomFor(lobby, role) > 0)) &&
 		(filters.maxMinLevel === null || lobby.minLevel <= filters.maxMinLevel) &&
@@ -123,7 +148,8 @@ export function activeFilterCount(filters: Filters): number {
 		(filters.instance ? 1 : 0) +
 		filters.roles.length +
 		(filters.maxMinLevel !== null ? 1 : 0) +
-		(filters.timeRange !== 'any' ? 1 : 0)
+		(filters.timeRange !== 'any' ? 1 : 0) +
+		(filters.server ? 1 : 0)
 	);
 }
 

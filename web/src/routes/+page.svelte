@@ -8,7 +8,9 @@
 		emptyState,
 		instanceOptions,
 		NO_FILTERS,
+		byServer,
 		roleCounts,
+		serverCounts,
 		timeRangeCounts,
 		visibleTimeRanges,
 		type Filters
@@ -41,12 +43,17 @@
 	let selectedDate = $derived(data.today);
 	let filters = $state<Filters>(NO_FILTERS);
 
-	const days = $derived(buildDays(data.today, data.lobbies));
+	// RN-14 da spec servidor: o servidor escolhido recorta os dias, as contagens e o destaque.
+	const scoped = $derived(byServer(data.lobbies, filters.server));
+	const days = $derived(buildDays(data.today, scoped));
 	const day = $derived(days.find((d) => d.date === selectedDate) ?? days[0]);
-	const dayLobbies = $derived(lobbiesForDay(data.lobbies, day.date));
-	const filtered = $derived(applyFilters(dayLobbies, filters));
+	const allDayLobbies = $derived(lobbiesForDay(data.lobbies, day.date));
+	const dayLobbies = $derived(lobbiesForDay(scoped, day.date));
+	const filtered = $derived(applyFilters(allDayLobbies, filters));
 	const featured = $derived(featuredLobby(dayLobbies, now));
-	const empty = $derived(emptyState(dayLobbies, filtered));
+	// Servidor sem lobby num dia que tem lobby é o estado vazio de filtros (borda da RN-14).
+	const empty = $derived(emptyState(allDayLobbies, filtered));
+	const dayServerCounts = $derived(serverCounts(allDayLobbies));
 	const instances = $derived(instanceOptions(data.lobbies));
 	const activeFilters = $derived(activeFilterCount(filters));
 	const noFilters = $derived(activeFilters === 0);
@@ -60,9 +67,9 @@
 
 	const heading = $derived(day.today ? 'Grupos para hoje' : `Grupos para ${day.label}`);
 	const subheading = $derived(
-		dayLobbies.length === 0
+		allDayLobbies.length === 0
 			? `${day.label} · nenhum grupo`
-			: `${day.today ? `${day.label} · ` : ''}${countLabel(dayLobbies.length, filtered.length, filters)} · por horário`
+			: `${day.today ? `${day.label} · ` : ''}${countLabel(allDayLobbies.length, filtered.length, filters)} · por horário`
 	);
 
 	const resetFilters = () => (filters = NO_FILTERS);
@@ -104,6 +111,7 @@
 				{instances}
 				roleCounts={dayRoleCounts}
 				timeCounts={dayTimeCounts}
+				serverCounts={dayServerCounts}
 				ranges={dayTimeRanges}
 				name="faixa"
 				onchange={(f) => (filters = f)}
@@ -167,6 +175,7 @@
 				{instances}
 				roleCounts={dayRoleCounts}
 				timeCounts={dayTimeCounts}
+				serverCounts={dayServerCounts}
 				ranges={dayTimeRanges}
 				name="faixa-gaveta"
 				size="md"

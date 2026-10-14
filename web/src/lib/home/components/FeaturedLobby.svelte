@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Button from '$lib/ui/Button.svelte';
+	import { serverName } from '$lib/catalog/servers';
 	import { instanceArt } from '../catalog';
 	import { pendingFor } from '../lobbies';
 	import type { Lobby } from '../types';
@@ -31,6 +32,10 @@
 				<span class="rule"></span>
 				<span class="time">{lobby.time}</span>
 				{#if relative}<span class="relative">{relative}</span>{/if}
+				<!-- RN-08 da spec servidor. -->
+				{#if lobby.server}<span class="server" data-testid="featured-server"
+						>{serverName(lobby.server)}</span
+					>{/if}
 				{#if pending}<span class="pending" data-testid="pending-badge">{pending}</span>{/if}
 			</div>
 			<h2>{lobby.instance}</h2>
@@ -160,5 +165,11 @@
 		.cover {
 			width: 100%;
 		}
+	}
+	.server {
+		font: 700 11px/1 var(--font-ui);
+		letter-spacing: var(--tracking-caps);
+		text-transform: uppercase;
+		color: var(--gold-300);
 	}
 </style>

@@ -111,7 +111,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3f9d4a3a5eff8113b8b5f4c5b2ff73a1
 
-### T-07 — Home: servidor no card e filtro "Servidor"  [P] [ ]
+### T-07 — Home: servidor no card e filtro "Servidor"  [P] [x]
 - Cobre: US-04, RN-08, RN-12, RN-13, RN-14, CA-02.4 (Home), CA-04.1 a CA-04.5
 - Depende de: T-03
 - Paralelizável: [P] com T-05, T-06 e T-08
@@ -196,3 +196,7 @@ Sem lacunas: todos os 35 critérios da spec têm task.
   banco direto. Fica no roteiro de UAT.
 - 2026-10-14 — O web usa um catálogo fixo de servidores (`$lib/catalog/servers.ts`), como
   já faz com as classes, com o mesmo teste de ordem e códigos da API.
+- 2026-10-14 — RN-14 implementada como recorte: o servidor escolhido filtra os lobbies antes
+  de calcular o seletor de dias, as contagens de "Vaga para" e de faixa e o destaque. As
+  contagens do próprio filtro de servidor usam o dia inteiro (RN-13), e um servidor sem
+  lobby num dia com lobby mostra o estado vazio de filtros.
