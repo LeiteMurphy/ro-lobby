@@ -46,7 +46,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3f9d4a3a5eff818380f0c27db01b6443
 
-### T-03 — Lobby no servidor do dono e grupo no mesmo servidor  [ ]
+### T-03 — Lobby no servidor do dono e grupo no mesmo servidor  [x]
 - Cobre: US-02, US-03, RN-06, RN-07, RN-09, RN-10, CA-02.1, CA-02.3, CA-03.1 a CA-03.5
 - Depende de: T-01
 - Paralelizável: não

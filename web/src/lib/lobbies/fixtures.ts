@@ -9,6 +9,7 @@ export const TEMPLE: ApiLobby = {
 		level: 160,
 		reset: 'daily'
 	},
+	server: 'freya',
 	startsAt: '2026-10-07T23:00:00Z',
 	status: 'open',
 	formation: 'roles',

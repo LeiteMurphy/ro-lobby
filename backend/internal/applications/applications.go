@@ -54,6 +54,8 @@ const (
 	CodeBlocked          = "blocked"      // RN-07, RN-15
 	CodeNotMember        = "not_member"   // RN-14, RN-15, RN-20: a candidatura não está aceita
 	CodeSwapPending      = "swap_pending" // RN-20
+	// CodeWrongServer: o personagem é de outro servidor (RN-09 e RN-10 da spec servidor).
+	CodeWrongServer = "wrong_server"
 )
 
 // ErrNotFound vale para lobby ou candidatura inexistente.
@@ -196,6 +198,9 @@ func (s *Service) Apply(ctx context.Context, userID, lobbyID string, in ApplyInp
 		}
 		if blocked {
 			return rule(CodeBlocked) // RN-07, RN-15
+		}
+		if character.Server != lobby.Lobby.Server {
+			return rule(CodeWrongServer) // RN-09 da servidor
 		}
 		if character.Level < lobby.Lobby.MinLevel {
 			return rule(CodeBelowMinLevel) // RN-30

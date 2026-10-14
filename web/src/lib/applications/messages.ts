@@ -18,7 +18,9 @@ const RULES: Record<ApplicationRuleCode, string> = {
 	not_yours: 'Essa candidatura não é sua.',
 	blocked: 'Você não pode se candidatar a este lobby.',
 	not_member: 'Você não está mais no grupo.',
-	swap_pending: 'Você já tem um pedido de troca pendente neste lobby.'
+	swap_pending: 'Você já tem um pedido de troca pendente neste lobby.',
+	// spec servidor, RN-09 e RN-10.
+	wrong_server: 'Esse personagem é de outro servidor.'
 };
 
 export function ruleMessage(code: ApplicationRuleCode | undefined): string | null {

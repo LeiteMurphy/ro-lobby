@@ -34,6 +34,7 @@ const (
 	ApplicationRuleErrorCodeRoleFull         ApplicationRuleErrorCode = "role_full"
 	ApplicationRuleErrorCodeScheduleConflict ApplicationRuleErrorCode = "schedule_conflict"
 	ApplicationRuleErrorCodeSwapPending      ApplicationRuleErrorCode = "swap_pending"
+	ApplicationRuleErrorCodeWrongServer      ApplicationRuleErrorCode = "wrong_server"
 )
 
 // Valid indicates whether the value is a known member of the ApplicationRuleErrorCode enum.
@@ -66,6 +67,8 @@ func (e ApplicationRuleErrorCode) Valid() bool {
 	case ApplicationRuleErrorCodeScheduleConflict:
 		return true
 	case ApplicationRuleErrorCodeSwapPending:
+		return true
+	case ApplicationRuleErrorCodeWrongServer:
 		return true
 	default:
 		return false
@@ -1313,10 +1316,13 @@ type Lobby struct {
 	Pending *[]LobbyParticipant `json:"pending,omitempty"`
 
 	// PendingCount Candidaturas pendentes; zero depois do início (RN-28, D-02).
-	PendingCount int         `json:"pendingCount"`
-	Slots        Slots       `json:"slots"`
-	StartsAt     time.Time   `json:"startsAt"`
-	Status       LobbyStatus `json:"status"`
+	PendingCount int `json:"pendingCount"`
+
+	// Server Servidor do personagem do dono na criação; não muda depois (spec servidor, RN-06, RN-07).
+	Server   ServerId    `json:"server"`
+	Slots    Slots       `json:"slots"`
+	StartsAt time.Time   `json:"startsAt"`
+	Status   LobbyStatus `json:"status"`
 
 	// SwapRequests Pedidos de troca pendentes. Só no detalhe e só para o dono (D-12).
 	SwapRequests *[]LobbySwapRequest `json:"swapRequests,omitempty"`

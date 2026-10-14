@@ -221,6 +221,7 @@ func toAPILobby(l lobbies.Lobby) (api.Lobby, error) {
 			Name:  l.InstanceName,
 			Level: l.InstanceLevel,
 		},
+		Server:       api.ServerId(l.Server),
 		StartsAt:     l.StartsAt,
 		Status:       api.LobbyStatus(l.Status),
 		Formation:    api.Formation(l.Formation),

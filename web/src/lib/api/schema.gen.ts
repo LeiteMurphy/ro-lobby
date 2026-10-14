@@ -984,6 +984,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             instance: components["schemas"]["LobbyInstance"];
+            /** @description Servidor do personagem do dono na criação; não muda depois (spec servidor, RN-06, RN-07). */
+            server: components["schemas"]["ServerId"];
             /** Format: date-time */
             startsAt: string;
             status: components["schemas"]["LobbyStatus"];
@@ -1028,7 +1030,7 @@ export interface components {
             /** @enum {string} */
             error: "application_rule";
             /** @enum {string} */
-            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "group_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending";
+            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "group_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending" | "wrong_server";
         };
         Application: {
             /** Format: uuid */
