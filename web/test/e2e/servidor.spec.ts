@@ -186,7 +186,7 @@ test.describe('servidor do jogo', () => {
 		await expect(item(`TalFre${s}`).getByTestId('talent-server')).toHaveText('Freya');
 
 		await page.getByLabel('Servidor').selectOption('nidhogg');
-		await page.getByRole('button', { name: 'Filtrar' }).click();
+		await expect(page).toHaveURL(/servidor=nidhogg/);
 		await expect(item(`TalNid${s}`)).toHaveCount(1);
 		await expect(item(`TalFre${s}`)).toHaveCount(0);
 

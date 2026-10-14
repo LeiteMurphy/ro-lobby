@@ -146,7 +146,7 @@ describe('/talentos renderizada no servidor', () => {
 		expect(html).toContain('Brasa');
 		expect(html).toContain('Guardião Real · Nv 172');
 		expect(html).toContain('Tank');
-		expect(html).toContain('qua · 19:00–23:00 (Brasília)');
+		expect(html).toContain('Qua · 19:00–23:00 (Brasília)');
 		expect(html).toContain('Templo do Demônio Rei');
 	});
 
@@ -220,5 +220,34 @@ describe('/talentos com o servidor (spec servidor)', () => {
 		expect(html).toMatch(
 			/Guardião Real · Nv 172 · <span[^>]*data-testid="talent-server"[^>]*>Nidhogg</
 		);
+	});
+});
+
+describe('/talentos com filtros na hora e dias com maiúscula (spec talentos-filtros)', () => {
+	const html = render(Page, {
+		props: {
+			data: {
+				user: null,
+				talents: [BRASA],
+				limited: false,
+				filters: { instancia: '', funcao: '', servidor: '', dia: '', hora: '' },
+				instances: [],
+				classNames: {},
+				loadError: null,
+				loginHref: '/'
+			},
+			params: {}
+		} as never
+	}).body;
+
+	it('CA-01.2 / RN-01: o formulário continua GET com "Filtrar" para quem está sem JavaScript', () => {
+		expect(html).toMatch(/<form[^>]*method="GET"/);
+		expect(html).toMatch(/<button[^>]*type="submit"[^>]*>[\s\S]*Filtrar/);
+	});
+
+	it('CA-02.1 / RN-02: o filtro "Dia" lista Segunda a Domingo com maiúscula', () => {
+		const select = html.split('name="dia"')[1].split('</select>')[0];
+		const days = [...select.matchAll(/<option value="\d"[^>]*>([^<]+)</g)].map((m) => m[1]);
+		expect(days).toEqual(['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']);
 	});
 });

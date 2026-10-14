@@ -29,12 +29,12 @@ const INSTANCES = [
 ];
 
 describe('textos do banco de talentos', () => {
-	it('RN-02: dias seguidos viram faixa; todos, "todos os dias"; soltos, lista', () => {
-		expect(daysLabel([1, 2, 3, 4, 5])).toBe('seg a sex');
-		expect(daysLabel([0, 1, 2, 3, 4, 5, 6])).toBe('todos os dias');
-		expect(daysLabel([5, 6, 0])).toBe('sex a dom');
-		expect(daysLabel([1, 3, 5])).toBe('seg, qua, sex');
-		expect(daysLabel([3])).toBe('qua');
+	it('RN-02 / CA-02.1 (talentos-filtros): dias com maiúscula; seguidos viram faixa; todos, "Todos os dias"; soltos, lista', () => {
+		expect(daysLabel([1, 2, 3, 4, 5])).toBe('Seg a Sex');
+		expect(daysLabel([0, 1, 2, 3, 4, 5, 6])).toBe('Todos os dias');
+		expect(daysLabel([5, 6, 0])).toBe('Sex a Dom');
+		expect(daysLabel([1, 3, 5])).toBe('Seg, Qua, Sex');
+		expect(daysLabel([3])).toBe('Qua');
 	});
 
 	it('RN-03: horas de 30 em 30 minutos e a faixa que vira a meia-noite', () => {
