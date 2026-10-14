@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginAs, newPage } from './pages';
-import { apiLogin, createCharacter, createLobby, rand } from './seed';
+import { apiLogin, createCharacter, createLobby, rand, setAvailability } from './seed';
 
 // Ponta a ponta do servidor do jogo (spec servidor), com o Discord falso e o banco do ponta
 // a ponta. Os lobbies ficam no dia 11, longe dos outros testes.
@@ -148,5 +148,50 @@ test.describe('servidor do jogo', () => {
 		await page.reload();
 		await page.getByRole('tablist', { name: 'Dias' }).getByRole('tab').nth(12).click();
 		await expect(filter.getByRole('radio', { name: /Todos/ })).toBeChecked();
+	});
+
+	test('CA-05.3 / CA-05.4: filtro "Servidor" em /talentos e o servidor em cada item', async ({
+		page,
+		request
+	}) => {
+		const s = rand();
+		const token = await apiLogin(request, `tal${s}`);
+		const nid = await createCharacter(request, token, {
+			nick: `TalNid${s}`,
+			classId: 'arquimago',
+			level: 250,
+			role: 'dps',
+			server: 'nidhogg'
+		});
+		const fre = await createCharacter(request, token, {
+			nick: `TalFre${s}`,
+			classId: 'arquimago',
+			level: 250,
+			role: 'dps',
+			server: 'freya'
+		});
+		for (const c of [nid, fre]) {
+			await setAvailability(request, token, c.id, {
+				days: [0, 1, 2, 3, 4, 5, 6],
+				start: '03:00',
+				end: '04:00',
+				anyInstance: true
+			});
+		}
+
+		await page.goto('/talentos');
+		await expect(page.getByLabel('Servidor')).toHaveValue('');
+		const item = (nick: string) => page.locator('article', { hasText: nick });
+		await expect(item(`TalNid${s}`).getByTestId('talent-server')).toHaveText('Nidhogg');
+		await expect(item(`TalFre${s}`).getByTestId('talent-server')).toHaveText('Freya');
+
+		await page.getByLabel('Servidor').selectOption('nidhogg');
+		await page.getByRole('button', { name: 'Filtrar' }).click();
+		await expect(item(`TalNid${s}`)).toHaveCount(1);
+		await expect(item(`TalFre${s}`)).toHaveCount(0);
+
+		// RN-18: abrir /talentos de novo começa em Todos.
+		await page.goto('/talentos');
+		await expect(page.getByLabel('Servidor')).toHaveValue('');
 	});
 });

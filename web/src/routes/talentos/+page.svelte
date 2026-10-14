@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import TopBar from '$lib/home/components/TopBar.svelte';
 	import { ROLE_LABELS, ROLES } from '$lib/home/types';
+	import { SERVERS } from '$lib/catalog/servers';
 	import TalentCard from '$lib/talents/components/TalentCard.svelte';
 	import { CLOCK_OPTIONS, WEEK_ORDER, WEEKDAY_NAMES } from '$lib/talents/format';
 	import Button from '$lib/ui/Button.svelte';
@@ -54,6 +55,16 @@
 					<option value="">Qualquer função</option>
 					{#each ROLES as r (r)}
 						<option value={r} selected={data.filters.funcao === r}>{ROLE_LABELS[r]}</option>
+					{/each}
+				</select>
+			</div>
+			<!-- RN-18 da spec servidor: Todos, Freya e Nidhogg; começa em Todos. -->
+			<div class="field">
+				<label class="lbl" for="{uid}-servidor">Servidor</label>
+				<select id="{uid}-servidor" class="input" name="servidor">
+					<option value="">Todos</option>
+					{#each SERVERS as s (s.id)}
+						<option value={s.id} selected={data.filters.servidor === s.id}>{s.name}</option>
 					{/each}
 				</select>
 			</div>

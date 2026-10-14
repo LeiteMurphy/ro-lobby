@@ -125,7 +125,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3f9d4a3a5eff81ec874df18b4cca1385
 
-### T-08 — Banco de talentos: filtro, servidor nos itens e prévia  [P] [ ]
+### T-08 — Banco de talentos: filtro, servidor nos itens e prévia  [P] [x]
 - Cobre: US-05, RN-17, RN-18, RN-19, CA-05.2 (prévia), CA-05.3, CA-05.4
 - Depende de: T-04
 - Paralelizável: [P] com T-05, T-06 e T-07
@@ -200,3 +200,12 @@ Sem lacunas: todos os 35 critérios da spec têm task.
   de calcular o seletor de dias, as contagens de "Vaga para" e de faixa e o destaque. As
   contagens do próprio filtro de servidor usam o dia inteiro (RN-13), e um servidor sem
   lobby num dia com lobby mostra o estado vazio de filtros.
+- 2026-10-14 — CA-05.3 diz que "recarregar a página volta o filtro para Todos". Em
+  `/talentos` todos os filtros ficam na query string (RN-11 da banco-de-talentos, funciona
+  sem JS), então recarregar o mesmo link mantém o filtro, e abrir `/talentos` de novo começa
+  em Todos. O servidor seguiu os outros filtros. **Proposta de ajuste na spec, aguardando o
+  usuário:** "abrir `/talentos` de novo começa em Todos; o filtro fica no link, como os
+  outros".
+- 2026-10-14 — A prévia da criação (CA-05.2) já recontava ao trocar de personagem, porque o
+  `characterId` faz parte da consulta; a T-08 não mudou código ali. A API (T-04) prova o
+  servidor na contagem.

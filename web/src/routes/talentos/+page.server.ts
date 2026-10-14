@@ -3,6 +3,7 @@ import { loginHref } from '$lib/auth/display';
 import { SESSION_COOKIE } from '$lib/auth/oauth';
 import { listClasses } from '$lib/characters/api';
 import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { SERVERS } from '$lib/catalog/servers';
 import { listInstances } from '$lib/lobbies/api';
 import { listTalents, type CatalogFilter, type Role } from '$lib/talents/api';
 import { CLOCK_OPTIONS } from '$lib/talents/format';
@@ -20,6 +21,8 @@ const ROLES: readonly Role[] = ['tank', 'support', 'dps'];
 interface TalentFilterValues {
 	instancia: string;
 	funcao: string;
+	/** RN-18 da spec servidor: '' é Todos. */
+	servidor: string;
 	dia: string;
 	hora: string;
 }
@@ -30,6 +33,7 @@ function readFilters(url: URL): { values: TalentFilterValues; filter: CatalogFil
 	const values: TalentFilterValues = {
 		instancia: q.get('instancia') ?? '',
 		funcao: q.get('funcao') ?? '',
+		servidor: q.get('servidor') ?? '',
 		dia: q.get('dia') ?? '',
 		hora: q.get('hora') ?? ''
 	};
@@ -37,6 +41,8 @@ function readFilters(url: URL): { values: TalentFilterValues; filter: CatalogFil
 	if (values.instancia) filter.instanceId = values.instancia;
 	if (ROLES.includes(values.funcao as Role)) filter.role = values.funcao as Role;
 	else values.funcao = '';
+	if (SERVERS.some((s) => s.id === values.servidor)) filter.server = values.servidor;
+	else values.servidor = '';
 	if (/^[0-6]$/.test(values.dia)) filter.day = Number(values.dia);
 	else values.dia = '';
 	if (CLOCK_OPTIONS.includes(values.hora)) filter.time = values.hora;
