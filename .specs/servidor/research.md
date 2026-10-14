@@ -37,7 +37,7 @@ precisa saber o servidor do personagem e do lobby, e a Home precisa filtrar por 
   escreveu "Niddhog"; a forma mitológica é "Nidhogg". Confirmar com o usuário.
 
 ## Arquivos-chave
-- `backend/migrations/00003_characters.sql`, `00004_lobbies.sql` (nova migração `00007`)
+- `backend/migrations/00003_characters.sql`, `00004_lobbies.sql` (nova migração `00010`)
 - `backend/queries/characters.sql`, `lobbies.sql`, `applications.sql`, `swap_requests.sql`
 - `backend/internal/{characters,lobbies,applications,catalog}`
 - `openapi.yaml` e `web/src/lib/api/schema.gen.ts`
@@ -48,3 +48,13 @@ precisa saber o servidor do personagem e do lobby, e a Home precisa filtrar por 
 **M (Médio).** Um campo novo em duas tabelas e regras novas em três specs, passando por
 API, contrato e web. Não há decisão de arquitetura: o servidor é um catálogo fixo como
 função. Fases: Specify → Tasks → Execute → Validate.
+
+## Atualização de 2026-10-14
+Retomada depois do `main` avançar. Entraram nesse meio-tempo, e a spec passa a cobrir:
+- banco de talentos (afinidade, `/talentos`);
+- compartilhar lobby (convite e Open Graph);
+- publicação em `rolobby.com.br` (ADR-08). Os dados que já existem são de jogadores reais,
+  então a migração marca os personagens "a conferir".
+
+A nova migração é a `00010` (a `discord-bot` fica com a `00011`). A grafia "Nidhogg" foi
+confirmada.

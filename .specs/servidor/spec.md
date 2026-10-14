@@ -2,14 +2,17 @@
 
 - Feature: `servidor` · Nível: M · Status: Rascunho
 - Notion: (criado na fase de Tasks)
-- Última revisão: 2026-10-08 — primeira versão
+- Última revisão: 2026-10-14 — dados de produção com aviso para conferir (RN-15, RN-16),
+  banco de talentos (US-05, RN-17 a RN-19) e servidor no convite e no preview (RN-20)
 
 ## 1. Contexto
 O Ragnarok LATAM tem dois servidores, Freya e Nidhogg. Cada personagem vive em um deles, e
 um grupo só joga junto se todos estiverem no mesmo servidor. Hoje o RO Lobby não sabe o
 servidor de ninguém: um jogador de Freya pode se candidatar a um grupo de Nidhogg e só
 descobre o problema na hora de jogar. Esta feature grava o servidor no personagem e no
-lobby, impede grupos com servidores misturados e deixa a Home filtrar por servidor.
+lobby, impede grupos com servidores misturados e deixa a Home e o banco de talentos
+filtrar por servidor. Como o RO Lobby já está no ar para testes fechados (ADR-08), os
+personagens que já existem precisam ser conferidos pelos donos.
 
 ## 2. Atores
 | Ator | Descrição | Permissões principais |
@@ -26,6 +29,8 @@ lobby, impede grupos com servidores misturados e deixa a Home filtrar por servid
 | US-02 | P1 | Como dono, quero que o lobby fique no servidor do meu personagem, para os candidatos saberem onde o grupo vai jogar. |
 | US-03 | P1 | Como dono, quero que só personagens do servidor do lobby entrem no grupo, para não montar um grupo que não consegue jogar junto. |
 | US-04 | P1 | Como visitante, quero filtrar a Home por servidor, para ver só os grupos de onde eu jogo. |
+| US-05 | P1 | Como dono ou jogador, quero que o banco de talentos respeite o servidor, para só chamar quem pode jogar comigo. |
+| US-06 | P1 | Como jogador que já tinha personagens, quero ser avisado para conferir o servidor deles, para não ficar no servidor errado. |
 
 ## 4. Regras de domínio
 
@@ -77,10 +82,33 @@ lobby, impede grupos com servidores misturados e deixa a Home filtrar por servid
   destaque e os estados vazios respeitam o servidor escolhido como respeitam os outros
   filtros hoje. O botão "Limpar filtros" volta o servidor para Todos.
 
+### Banco de talentos
+- **RN-17** — A afinidade com um lobby ganha a condição "o personagem é do servidor do
+  lobby" (amplia a RN-06 da `banco-de-talentos`). Isso vale para "Jogadores disponíveis"
+  (RN-09 de lá) e para a prévia "N jogadores disponíveis" da criação, que usa o servidor
+  do personagem escolhido como dono (RN-10 de lá).
+- **RN-18** — `/talentos` ganha o filtro "Servidor", com Todos, Freya e Nidhogg. Ele
+  começa em Todos, não guarda a escolha e se combina com os outros filtros com E (amplia a
+  RN-11 de lá).
+- **RN-19** — Cada personagem da lista de `/talentos` e do painel "Jogadores disponíveis"
+  mostra o servidor (amplia a RN-12 de lá).
+
+### Convite e preview
+- **RN-20** — O servidor do lobby entra no convite copiado e no `og:title`, logo depois do
+  título: "Grupo para <instância> · <servidor> · <dia>, <dd/mm> às <hh:mm>..." e
+  "<instância> · <servidor> · <dia>, <dd/mm> às <hh:mm>" (amplia a RN-02 e a RN-05 da
+  `compartilhar-lobby`).
+
 ### Dados existentes
-- **RN-15** — Na migração, todo personagem e todo lobby que já existe recebe Freya. Se a
-  migração encontrar dois nicks iguais (o que a RN-05 antiga já impedia), ela falha sem
-  mudar nada.
+- **RN-15** — Na migração, todo personagem e todo lobby que já existe recebe Freya, e
+  todo personagem migrado fica "a conferir". Personagem criado depois da migração nasce
+  conferido. Se a migração encontrar dois nicks iguais (o que a RN-05 antiga já impedia),
+  ela falha sem mudar nada.
+- **RN-16** — Enquanto o Usuário tem personagem a conferir, o perfil mostra o aviso
+  "Confira o servidor dos seus personagens". O aviso lista esses personagens, cada um com
+  "Está certo" e "Editar". O personagem deixa de estar a conferir quando o dono clica em
+  "Está certo" ou salva uma edição dele. Personagem a conferir funciona normalmente em
+  tudo (candidatura, lobby, banco de talentos).
 
 ## 5. Critérios de aceite
 
@@ -229,11 +257,82 @@ Then o filtro está em Todos
 
 ### Migração
 ```gherkin
-CA-05.1 — Dados existentes recebem Freya  [RN-15]
+CA-06.7 — Dados existentes recebem Freya  [US-06, RN-15]
 Given personagens e lobbies criados antes desta feature
 When a migração roda
 Then todos ficam em Freya
+  And todos os personagens ficam a conferir
   And a migração volta atrás (down) sem perder os outros dados
+```
+
+### US-05 — Banco de talentos
+```gherkin
+CA-05.1 — Afinidade só do mesmo servidor  [US-05, RN-17]
+Given um lobby aberto em Freya
+  And dois personagens no banco com afinidade em tudo, um em Freya e outro em Nidhogg
+When o dono vê "Jogadores disponíveis"
+Then só o personagem de Freya aparece
+
+CA-05.2 — Prévia da criação conta o servidor  [US-05, RN-17]
+Given dois personagens no banco com afinidade com o que está sendo montado, um em Freya e outro em Nidhogg
+When o Usuário monta um lobby com um personagem dele em Nidhogg
+Then a prévia mostra "1 jogador disponível"
+  And ao trocar para um personagem dele em Freya a prévia continua em 1, agora contando o de Freya
+
+CA-05.3 — Filtro de servidor em /talentos  [US-05, RN-18]
+Given o banco com 3 personagens em Freya e 1 em Nidhogg
+When alguém abre /talentos e escolhe Nidhogg
+Then a lista mostra só o de Nidhogg
+  And recarregar a página volta o filtro para Todos
+
+CA-05.4 — Servidor na lista  [US-05, RN-19]
+Given um personagem em Nidhogg no banco
+When ele aparece em /talentos ou em "Jogadores disponíveis"
+Then o item mostra "Nidhogg"
+```
+
+### US-02 — Servidor no convite (complemento)
+```gherkin
+CA-02.5 — Convite e preview com o servidor  [US-02, RN-20]
+Given um lobby aberto em Nidhogg
+When alguém copia o convite ou o link é colado no Discord
+Then o convite e o og:title trazem "Nidhogg" logo depois do título do lobby
+```
+
+### US-06 — Conferir os personagens migrados
+```gherkin
+CA-06.1 — Aviso para quem tem personagem migrado  [US-06, RN-15, RN-16]
+Given um Usuário com dois personagens criados antes da migração
+When ele abre /perfil
+Then o perfil mostra "Confira o servidor dos seus personagens" com os dois personagens
+  And cada um tem "Está certo" e "Editar"
+
+CA-06.2 — "Está certo" confirma  [US-06, RN-16]
+Given um Usuário com dois personagens a conferir
+When ele clica em "Está certo" em um deles
+Then esse personagem sai do aviso e continua em Freya
+  And o aviso continua com o outro
+
+CA-06.3 — Salvar a edição confirma  [US-06, RN-16]
+Given um personagem a conferir em Freya
+When o dono edita o personagem para Nidhogg e salva
+Then o personagem fica em Nidhogg e sai do aviso
+  And, sem personagens a conferir, o aviso some
+
+CA-06.4 — Personagem novo não entra no aviso  [US-06, RN-15]
+Given um Usuário sem personagens a conferir
+When ele cria um personagem
+Then o perfil não mostra o aviso
+
+CA-06.5 — A conferir funciona normalmente  [US-06, RN-16]
+Given um personagem a conferir
+When o dono se candidata, cria um lobby ou o põe no banco de talentos com ele
+Then a ação segue as regras de sempre
+
+CA-06.6 — Só o dono confirma  [US-06, RN-16]
+Given um personagem a conferir de outro Usuário
+When alguém tenta confirmá-lo pela API
+Then a API responde 404 e o personagem continua a conferir
 ```
 
 ## 6. Casos de borda
@@ -260,6 +359,8 @@ Then todos ficam em Freya
 - Lembrar o filtro de servidor ou abrir no servidor do principal — escolhido "Todos, sem
   memória" na entrevista; pode virar ajuste depois.
 - Servidor em "Minhas candidaturas" — não escolhido na entrevista.
+- Avisar por e-mail ou Discord quem tem personagem a conferir — o aviso fica só no perfil.
+- Servidor na sala do Discord — entra pela spec `discord-bot`, que é posterior.
 - Escolher o servidor do lobby por campo próprio — o servidor vem do personagem do dono.
 - Mudar o servidor de um lobby existente.
 - Servidores de outras regiões ou novos servidores — o catálogo tem só os dois atuais;
@@ -279,3 +380,9 @@ Then todos ficam em Freya
 - Personagens de outro servidor na candidatura e na troca → desabilitados com motivo.
 - Onde o servidor aparece → carteirinha do perfil, card da Home e destaque, detalhe do
   lobby.
+- (Revisão de 2026-10-14) Dados de produção → continuam em Freya, com o aviso "Confira o
+  servidor" no perfil até o dono confirmar ou editar.
+- (Revisão de 2026-10-14) Banco de talentos → afinidade só do mesmo servidor, filtro em
+  `/talentos` e servidor em cada item.
+- (Revisão de 2026-10-14) Convite e preview → trazem o servidor.
+- (Revisão de 2026-10-14) Grafia → Nidhogg, confirmada.
