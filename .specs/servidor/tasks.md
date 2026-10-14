@@ -27,7 +27,7 @@
     - mesmo nick em servidores diferentes e `taken` no mesmo servidor, inclusive ao mudar
       de servidor;
     - a edição do servidor, e a recusa dela com vínculo ativo.
-- Commit:
+- Commit: 3b60359
 - Notion: https://app.notion.com/p/3f9d4a3a5eff812c9aebe6ecfafeeefd
 
 ### T-02 — Conferir o servidor dos personagens migrados (API)  [P] [x]
@@ -43,7 +43,7 @@
   - o personagem de outro Usuário responde 404;
   - um personagem a conferir se candidata, cria lobby e entra no banco de talentos
     normalmente.
-- Commit:
+- Commit: 43a7bed
 - Notion: https://app.notion.com/p/3f9d4a3a5eff818380f0c27db01b6443
 
 ### T-03 — Lobby no servidor do dono e grupo no mesmo servidor  [x]
@@ -59,7 +59,7 @@
   - candidatar, trocar o personagem do dono e pedir troca com personagem de outro
     servidor respondem 409 `wrong_server`, sem mudar nada;
   - o mesmo servidor segue as regras de sempre.
-- Commit:
+- Commit: c845330
 - Notion: https://app.notion.com/p/3f9d4a3a5eff8136be09f31656dfa3bf
 
 ### T-04 — Banco de talentos por servidor (API)  [x]
@@ -74,7 +74,7 @@
   - a contagem da criação usa o servidor do personagem do dono informado;
   - `/talents?server=nidhogg` filtra;
   - cada item traz o servidor.
-- Commit:
+- Commit: 167a7f4
 - Notion: https://app.notion.com/p/3f9d4a3a5eff8151a767ca7842ea8d29
 
 ## Web
@@ -92,7 +92,7 @@
   - as mensagens "Esse nick já está em uso nesse servidor" e a da trava com "servidor,
     nível ou função";
   - o aviso com "Está certo" e "Editar", que some quando não sobra personagem a conferir.
-- Commit:
+- Commit: b7af046
 - Notion: https://app.notion.com/p/3f9d4a3a5eff81ec8656e940177df6d9
 
 ### T-06 — Lobby: criação, detalhe, escolha de personagem, convite e preview  [P] [x]
@@ -108,7 +108,7 @@
   - o servidor no detalhe;
   - "Outro servidor (Nidhogg)" desabilitado na candidatura e no pedido de troca;
   - o servidor no convite copiado e no `og:title`.
-- Commit:
+- Commit: 1d1fb66
 - Notion: https://app.notion.com/p/3f9d4a3a5eff8113b8b5f4c5b2ff73a1
 
 ### T-07 — Home: servidor no card e filtro "Servidor"  [P] [x]
@@ -122,7 +122,7 @@
   - o "Limpar filtros";
   - que a escolha não é guardada;
   - o servidor no card e no destaque.
-- Commit:
+- Commit: e294e15
 - Notion: https://app.notion.com/p/3f9d4a3a5eff81ec874df18b4cca1385
 
 ### T-08 — Banco de talentos: filtro, servidor nos itens e prévia  [P] [x]
@@ -135,7 +135,7 @@
   - o filtro "Servidor" em `/talentos`, que não é guardado;
   - o servidor em cada item e no painel "Jogadores disponíveis";
   - a prévia da criação mudando com o servidor do personagem escolhido.
-- Commit:
+- Commit: be355dc
 - Notion: https://app.notion.com/p/3f9d4a3a5eff812b89edf8ecce6efeef
 
 ## Matriz de cobertura
