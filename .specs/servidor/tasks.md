@@ -203,8 +203,8 @@ Sem lacunas: todos os 35 critérios da spec têm task.
 - 2026-10-14 — CA-05.3 diz que "recarregar a página volta o filtro para Todos". Em
   `/talentos` todos os filtros ficam na query string (RN-11 da banco-de-talentos, funciona
   sem JS), então recarregar o mesmo link mantém o filtro, e abrir `/talentos` de novo começa
-  em Todos. O servidor seguiu os outros filtros. **Proposta de ajuste na spec, aguardando o
-  usuário:** "abrir `/talentos` de novo começa em Todos; o filtro fica no link, como os
+  em Todos. O servidor seguiu os outros filtros. **Ajuste na spec aprovado pelo usuário em
+  2026-10-14:** "abrir `/talentos` de novo começa em Todos; o filtro fica no link, como os
   outros".
 - 2026-10-14 — A prévia da criação (CA-05.2) já recontava ao trocar de personagem, porque o
   `characterId` faz parte da consulta; a T-08 não mudou código ali. A API (T-04) prova o

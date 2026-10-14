@@ -2,7 +2,8 @@
 
 - Feature: `servidor` · Nível: M · Status: Aprovada (2026-10-14)
 - Notion: https://app.notion.com/p/3f4d4a3a5eff813abe61c566699df094
-- Última revisão: 2026-10-14 — dados de produção com aviso para conferir (RN-15, RN-16),
+- Última revisão: 2026-10-14 — filtro de `/talentos` no link (RN-18, CA-05.3), aprovado na
+  validação; antes, dados de produção com aviso para conferir (RN-15, RN-16),
   banco de talentos (US-05, RN-17 a RN-19) e servidor no convite e no preview (RN-20)
 
 ## 1. Contexto
@@ -88,8 +89,9 @@ personagens que já existem precisam ser conferidos pelos donos.
   (RN-09 de lá) e para a prévia "N jogadores disponíveis" da criação, que usa o servidor
   do personagem escolhido como dono (RN-10 de lá).
 - **RN-18** — `/talentos` ganha o filtro "Servidor", com Todos, Freya e Nidhogg. Ele
-  começa em Todos, não guarda a escolha e se combina com os outros filtros com E (amplia a
-  RN-11 de lá).
+  começa em Todos e se combina com os outros filtros com E (amplia a RN-11 de lá). Como os
+  outros filtros de `/talentos`, a escolha fica no link: abrir `/talentos` de novo começa
+  em Todos.
 - **RN-19** — Cada personagem da lista de `/talentos` e do painel "Jogadores disponíveis"
   mostra o servidor (amplia a RN-12 de lá).
 
@@ -283,7 +285,7 @@ CA-05.3 — Filtro de servidor em /talentos  [US-05, RN-18]
 Given o banco com 3 personagens em Freya e 1 em Nidhogg
 When alguém abre /talentos e escolhe Nidhogg
 Then a lista mostra só o de Nidhogg
-  And recarregar a página volta o filtro para Todos
+  And abrir /talentos de novo, sem o filtro no link, volta o filtro para Todos
 
 CA-05.4 — Servidor na lista  [US-05, RN-19]
 Given um personagem em Nidhogg no banco
