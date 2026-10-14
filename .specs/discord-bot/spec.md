@@ -2,8 +2,8 @@
 
 - Feature: `discord-bot` · Nível: G · Status: Aprovada (2026-10-14)
 - Notion: (entra na fase de Tasks)
-- Última revisão: 2026-10-14 — link do Discord do dono (US-07) e "Avisar no Discord" com
-  intervalo (US-08)
+- Última revisão: 2026-10-14 — link do Discord do dono (US-07), "Avisar no Discord" com
+  intervalo (US-08) e, pelo design, uma categoria por sala (RN-05, RN-22, D-04)
 
 ## 1. Contexto
 Depois de montado, o grupo ainda precisa se achar no Discord para combinar a run e entrar
@@ -51,8 +51,8 @@ no servidor sozinho, por opt-in, sem precisar de convite.
   conexão é atualizada.
 
 ### Sala
-- **RN-05** — Cada lobby tem no máximo uma sala. A sala é um canal de texto e um canal de
-  voz no servidor oficial, com o título do lobby (instância ou título livre) e um código
+- **RN-05** — Cada lobby tem no máximo uma sala. A sala é uma categoria com um canal de texto
+  e um canal de voz no servidor oficial, com o título do lobby (instância ou título livre) e um código
   curto do lobby no nome, para dois lobbies iguais não se confundirem.
 - **RN-06** — Só o dono abre a sala, e só com o lobby aberto (nem iniciado, nem
   cancelado) e sem sala aberta antes. Não há outro gatilho: lobby lotado não abre a sala
@@ -137,7 +137,7 @@ no servidor sozinho, por opt-in, sem precisar de convite.
   dependem do Discord. Elas valem mesmo com o Discord fora do ar. O efeito na sala (acesso,
   mensagem, lembrete, remoção) fica pendente e é refeito até dar certo ou até a sala ser
   apagada.
-- **RN-22** — Sem a configuração do bot (token, servidor e categoria), a feature fica
+- **RN-22** — Sem a configuração do bot (token e servidor), a feature fica
   desligada: o perfil não oferece a conexão, e o detalhe do lobby não mostra a seção. O
   resto do RO Lobby funciona normalmente.
 
@@ -483,7 +483,8 @@ Then o canal de texto recebe o aviso
 - Dois cliques em "Abrir sala" ao mesmo tempo → só uma sala é criada, e a outra tentativa é
   recusada [RN-05].
 - A API reinicia com efeitos pendentes ou horários vencidos → eles são feitos quando ela
-  volta, uma vez só [RN-14, RN-16, RN-21].
+  volta, uma vez só [RN-14, RN-16, RN-21]. Um lembrete que venceu depois do início do
+  lobby é descartado, porque não serve mais [RN-14].
 - Lobby lotado ou com vagas → não importa para a sala [RN-06].
 - Dois cliques em "Avisar no Discord" ao mesmo tempo → só um aviso é postado [RN-27].
 - Link do dono que expirou ou foi revogado no Discord → o RO Lobby não confere; o dono
