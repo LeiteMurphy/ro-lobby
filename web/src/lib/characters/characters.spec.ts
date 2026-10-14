@@ -107,7 +107,9 @@ describe('cliente da API de personagens', () => {
 
 describe('mensagens em pt-BR (D-07)', () => {
 	it.each([
-		['nick', 'taken', 'Esse nick já está em uso'],
+		['nick', 'taken', 'Esse nick já está em uso nesse servidor'],
+		['server', 'required', 'Escolha o servidor'],
+		['server', 'invalid', 'Escolha o servidor'],
 		['nick', 'required', 'Informe o nick'],
 		['nick', 'too_long', 'Use até 24 caracteres'],
 		['classId', 'invalid', 'Escolha uma classe da lista'],
@@ -132,7 +134,7 @@ describe('mensagens em pt-BR (D-07)', () => {
 				{ field: 'level', code: 'invalid' },
 				{ field: 'nick', code: 'too_long' }
 			])
-		).toEqual({ nick: 'Esse nick já está em uso', level: 'O nível vai de 1 a 275' });
+		).toEqual({ nick: 'Esse nick já está em uso nesse servidor', level: 'O nível vai de 1 a 275' });
 	});
 });
 

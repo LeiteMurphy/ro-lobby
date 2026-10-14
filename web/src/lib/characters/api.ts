@@ -35,6 +35,11 @@ export function deleteCharacter(call: Call, id: string) {
 	return request<void>(call, 'DELETE', `/characters/${encodeURIComponent(id)}`);
 }
 
+/** RN-16 da spec servidor: "Está certo" tira o personagem da conferência. */
+export function confirmCharacterServer(call: Call, id: string) {
+	return request<void>(call, 'POST', `/characters/${encodeURIComponent(id)}/confirm-server`);
+}
+
 export function setMainCharacter(call: Call, id: string) {
 	return request<void>(call, 'PUT', `/characters/${encodeURIComponent(id)}/main`);
 }

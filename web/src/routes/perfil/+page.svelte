@@ -6,6 +6,8 @@
 	import ConfirmDialog from '$lib/characters/components/ConfirmDialog.svelte';
 	import type { Character } from '$lib/characters/api';
 	import { LIMIT_MESSAGE } from '$lib/characters/messages';
+	import { serverName } from '$lib/catalog/servers';
+	import { enhance } from '$app/forms';
 	import TopBar from '$lib/home/components/TopBar.svelte';
 	import AvailabilityDialog, {
 		type AvailabilityForm
@@ -46,9 +48,14 @@
 			? form
 			: null
 	);
-	// Erros de excluir e de marcar principal aparecem no topo da página.
+	// RN-15 / RN-16 da spec servidor: personagens migrados que o dono ainda não conferiu.
+	const toConfirm = $derived(data.characters.filter((c) => c.serverToConfirm));
+
+	// Erros de excluir, de marcar principal e de conferir aparecem no topo da página.
 	const pageMessage = $derived(
-		form && (form.mode === 'delete' || form.mode === 'main') && 'message' in form
+		form &&
+			(form.mode === 'delete' || form.mode === 'main' || form.mode === 'confirm') &&
+			'message' in form
 			? form.message
 			: null
 	);
@@ -86,6 +93,35 @@
 		{/if}
 		{#if pageMessage}
 			<p class="alert" role="alert">{pageMessage}</p>
+		{/if}
+
+		{#if toConfirm.length > 0}
+			<!-- CA-06.1: o aviso some quando não sobra personagem a conferir (CA-06.3). -->
+			<section class="confirm" aria-labelledby="confirm-title" data-testid="server-confirm">
+				<div class="confirm-text">
+					<h2 id="confirm-title">Confira o servidor dos seus personagens</h2>
+					<p>
+						Agora o RO Lobby sabe em qual servidor cada personagem joga. Os que você já tinha
+						ficaram em Freya: confirme ou edite.
+					</p>
+				</div>
+				<ul>
+					{#each toConfirm as character (character.id)}
+						<li>
+							<span class="who"
+								><strong>{character.nick}</strong> · {serverName(character.server)}</span
+							>
+							<form method="POST" action="?/confirm" use:enhance>
+								<input type="hidden" name="id" value={character.id} />
+								<Button type="submit" size="sm">Está certo</Button>
+							</form>
+							<Button variant="ghost" size="sm" onclick={() => show({ kind: 'update', character })}
+								>Editar</Button
+							>
+						</li>
+					{/each}
+				</ul>
+			</section>
 		{/if}
 
 		{#if data.characters.length === 0 && !data.loadError}
@@ -201,6 +237,49 @@
 		background: rgba(240, 100, 140, 0.12);
 		color: var(--status-error);
 		font: 500 14px/1.3 var(--font-ui);
+	}
+	.confirm {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 16px 18px;
+		border: 1px solid var(--gold-line);
+		border-radius: var(--radius-lg);
+		background: var(--panel-bg);
+	}
+	.confirm-text {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.confirm h2 {
+		margin: 0;
+		font: var(--type-title);
+	}
+	.confirm p {
+		margin: 0;
+		color: var(--fg-2);
+	}
+	.confirm ul {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.confirm li {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+	}
+	.confirm .who {
+		flex: 1;
+		min-width: 160px;
+	}
+	.confirm form {
+		margin: 0;
 	}
 	.grid {
 		display: grid;

@@ -6,11 +6,12 @@ type Field = FieldError['field'];
 type Code = FieldError['code'];
 
 // Só os campos do personagem; os do lobby têm as mensagens em `$lib/lobbies/messages`.
-type CharacterField = 'nick' | 'classId' | 'level' | 'role' | 'portrait' | 'link';
+type CharacterField = 'nick' | 'classId' | 'level' | 'role' | 'portrait' | 'link' | 'server';
 
 const MESSAGES: Record<CharacterField, Partial<Record<Code, string>> & { fallback: string }> = {
 	nick: {
-		taken: 'Esse nick já está em uso',
+		// RN-03 da spec servidor: o nick é único em cada servidor.
+		taken: 'Esse nick já está em uso nesse servidor',
 		required: 'Informe o nick',
 		too_long: 'Use até 24 caracteres',
 		fallback: 'Use só letras, números e símbolos visíveis'
@@ -22,13 +23,18 @@ const MESSAGES: Record<CharacterField, Partial<Record<Code, string>> & { fallbac
 	link: {
 		too_long: 'Use um link de até 300 caracteres',
 		fallback: 'Use um link https:// válido'
-	}
+	},
+	// RN-02 da spec servidor.
+	server: { fallback: 'Escolha o servidor' }
 };
 
 export const LIMIT_MESSAGE = 'Você já tem 10 personagens';
-/** RN-21 da spec lobbies e RN-25/RN-26 da candidatura-lobby: personagem num lobby aberto. */
+/**
+ * RN-21 da spec lobbies, RN-25/RN-26 da candidatura-lobby e RN-04 da servidor: personagem
+ * num lobby aberto.
+ */
 export const IN_OPEN_LOBBY_MESSAGE =
-	'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função.';
+	'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar servidor, nível ou função.';
 export const UNAVAILABLE_MESSAGE = 'Não foi possível falar com o servidor. Tente de novo.';
 export const NOT_FOUND_MESSAGE = 'Esse personagem não existe mais.';
 

@@ -79,7 +79,7 @@
 
 ## Web
 
-### T-05 — Perfil: servidor do personagem e aviso para conferir  [ ]
+### T-05 — Perfil: servidor do personagem e aviso para conferir  [x]
 - Cobre: US-01, US-06, RN-02, RN-03, RN-04, RN-05, RN-16, CA-01.2, CA-01.3 (formulário),
   CA-01.5 (mensagem), CA-01.8 (mensagem), CA-06.1, CA-06.2, CA-06.3, CA-06.4
 - Depende de: T-01, T-02
@@ -191,3 +191,8 @@ Sem lacunas: todos os 35 critérios da spec têm task.
   perfil volta a passar na T-05. O seed do e2e já manda Freya.
 - 2026-10-14 — A migração passa de `00007` (rascunho) para `00010`; a `discord-bot` fica
   com a `00011`.
+- 2026-10-14 — O aviso "Confira o servidor" (CA-06.1 a CA-06.3) é provado por SSR e pelas
+  actions, sem e2e: personagem a conferir só existe por migração, e o e2e não mexe no
+  banco direto. Fica no roteiro de UAT.
+- 2026-10-14 — O web usa um catálogo fixo de servidores (`$lib/catalog/servers.ts`), como
+  já faz com as classes, com o mesmo teste de ordem e códigos da API.

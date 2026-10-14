@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ROLE_ICONS } from '$lib/home/catalog';
 	import { ROLE_LABELS } from '$lib/home/types';
+	import { serverName } from '$lib/catalog/servers';
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { Character } from '../api';
 	import { portraitInfo } from '../portraits';
@@ -22,7 +23,8 @@
 	const headingId = $props.id();
 </script>
 
-<!-- RN-16: carta vertical (1b) com retrato, nick, selo "Principal", classe, nível e função. -->
+<!-- RN-16: carta vertical (1b) com retrato, nick, selo "Principal", classe, nível e função;
+     RN-05 da spec servidor: o servidor junto da classe. -->
 <article
 	class="card"
 	class:main={character.isMain}
@@ -35,7 +37,11 @@
 			<h2 class="nick" id={headingId}>{character.nick}</h2>
 			{#if character.isMain}<span class="badge">Principal</span>{/if}
 		</div>
-		<span class="cls">{className}</span>
+		<span class="cls"
+			>{className} ·
+			<span class="server" data-testid="character-server">{serverName(character.server)}</span
+			></span
+		>
 		<dl class="stats">
 			<div>
 				<dt>Nível</dt>
@@ -179,6 +185,10 @@
 	.cls {
 		font: 500 13px/1.3 var(--font-ui);
 		color: var(--fg-2);
+	}
+	.server {
+		color: var(--fg-1);
+		font-weight: 600;
 	}
 	.stats {
 		display: grid;
