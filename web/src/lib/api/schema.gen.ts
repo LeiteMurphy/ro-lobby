@@ -836,6 +836,7 @@ export interface components {
             id: string;
             name: string;
         };
+        /** @description Personagem do banco; server é o servidor dele (spec servidor, RN-19). */
         Talent: {
             /** Format: uuid */
             characterId: string;
@@ -843,6 +844,7 @@ export interface components {
             classId: string;
             level: number;
             role: components["schemas"]["Role"];
+            server: components["schemas"]["ServerId"];
             portrait: components["schemas"]["Portrait"];
             link: string | null;
             days: number[];
@@ -1726,6 +1728,8 @@ export interface operations {
             query?: {
                 instanceId?: string;
                 role?: components["schemas"]["Role"];
+                /** @description Só personagens desse servidor (spec servidor, RN-18). */
+                server?: string;
                 /** @description Dia da semana, domingo = 0. */
                 day?: number;
                 /** @description Hora de Brasília, HH:MM de 30 em 30 minutos. */

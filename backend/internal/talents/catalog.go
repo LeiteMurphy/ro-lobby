@@ -23,6 +23,7 @@ const (
 	FieldInstanceID  = "instanceId"
 	FieldRole        = "role"
 	FieldCharacterID = "characterId"
+	FieldServer      = "server"
 )
 
 var roles = []string{"tank", "support", "dps"}
@@ -32,8 +33,10 @@ var roles = []string{"tank", "support", "dps"}
 type CatalogFilter struct {
 	InstanceID string
 	Role       string
-	Day        *int
-	Time       string
+	// Server é o filtro de servidor (RN-18 da spec servidor).
+	Server string
+	Day    *int
+	Time   string
 }
 
 // Catalog lista o banco com os filtros, por nível decrescente, até MaxCatalog (RN-08,
@@ -52,6 +55,12 @@ func (s *Service) Catalog(ctx context.Context, f CatalogFilter) ([]Talent, error
 			errs = append(errs, FieldError{FieldRole, CodeInvalid})
 		}
 		params.Role = pgtype.Text{String: f.Role, Valid: true}
+	}
+	if f.Server != "" {
+		if _, ok := catalog.ServerByID(f.Server); !ok {
+			errs = append(errs, FieldError{FieldServer, CodeInvalid})
+		}
+		params.Server = pgtype.Text{String: f.Server, Valid: true}
 	}
 	if f.Day != nil {
 		if *f.Day < 0 || *f.Day > 6 {
@@ -139,6 +148,7 @@ func (s *Service) Count(ctx context.Context, userID string, in CountInput) (int,
 	}
 	list, err := s.affinity(ctx, Probe{
 		InstanceID: in.InstanceID, StartsAt: in.StartsAt, MinLevel: in.MinLevel, Roles: openRoles, Owner: owner,
+		Server: character.Server, // RN-17 da servidor: o servidor do personagem escolhido
 	})
 	return len(list), err
 }

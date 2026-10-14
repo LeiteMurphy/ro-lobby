@@ -328,6 +328,11 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Role"
+        - name: server
+          in: query
+          description: Só personagens desse servidor (spec servidor, RN-18).
+          schema:
+            type: string
         - name: day
           in: query
           description: Dia da semana, domingo = 0.
@@ -1321,7 +1326,8 @@ components:
     Talent:
       type: object
       additionalProperties: false
-      required: [characterId, nick, classId, level, role, portrait, link, days, start, end, anyInstance, instances, removed, blocked]
+      description: Personagem do banco; server é o servidor dele (spec servidor, RN-19).
+      required: [characterId, nick, classId, level, role, server, portrait, link, days, start, end, anyInstance, instances, removed, blocked]
       properties:
         characterId:
           type: string
@@ -1334,6 +1340,8 @@ components:
           type: integer
         role:
           $ref: "#/components/schemas/Role"
+        server:
+          $ref: "#/components/schemas/ServerId"
         portrait:
           $ref: "#/components/schemas/Portrait"
         link:

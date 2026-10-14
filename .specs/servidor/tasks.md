@@ -62,7 +62,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3f9d4a3a5eff8136be09f31656dfa3bf
 
-### T-04 — Banco de talentos por servidor (API)  [ ]
+### T-04 — Banco de talentos por servidor (API)  [x]
 - Cobre: US-05, RN-17, RN-18, RN-19, CA-05.1, CA-05.2 (API), CA-05.3 (API), CA-05.4 (API)
 - Depende de: T-03
 - Paralelizável: não

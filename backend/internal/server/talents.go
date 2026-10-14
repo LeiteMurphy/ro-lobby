@@ -68,7 +68,7 @@ func (h talentsHandler) ListTalents(ctx context.Context, req api.ListTalentsRequ
 		return nil, err
 	}
 	p := req.Params
-	f := talents.CatalogFilter{InstanceID: valueOf(p.InstanceId), Day: p.Day, Time: valueOf(p.Time)}
+	f := talents.CatalogFilter{InstanceID: valueOf(p.InstanceId), Server: valueOf(p.Server), Day: p.Day, Time: valueOf(p.Time)}
 	if p.Role != nil {
 		f.Role = string(*p.Role)
 	}
@@ -145,7 +145,7 @@ func toAPITalents(list []talents.Talent, withDiscord bool) ([]api.Talent, error)
 			instances[j] = api.TalentInstance{Id: in.ID, Name: in.Name}
 		}
 		out[i] = api.Talent{
-			CharacterId: id, Nick: t.Nick, ClassId: t.ClassID, Level: t.Level, Role: api.Role(t.Role),
+			CharacterId: id, Nick: t.Nick, ClassId: t.ClassID, Level: t.Level, Role: api.Role(t.Role), Server: api.ServerId(t.Server),
 			Portrait: api.Portrait(catalog.ArtOf(t.ClassID)), Days: t.Days, Start: t.Start, End: t.End,
 			AnyInstance: t.AnyInstance, Instances: instances, Removed: t.Removed, Blocked: t.Blocked,
 		}

@@ -28,7 +28,7 @@ WHERE c.user_id = @user_id;
 -- criação). dow e minute são o início do lobby em Brasília (D-01); a janela é o início
 -- ± 2 h (D-03 da lobbies).
 SELECT c.id, c.nick, c.class_id, c.level, c.role, c.portrait, c.link,
-       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username,
+       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username, c.server,
        -- RN-13: a pessoa já foi removida deste lobby, e se com bloqueio.
        EXISTS (SELECT 1 FROM applications ap
                WHERE ap.lobby_id = sqlc.narg(lobby_id)::uuid AND ap.user_id = c.user_id
@@ -41,6 +41,8 @@ JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id
 WHERE a.enabled
   AND c.user_id <> sqlc.arg(exclude_user_id)
+  -- RN-17 da servidor: só personagens do servidor do lobby.
+  AND c.server = sqlc.arg(server)::text
   -- RN-07 da lobby-sem-instancia: lobby sem instância (instance_id vazio) aceita todos.
   AND (sqlc.arg(instance_id)::text = '' OR a.any_instance OR sqlc.arg(instance_id)::text = ANY (a.instance_ids))
   AND ((a.start_minute < a.end_minute
@@ -66,7 +68,7 @@ ORDER BY c.level DESC, lower(c.nick), c.seq;
 -- hora cai na faixa daquele dia (RN-03); só com o dia, a faixa toca o dia; só com a hora,
 -- a hora cai na faixa em qualquer dia.
 SELECT c.id, c.nick, c.class_id, c.level, c.role, c.portrait, c.link,
-       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username
+       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username, c.server
 FROM character_availability a
 JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id
@@ -74,6 +76,8 @@ WHERE a.enabled
   AND (sqlc.narg(instance_id)::text IS NULL OR a.any_instance
        OR sqlc.narg(instance_id)::text = ANY (a.instance_ids))
   AND (sqlc.narg(role)::text IS NULL OR c.role = sqlc.narg(role)::text)
+  -- RN-18 da servidor: filtro opcional de servidor.
+  AND (sqlc.narg(server)::text IS NULL OR c.server = sqlc.narg(server)::text)
   AND (sqlc.narg(dow)::int IS NULL
        OR a.days & (1 << sqlc.narg(dow)::int) <> 0
        OR (a.start_minute > a.end_minute AND sqlc.narg(minute)::int IS NULL

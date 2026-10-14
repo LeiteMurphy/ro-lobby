@@ -30,6 +30,7 @@ type Talent struct {
 	ClassID         string
 	Level           int
 	Role            string
+	Server          string
 	Portrait        string
 	Link            string
 	Days            []int
@@ -51,6 +52,8 @@ type Probe struct {
 	MinLevel   int
 	// Roles são as funções com vaga aberta.
 	Roles []string
+	// Server é o servidor do lobby; só personagens dele entram (RN-17 da spec servidor).
+	Server string
 	// Owner é o Usuário dono do lobby; os personagens dele não entram (RN-07).
 	Owner pgtype.UUID
 	// Lobby é o lobby gravado, para o selo de removido (RN-13); vazio na criação.
@@ -87,7 +90,7 @@ func (s *Service) ForLobby(ctx context.Context, userID, lobbyID string) ([]Talen
 	}
 	return s.affinity(ctx, Probe{
 		InstanceID: l.InstanceID, StartsAt: l.StartsAt, MinLevel: l.MinLevel, Roles: roles, Owner: owner,
-		Lobby: lid,
+		Lobby: lid, Server: l.Server,
 	})
 }
 
@@ -107,6 +110,7 @@ func (s *Service) affinity(ctx context.Context, p Probe) ([]Talent, error) {
 		WindowStart:   p.StartsAt.Add(-window),
 		WindowEnd:     p.StartsAt.Add(window),
 		LobbyID:       p.Lobby,
+		Server:        p.Server,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("talents: afinidade: %w", err)
@@ -116,7 +120,7 @@ func (s *Service) affinity(ctx context.Context, p Probe) ([]Talent, error) {
 		out[i] = toTalent(db.CatalogRow{
 			ID: r.ID, Nick: r.Nick, ClassID: r.ClassID, Level: r.Level, Role: r.Role, Portrait: r.Portrait,
 			Link: r.Link, Days: r.Days, StartMinute: r.StartMinute, EndMinute: r.EndMinute,
-			AnyInstance: r.AnyInstance, InstanceIds: r.InstanceIds, Username: r.Username,
+			AnyInstance: r.AnyInstance, InstanceIds: r.InstanceIds, Username: r.Username, Server: r.Server,
 		})
 		out[i].Removed, out[i].Blocked = r.Removed, r.Blocked
 	}
@@ -136,6 +140,7 @@ func toTalent(r db.CatalogRow) Talent {
 		ClassID:         r.ClassID,
 		Level:           int(r.Level),
 		Role:            r.Role,
+		Server:          r.Server,
 		Portrait:        r.Portrait,
 		Link:            r.Link.String,
 		Days:            daysOf(r.Days),

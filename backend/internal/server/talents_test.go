@@ -48,7 +48,7 @@ func (f *fakeTalents) Count(_ context.Context, userID string, in talents.CountIn
 var fogo = talents.Talent{
 	CharacterID: charID, Nick: "Fogo", ClassID: "arquimago", Level: 200, Role: "dps", Portrait: "retrato-2",
 	Days: []int{3}, Start: "18:00", End: "00:00", AnyInstance: true, Instances: []talents.Instance{},
-	DiscordUsername: "caio", Removed: true,
+	DiscordUsername: "caio", Removed: true, Server: "nidhogg",
 }
 
 func newTalentsServer(f *fakeTalents) http.Handler {
@@ -112,7 +112,7 @@ func TestListLobbyTalents_CA02_1(t *testing.T) {
 		"characterId": charID, "nick": "Fogo", "classId": "arquimago", "level": float64(200), "role": "dps",
 		"portrait": "bruxo", "link": nil, "days": []any{float64(3)}, "start": "18:00", "end": "00:00",
 		"anyInstance": true, "instances": []any{}, "discordUsername": "caio",
-		"removed": true, "blocked": false,
+		"removed": true, "blocked": false, "server": "nidhogg", // CA-05.4 (servidor)
 	}
 	if !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got[0])
@@ -133,13 +133,13 @@ func TestListLobbyTalents_CA02_4_Errors(t *testing.T) {
 	}
 }
 
-// CA-04.1 / CA-04.2 / RN-11 / RN-12 / RNF-05: os filtros chegam ao serviço; sem sessão o
+// CA-04.1 / CA-04.2 / RN-11 / RN-12 / RNF-05, CA-05.3 (servidor): os filtros chegam ao serviço; sem sessão o
 // nome no Discord não sai, com sessão sai.
 func TestListTalents_CA04_1_CA04_2(t *testing.T) {
 	f := &fakeTalents{list: []talents.Talent{fogo}}
-	rec, got := callList(t, newTalentsServer(f), "/talents?instanceId=sonho-sombrio&role=dps&day=6&time=01:00")
+	rec, got := callList(t, newTalentsServer(f), "/talents?instanceId=sonho-sombrio&role=dps&day=6&time=01:00&server=nidhogg")
 	day := 6
-	want := talents.CatalogFilter{InstanceID: "sonho-sombrio", Role: "dps", Day: &day, Time: "01:00"}
+	want := talents.CatalogFilter{InstanceID: "sonho-sombrio", Role: "dps", Server: "nidhogg", Day: &day, Time: "01:00"}
 	if rec.Code != http.StatusOK || !reflect.DeepEqual(f.gotFilter, want) {
 		t.Fatalf("status %d, filtro %+v", rec.Code, f.gotFilter)
 	}

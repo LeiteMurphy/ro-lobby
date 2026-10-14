@@ -1587,7 +1587,7 @@ type SwapRequestInput struct {
 // SwapRequestStatus Estado do pedido de troca (RN-24); pendente de lobby iniciado vem como expired (D-12).
 type SwapRequestStatus string
 
-// Talent defines model for Talent.
+// Talent Personagem do banco; server é o servidor dele (spec servidor, RN-19).
 type Talent struct {
 	AnyInstance bool `json:"anyInstance"`
 
@@ -1612,8 +1612,11 @@ type Talent struct {
 	Removed bool `json:"removed"`
 
 	// Role Função do personagem (RN-08).
-	Role  Role   `json:"role"`
-	Start string `json:"start"`
+	Role Role `json:"role"`
+
+	// Server Servidor do Ragnarok LATAM (spec servidor, RN-01).
+	Server ServerId `json:"server"`
+	Start  string   `json:"start"`
 }
 
 // TalentCount defines model for TalentCount.
@@ -1717,6 +1720,9 @@ type ListLobbiesParams struct {
 type ListTalentsParams struct {
 	InstanceId *string `form:"instanceId,omitempty" json:"instanceId,omitempty"`
 	Role       *Role   `form:"role,omitempty" json:"role,omitempty"`
+
+	// Server Só personagens desse servidor (spec servidor, RN-18).
+	Server *string `form:"server,omitempty" json:"server,omitempty"`
 
 	// Day Dia da semana, domingo = 0.
 	Day *int `form:"day,omitempty" json:"day,omitempty"`
@@ -2678,6 +2684,19 @@ func (siw *ServerInterfaceWrapper) ListTalents(w http.ResponseWriter, r *http.Re
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "role"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "role", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "server" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "server", r.URL.Query(), &params.Server, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "server"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "server", Err: err})
 		}
 		return
 	}
