@@ -42,6 +42,7 @@ const BRASA = {
 	classId: 'guardiao-real',
 	level: 172,
 	role: 'tank',
+	server: 'nidhogg',
 	portrait: 'retrato-3',
 	link: null,
 	days: [3],
@@ -53,15 +54,20 @@ const BRASA = {
 const USER = { id: 'u1', username: 'ana', globalName: null };
 
 describe('load de /talentos', () => {
-	it('CA-04.1 / CA-01.2 / RN-11: os filtros da URL vão para a API', async () => {
+	it('CA-04.1 / CA-01.2 / RN-11, CA-05.3 (servidor): os filtros da URL vão para a API', async () => {
 		const { fn, calls } = fakeFetch(json(200, [BRASA]));
 		const data = (await load(
-			loadEvent('?instancia=templo-do-demonio-rei&funcao=tank&dia=6&hora=01:00', null, fn)
+			loadEvent(
+				'?instancia=templo-do-demonio-rei&funcao=tank&servidor=nidhogg&dia=6&hora=01:00',
+				null,
+				fn
+			)
 		)) as Record<string, unknown>;
 		const api = calls.find((c) => c.url.pathname === '/talents')!;
 		expect(Object.fromEntries(api.url.searchParams)).toEqual({
 			instanceId: 'templo-do-demonio-rei',
 			role: 'tank',
+			server: 'nidhogg',
 			day: '6',
 			time: '01:00'
 		});
@@ -69,6 +75,7 @@ describe('load de /talentos', () => {
 		expect(data.filters).toEqual({
 			instancia: 'templo-do-demonio-rei',
 			funcao: 'tank',
+			servidor: 'nidhogg',
 			dia: '6',
 			hora: '01:00'
 		});
@@ -76,11 +83,13 @@ describe('load de /talentos', () => {
 
 	it('RN-11: valores fora da lista são ignorados', async () => {
 		const { fn, calls } = fakeFetch(json(200, []));
-		const data = (await load(loadEvent('?funcao=healer&dia=9&hora=01:15', null, fn))) as {
+		const data = (await load(
+			loadEvent('?funcao=healer&servidor=thor&dia=9&hora=01:15', null, fn)
+		)) as {
 			filters: Record<string, string>;
 		};
 		expect([...calls.find((c) => c.url.pathname === '/talents')!.url.searchParams]).toEqual([]);
-		expect(data.filters).toEqual({ instancia: '', funcao: '', dia: '', hora: '' });
+		expect(data.filters).toEqual({ instancia: '', funcao: '', servidor: '', dia: '', hora: '' });
 	});
 
 	it('CA-04.2 / D-05: a sessão só vai para a API com o Usuário logado', async () => {
@@ -114,7 +123,7 @@ describe('/talentos renderizada no servidor', () => {
 					user: null,
 					talents: [BRASA],
 					limited: false,
-					filters: { instancia: '', funcao: '', dia: '', hora: '' },
+					filters: { instancia: '', funcao: '', servidor: '', dia: '', hora: '' },
 					instances: [{ id: 'templo-do-demonio-rei', name: 'Templo do Demônio Rei', level: 160 }],
 					classNames: { 'guardiao-real': 'Guardião Real' },
 					loadError: null,
@@ -170,6 +179,46 @@ describe('/talentos renderizada no servidor', () => {
 	it('risco do design: com 100, mostra o aviso dos 100 primeiros', () => {
 		expect(renderPage({ limited: true })).toContain(
 			'Mostrando os 100 primeiros. Use os filtros para achar mais.'
+		);
+	});
+});
+
+describe('/talentos com o servidor (spec servidor)', () => {
+	const renderPage = (over: Record<string, unknown>) =>
+		render(Page, {
+			props: {
+				data: {
+					user: null,
+					talents: [BRASA],
+					limited: false,
+					filters: { instancia: '', funcao: '', servidor: '', dia: '', hora: '' },
+					instances: [],
+					classNames: { 'guardiao-real': 'Guardião Real' },
+					loadError: null,
+					loginHref: '/',
+					...over
+				},
+				params: {}
+			} as never
+		}).body;
+
+	it('CA-05.3 / RN-18: o filtro "Servidor" começa em Todos e volta marcado', () => {
+		const html = renderPage({});
+		const select = html.split('name="servidor"')[1].split('</select>')[0];
+		expect(select).toContain('<option value="">Todos</option>');
+		expect(select).not.toMatch(/selected/);
+		expect(html).toContain('>Freya</option>');
+		expect(html).toContain('>Nidhogg</option>');
+		const chosen = renderPage({
+			filters: { instancia: '', funcao: '', servidor: 'nidhogg', dia: '', hora: '' }
+		});
+		expect(chosen).toMatch(/<option value="nidhogg"[^>]*selected/);
+	});
+
+	it('CA-05.4 / RN-19: cada personagem mostra o servidor', () => {
+		const html = renderPage({});
+		expect(html).toMatch(
+			/Guardião Real · Nv 172 · <span[^>]*data-testid="talent-server"[^>]*>Nidhogg</
 		);
 	});
 });

@@ -219,7 +219,7 @@ test.describe('lobbies', () => {
 		await page.getByRole('menuitem', { name: 'Excluir' }).click();
 		await page.getByTestId('confirm-dialog').getByRole('button', { name: 'Excluir' }).click();
 		await expect(page.getByRole('alert')).toHaveText(
-			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função.'
+			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar servidor, nível ou função.'
 		);
 		await expect(page.getByTestId('character-card')).toHaveCount(1);
 

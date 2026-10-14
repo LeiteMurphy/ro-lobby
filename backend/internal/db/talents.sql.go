@@ -14,7 +14,7 @@ import (
 
 const affinity = `-- name: Affinity :many
 SELECT c.id, c.nick, c.class_id, c.level, c.role, c.portrait, c.link,
-       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username,
+       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username, c.server,
        -- RN-13: a pessoa já foi removida deste lobby, e se com bloqueio.
        EXISTS (SELECT 1 FROM applications ap
                WHERE ap.lobby_id = $1::uuid AND ap.user_id = c.user_id
@@ -27,20 +27,22 @@ JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id
 WHERE a.enabled
   AND c.user_id <> $2
+  -- RN-17 da servidor: só personagens do servidor do lobby.
+  AND c.server = $3::text
   -- RN-07 da lobby-sem-instancia: lobby sem instância (instance_id vazio) aceita todos.
-  AND ($3::text = '' OR a.any_instance OR $3::text = ANY (a.instance_ids))
+  AND ($4::text = '' OR a.any_instance OR $4::text = ANY (a.instance_ids))
   AND ((a.start_minute < a.end_minute
-        AND a.days & (1 << $4::int) <> 0
-        AND $5::int >= a.start_minute AND $5::int < a.end_minute)
+        AND a.days & (1 << $5::int) <> 0
+        AND $6::int >= a.start_minute AND $6::int < a.end_minute)
     OR (a.start_minute > a.end_minute
-        AND ((a.days & (1 << $4::int) <> 0 AND $5::int >= a.start_minute)
-          OR (a.days & (1 << (($4::int + 6) % 7)) <> 0 AND $5::int < a.end_minute))))
-  AND c.level >= $6::int
-  AND c.role = ANY ($7::text[])
+        AND ((a.days & (1 << $5::int) <> 0 AND $6::int >= a.start_minute)
+          OR (a.days & (1 << (($5::int + 6) % 7)) <> 0 AND $6::int < a.end_minute))))
+  AND c.level >= $7::int
+  AND c.role = ANY ($8::text[])
   AND NOT EXISTS (
       SELECT 1 FROM lobbies l
       WHERE l.cancelled_at IS NULL
-        AND l.starts_at > $8 AND l.starts_at < $9
+        AND l.starts_at > $9 AND l.starts_at < $10
         AND (l.owner_character_id = c.id
              OR EXISTS (SELECT 1 FROM applications ap
                         WHERE ap.lobby_id = l.id AND ap.character_id = c.id
@@ -51,6 +53,7 @@ ORDER BY c.level DESC, lower(c.nick), c.seq
 type AffinityParams struct {
 	LobbyID       pgtype.UUID
 	ExcludeUserID pgtype.UUID
+	Server        string
 	InstanceID    string
 	Dow           int32
 	Minute        int32
@@ -74,6 +77,7 @@ type AffinityRow struct {
 	AnyInstance bool
 	InstanceIds []string
 	Username    string
+	Server      string
 	Removed     bool
 	Blocked     bool
 }
@@ -85,6 +89,7 @@ func (q *Queries) Affinity(ctx context.Context, arg AffinityParams) ([]AffinityR
 	rows, err := q.db.Query(ctx, affinity,
 		arg.LobbyID,
 		arg.ExcludeUserID,
+		arg.Server,
 		arg.InstanceID,
 		arg.Dow,
 		arg.Minute,
@@ -114,6 +119,7 @@ func (q *Queries) Affinity(ctx context.Context, arg AffinityParams) ([]AffinityR
 			&i.AnyInstance,
 			&i.InstanceIds,
 			&i.Username,
+			&i.Server,
 			&i.Removed,
 			&i.Blocked,
 		); err != nil {
@@ -129,7 +135,7 @@ func (q *Queries) Affinity(ctx context.Context, arg AffinityParams) ([]AffinityR
 
 const catalog = `-- name: Catalog :many
 SELECT c.id, c.nick, c.class_id, c.level, c.role, c.portrait, c.link,
-       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username
+       a.days, a.start_minute, a.end_minute, a.any_instance, a.instance_ids, u.username, c.server
 FROM character_availability a
 JOIN characters c ON c.id = a.character_id
 JOIN users u ON u.id = c.user_id
@@ -137,29 +143,32 @@ WHERE a.enabled
   AND ($1::text IS NULL OR a.any_instance
        OR $1::text = ANY (a.instance_ids))
   AND ($2::text IS NULL OR c.role = $2::text)
-  AND ($3::int IS NULL
-       OR a.days & (1 << $3::int) <> 0
-       OR (a.start_minute > a.end_minute AND $4::int IS NULL
-           AND a.days & (1 << (($3::int + 6) % 7)) <> 0)
-       OR (a.start_minute > a.end_minute AND $4::int < a.end_minute
-           AND a.days & (1 << (($3::int + 6) % 7)) <> 0))
+  -- RN-18 da servidor: filtro opcional de servidor.
+  AND ($3::text IS NULL OR c.server = $3::text)
   AND ($4::int IS NULL
+       OR a.days & (1 << $4::int) <> 0
+       OR (a.start_minute > a.end_minute AND $5::int IS NULL
+           AND a.days & (1 << (($4::int + 6) % 7)) <> 0)
+       OR (a.start_minute > a.end_minute AND $5::int < a.end_minute
+           AND a.days & (1 << (($4::int + 6) % 7)) <> 0))
+  AND ($5::int IS NULL
        OR (a.start_minute < a.end_minute
-           AND $4::int >= a.start_minute AND $4::int < a.end_minute
-           AND ($3::int IS NULL OR a.days & (1 << $3::int) <> 0))
+           AND $5::int >= a.start_minute AND $5::int < a.end_minute
+           AND ($4::int IS NULL OR a.days & (1 << $4::int) <> 0))
        OR (a.start_minute > a.end_minute
-           AND (($4::int >= a.start_minute
-                 AND ($3::int IS NULL OR a.days & (1 << $3::int) <> 0))
-             OR ($4::int < a.end_minute
-                 AND ($3::int IS NULL
-                      OR a.days & (1 << (($3::int + 6) % 7)) <> 0)))))
+           AND (($5::int >= a.start_minute
+                 AND ($4::int IS NULL OR a.days & (1 << $4::int) <> 0))
+             OR ($5::int < a.end_minute
+                 AND ($4::int IS NULL
+                      OR a.days & (1 << (($4::int + 6) % 7)) <> 0)))))
 ORDER BY c.level DESC, lower(c.nick), c.seq
-LIMIT $5
+LIMIT $6
 `
 
 type CatalogParams struct {
 	InstanceID pgtype.Text
 	Role       pgtype.Text
+	Server     pgtype.Text
 	Dow        pgtype.Int4
 	Minute     pgtype.Int4
 	MaxRows    int32
@@ -179,6 +188,7 @@ type CatalogRow struct {
 	AnyInstance bool
 	InstanceIds []string
 	Username    string
+	Server      string
 }
 
 // RN-11 / RN-08: o banco com filtros opcionais, combinados com "E". Com dia e hora, a
@@ -188,6 +198,7 @@ func (q *Queries) Catalog(ctx context.Context, arg CatalogParams) ([]CatalogRow,
 	rows, err := q.db.Query(ctx, catalog,
 		arg.InstanceID,
 		arg.Role,
+		arg.Server,
 		arg.Dow,
 		arg.Minute,
 		arg.MaxRows,
@@ -213,6 +224,7 @@ func (q *Queries) Catalog(ctx context.Context, arg CatalogParams) ([]CatalogRow,
 			&i.AnyInstance,
 			&i.InstanceIds,
 			&i.Username,
+			&i.Server,
 		); err != nil {
 			return nil, err
 		}

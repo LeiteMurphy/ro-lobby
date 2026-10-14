@@ -21,6 +21,8 @@ export function setAvailability(call: Call, characterId: string, input: Availabi
 export interface CatalogFilter {
 	instanceId?: string;
 	role?: Role;
+	/** Servidor (spec servidor, RN-18). */
+	server?: string;
 	/** Dia da semana, domingo = 0. */
 	day?: number;
 	/** HH:MM de Brasília. */
@@ -35,6 +37,7 @@ export function listTalents(call: Call, filter: CatalogFilter) {
 	const query = new URLSearchParams();
 	if (filter.instanceId) query.set('instanceId', filter.instanceId);
 	if (filter.role) query.set('role', filter.role);
+	if (filter.server) query.set('server', filter.server);
 	if (filter.day !== undefined) query.set('day', String(filter.day));
 	if (filter.time) query.set('time', filter.time);
 	const qs = query.size ? `?${query}` : '';

@@ -2,6 +2,7 @@
 	import { portraitInfo } from '$lib/characters/portraits';
 	import { ROLE_ICONS } from '$lib/home/catalog';
 	import { ROLE_LABELS } from '$lib/home/types';
+	import { serverName } from '$lib/catalog/servers';
 	import { enhance } from '$app/forms';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -40,7 +41,11 @@
 				>{talent.blocked ? 'Removido · bloqueado' : 'Removido deste grupo'}</span
 			>
 		{/if}
-		<span class="sub">{className} · Nv {talent.level}</span>
+		<!-- RN-19 da spec servidor. -->
+		<span class="sub"
+			>{className} · Nv {talent.level} ·
+			<span data-testid="talent-server">{serverName(talent.server)}</span></span
+		>
 		<span class="sub"
 			>{daysLabel(talent.days)} · {rangeLabel(talent.start, talent.end)} (Brasília)</span
 		>

@@ -5,6 +5,7 @@ import { fromUtcIso } from './time';
 import { ROLE_LABELS } from '$lib/home/types';
 import { isFree, openSeats } from './seats';
 import { DELETED_CHARACTER } from './toHome';
+import { serverName } from '$lib/catalog/servers';
 
 const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
@@ -40,10 +41,13 @@ export function lobbyUrl(origin: string, id: string): string {
 	return `${origin}/lobbies/${encodeURIComponent(id)}`;
 }
 
-/** RN-02 / RN-03: o convite de três linhas que "Compartilhar" copia. */
+/**
+ * RN-02 / RN-03: o convite de três linhas que "Compartilhar" copia; RN-20 da spec servidor:
+ * o servidor logo depois do título.
+ */
 export function inviteText(lobby: ApiLobby, origin: string): string {
 	return [
-		`Grupo para ${lobby.instance.name} · ${whenLabel(lobby.startsAt)} (horário de Brasília)`,
+		`Grupo para ${lobby.instance.name} · ${serverName(lobby.server)} · ${whenLabel(lobby.startsAt)} (horário de Brasília)`,
 		`${openSlotsLabel(lobby)} · Nível mínimo ${lobby.minLevel}`,
 		`Candidate-se: ${lobbyUrl(origin, lobby.id)}`
 	].join('\n');
@@ -67,7 +71,8 @@ export function shareMeta(lobby: ApiLobby, origin: string): ShareMeta {
 				? 'Esse grupo já começou.'
 				: `${openSlotsLabel(lobby)} · Nível mínimo ${lobby.minLevel} · Anfitrião ${lobby.owner.nick ?? DELETED_CHARACTER}`;
 	return {
-		title: `${lobby.instance.name} · ${whenLabel(lobby.startsAt)}`,
+		// RN-20 da spec servidor: o servidor logo depois do título.
+		title: `${lobby.instance.name} · ${serverName(lobby.server)} · ${whenLabel(lobby.startsAt)}`,
 		description,
 		url: lobbyUrl(origin, lobby.id)
 	};

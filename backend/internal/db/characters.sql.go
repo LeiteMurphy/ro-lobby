@@ -21,6 +21,25 @@ func (q *Queries) ClearMain(ctx context.Context, userID pgtype.UUID) error {
 	return err
 }
 
+const confirmCharacterServer = `-- name: ConfirmCharacterServer :execrows
+UPDATE characters SET server_to_confirm = false WHERE id = $1 AND user_id = $2
+`
+
+type ConfirmCharacterServerParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+// RN-16 da servidor: "Está certo" tira o personagem da conferência; de outro Usuário não
+// muda nada.
+func (q *Queries) ConfirmCharacterServer(ctx context.Context, arg ConfirmCharacterServerParams) (int64, error) {
+	result, err := q.db.Exec(ctx, confirmCharacterServer, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const countCharacters = `-- name: CountCharacters :one
 SELECT count(*) FROM characters WHERE user_id = $1
 `
@@ -33,9 +52,9 @@ func (q *Queries) CountCharacters(ctx context.Context, userID pgtype.UUID) (int6
 }
 
 const createCharacter = `-- name: CreateCharacter :one
-INSERT INTO characters (user_id, nick, class_id, level, role, portrait, link, is_main, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at
+INSERT INTO characters (user_id, nick, class_id, level, role, portrait, link, is_main, created_at, server)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at, server, server_to_confirm
 `
 
 type CreateCharacterParams struct {
@@ -48,6 +67,7 @@ type CreateCharacterParams struct {
 	Link     pgtype.Text
 	IsMain   bool
 	Now      time.Time
+	Server   string
 }
 
 func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams) (Character, error) {
@@ -61,6 +81,7 @@ func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams
 		arg.Link,
 		arg.IsMain,
 		arg.Now,
+		arg.Server,
 	)
 	var i Character
 	err := row.Scan(
@@ -75,6 +96,8 @@ func (q *Queries) CreateCharacter(ctx context.Context, arg CreateCharacterParams
 		&i.Link,
 		&i.IsMain,
 		&i.CreatedAt,
+		&i.Server,
+		&i.ServerToConfirm,
 	)
 	return i, err
 }
@@ -99,7 +122,7 @@ func (q *Queries) DeleteCharacter(ctx context.Context, arg DeleteCharacterParams
 }
 
 const getOwnCharacter = `-- name: GetOwnCharacter :one
-SELECT id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at FROM characters WHERE id = $1 AND user_id = $2
+SELECT id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at, server, server_to_confirm FROM characters WHERE id = $1 AND user_id = $2
 `
 
 type GetOwnCharacterParams struct {
@@ -123,12 +146,14 @@ func (q *Queries) GetOwnCharacter(ctx context.Context, arg GetOwnCharacterParams
 		&i.Link,
 		&i.IsMain,
 		&i.CreatedAt,
+		&i.Server,
+		&i.ServerToConfirm,
 	)
 	return i, err
 }
 
 const listCharacters = `-- name: ListCharacters :many
-SELECT id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at FROM characters
+SELECT id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at, server, server_to_confirm FROM characters
 WHERE user_id = $1
 ORDER BY is_main DESC, created_at, seq
 `
@@ -155,6 +180,8 @@ func (q *Queries) ListCharacters(ctx context.Context, userID pgtype.UUID) ([]Cha
 			&i.Link,
 			&i.IsMain,
 			&i.CreatedAt,
+			&i.Server,
+			&i.ServerToConfirm,
 		); err != nil {
 			return nil, err
 		}
@@ -215,9 +242,11 @@ func (q *Queries) SetMain(ctx context.Context, arg SetMainParams) (int64, error)
 const updateCharacter = `-- name: UpdateCharacter :one
 UPDATE characters
 SET nick = $1, class_id = $2, level = $3, role = $4,
-    portrait = $5, link = $6
-WHERE id = $7 AND user_id = $8
-RETURNING id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at
+    portrait = $5, link = $6, server = $7,
+    -- RN-16 da servidor: salvar a edição confirma o servidor.
+    server_to_confirm = false
+WHERE id = $8 AND user_id = $9
+RETURNING id, seq, user_id, nick, class_id, level, role, portrait, link, is_main, created_at, server, server_to_confirm
 `
 
 type UpdateCharacterParams struct {
@@ -227,6 +256,7 @@ type UpdateCharacterParams struct {
 	Role     string
 	Portrait string
 	Link     pgtype.Text
+	Server   string
 	ID       pgtype.UUID
 	UserID   pgtype.UUID
 }
@@ -240,6 +270,7 @@ func (q *Queries) UpdateCharacter(ctx context.Context, arg UpdateCharacterParams
 		arg.Role,
 		arg.Portrait,
 		arg.Link,
+		arg.Server,
 		arg.ID,
 		arg.UserID,
 	)
@@ -256,6 +287,8 @@ func (q *Queries) UpdateCharacter(ctx context.Context, arg UpdateCharacterParams
 		&i.Link,
 		&i.IsMain,
 		&i.CreatedAt,
+		&i.Server,
+		&i.ServerToConfirm,
 	)
 	return i, err
 }

@@ -34,6 +34,7 @@ const (
 	ApplicationRuleErrorCodeRoleFull         ApplicationRuleErrorCode = "role_full"
 	ApplicationRuleErrorCodeScheduleConflict ApplicationRuleErrorCode = "schedule_conflict"
 	ApplicationRuleErrorCodeSwapPending      ApplicationRuleErrorCode = "swap_pending"
+	ApplicationRuleErrorCodeWrongServer      ApplicationRuleErrorCode = "wrong_server"
 )
 
 // Valid indicates whether the value is a known member of the ApplicationRuleErrorCode enum.
@@ -66,6 +67,8 @@ func (e ApplicationRuleErrorCode) Valid() bool {
 	case ApplicationRuleErrorCodeScheduleConflict:
 		return true
 	case ApplicationRuleErrorCodeSwapPending:
+		return true
+	case ApplicationRuleErrorCodeWrongServer:
 		return true
 	default:
 		return false
@@ -260,6 +263,7 @@ const (
 	FieldErrorFieldPortrait    FieldErrorField = "portrait"
 	FieldErrorFieldReason      FieldErrorField = "reason"
 	FieldErrorFieldRole        FieldErrorField = "role"
+	FieldErrorFieldServer      FieldErrorField = "server"
 	FieldErrorFieldSlots       FieldErrorField = "slots"
 	FieldErrorFieldStart       FieldErrorField = "start"
 	FieldErrorFieldStartsAt    FieldErrorField = "startsAt"
@@ -305,6 +309,8 @@ func (e FieldErrorField) Valid() bool {
 	case FieldErrorFieldReason:
 		return true
 	case FieldErrorFieldRole:
+		return true
+	case FieldErrorFieldServer:
 		return true
 	case FieldErrorFieldSlots:
 		return true
@@ -885,6 +891,24 @@ func (e Role) Valid() bool {
 	}
 }
 
+// Defines values for ServerId.
+const (
+	ServerIdFreya   ServerId = "freya"
+	ServerIdNidhogg ServerId = "nidhogg"
+)
+
+// Valid indicates whether the value is a known member of the ServerId enum.
+func (e ServerId) Valid() bool {
+	switch e {
+	case ServerIdFreya:
+		return true
+	case ServerIdNidhogg:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SwapCharacterPortrait.
 const (
 	SwapCharacterPortraitAlquimista     SwapCharacterPortrait = "alquimista"
@@ -1140,6 +1164,12 @@ type Character struct {
 
 	// Role Função do personagem (RN-08).
 	Role Role `json:"role"`
+
+	// Server Servidor do Ragnarok LATAM (spec servidor, RN-01).
+	Server ServerId `json:"server"`
+
+	// ServerToConfirm Personagem que já existia antes do servidor e que o dono ainda não conferiu (spec servidor, RN-15, RN-16).
+	ServerToConfirm bool `json:"serverToConfirm"`
 }
 
 // CharacterInput Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422.
@@ -1161,6 +1191,9 @@ type CharacterInput struct {
 
 	// Role Função do personagem (RN-08).
 	Role Role `json:"role"`
+
+	// Server ID de um servidor de GET /servers (spec servidor, RN-02). Fora do catálogo volta 422. Com o personagem num lobby aberto, mudar o servidor volta 409 (RN-04).
+	Server string `json:"server"`
 }
 
 // Class defines model for Class.
@@ -1283,10 +1316,13 @@ type Lobby struct {
 	Pending *[]LobbyParticipant `json:"pending,omitempty"`
 
 	// PendingCount Candidaturas pendentes; zero depois do início (RN-28, D-02).
-	PendingCount int         `json:"pendingCount"`
-	Slots        Slots       `json:"slots"`
-	StartsAt     time.Time   `json:"startsAt"`
-	Status       LobbyStatus `json:"status"`
+	PendingCount int `json:"pendingCount"`
+
+	// Server Servidor do personagem do dono na criação; não muda depois (spec servidor, RN-06, RN-07).
+	Server   ServerId    `json:"server"`
+	Slots    Slots       `json:"slots"`
+	StartsAt time.Time   `json:"startsAt"`
+	Status   LobbyStatus `json:"status"`
 
 	// SwapRequests Pedidos de troca pendentes. Só no detalhe e só para o dono (D-12).
 	SwapRequests *[]LobbySwapRequest `json:"swapRequests,omitempty"`
@@ -1476,6 +1512,18 @@ type RemoveInput struct {
 // Role Função do personagem (RN-08).
 type Role string
 
+// Server defines model for Server.
+type Server struct {
+	// Id Servidor do Ragnarok LATAM (spec servidor, RN-01).
+	Id ServerId `json:"id"`
+
+	// Name Example: Nidhogg
+	Name string `json:"name"`
+}
+
+// ServerId Servidor do Ragnarok LATAM (spec servidor, RN-01).
+type ServerId string
+
 // SessionCreated defines model for SessionCreated.
 type SessionCreated struct {
 	// SessionToken Vai só para o cookie HttpOnly do web; o banco guarda o hash (RN-07).
@@ -1539,7 +1587,7 @@ type SwapRequestInput struct {
 // SwapRequestStatus Estado do pedido de troca (RN-24); pendente de lobby iniciado vem como expired (D-12).
 type SwapRequestStatus string
 
-// Talent defines model for Talent.
+// Talent Personagem do banco; server é o servidor dele (spec servidor, RN-19).
 type Talent struct {
 	AnyInstance bool `json:"anyInstance"`
 
@@ -1564,8 +1612,11 @@ type Talent struct {
 	Removed bool `json:"removed"`
 
 	// Role Função do personagem (RN-08).
-	Role  Role   `json:"role"`
-	Start string `json:"start"`
+	Role Role `json:"role"`
+
+	// Server Servidor do Ragnarok LATAM (spec servidor, RN-01).
+	Server ServerId `json:"server"`
+	Start  string   `json:"start"`
 }
 
 // TalentCount defines model for TalentCount.
@@ -1670,6 +1721,9 @@ type ListTalentsParams struct {
 	InstanceId *string `form:"instanceId,omitempty" json:"instanceId,omitempty"`
 	Role       *Role   `form:"role,omitempty" json:"role,omitempty"`
 
+	// Server Só personagens desse servidor (spec servidor, RN-18).
+	Server *string `form:"server,omitempty" json:"server,omitempty"`
+
 	// Day Dia da semana, domingo = 0.
 	Day *int `form:"day,omitempty" json:"day,omitempty"`
 
@@ -1773,6 +1827,9 @@ type ServerInterface interface {
 	// SetAvailability Liga, edita ou desliga o personagem no banco de talentos
 	// (PUT /characters/{id}/availability)
 	SetAvailability(w http.ResponseWriter, r *http.Request, id CharacterId)
+	// ConfirmCharacterServer Confirma o servidor de um personagem migrado
+	// (POST /characters/{id}/confirm-server)
+	ConfirmCharacterServer(w http.ResponseWriter, r *http.Request, id CharacterId)
 	// SetMainCharacter Torna o personagem o principal
 	// (PUT /characters/{id}/main)
 	SetMainCharacter(w http.ResponseWriter, r *http.Request, id CharacterId)
@@ -1818,6 +1875,9 @@ type ServerInterface interface {
 	// ListMyApplications Minhas candidaturas
 	// (GET /me/applications)
 	ListMyApplications(w http.ResponseWriter, r *http.Request)
+	// ListServers Catálogo de servidores
+	// (GET /servers)
+	ListServers(w http.ResponseWriter, r *http.Request)
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(w http.ResponseWriter, r *http.Request)
@@ -2114,6 +2174,32 @@ func (siw *ServerInterfaceWrapper) SetAvailability(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetAvailability(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfirmCharacterServer operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmCharacterServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id CharacterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmCharacterServer(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2461,6 +2547,20 @@ func (siw *ServerInterfaceWrapper) ListMyApplications(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListServers operation middleware
+func (siw *ServerInterfaceWrapper) ListServers(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListServers(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteSession operation middleware
 func (siw *ServerInterfaceWrapper) DeleteSession(w http.ResponseWriter, r *http.Request) {
 
@@ -2584,6 +2684,19 @@ func (siw *ServerInterfaceWrapper) ListTalents(w http.ResponseWriter, r *http.Re
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "role"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "role", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "server" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "server", r.URL.Query(), &params.Server, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "server"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "server", Err: err})
 		}
 		return
 	}
@@ -2900,11 +3013,13 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetMe)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/session", wrapper.DeleteSession)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/classes", wrapper.ListClasses)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/servers", wrapper.ListServers)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/characters", wrapper.ListCharacters)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/characters", wrapper.CreateCharacter)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/characters/{id}", wrapper.DeleteCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}", wrapper.UpdateCharacter)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/main", wrapper.SetMainCharacter)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/characters/{id}/confirm-server", wrapper.ConfirmCharacterServer)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/characters/{id}/availability", wrapper.SetAvailability)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/talents", wrapper.ListTalents)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/talents/count", wrapper.CountTalents)
@@ -3740,6 +3855,50 @@ func (response SetAvailability422JSONResponse) VisitSetAvailabilityResponse(w ht
 	return err
 }
 
+type ConfirmCharacterServerRequestObject struct {
+	Id CharacterId `json:"id"`
+}
+
+type ConfirmCharacterServerResponseObject interface {
+	VisitConfirmCharacterServerResponse(w http.ResponseWriter) error
+}
+
+type ConfirmCharacterServer204Response struct {
+}
+
+func (response ConfirmCharacterServer204Response) VisitConfirmCharacterServerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ConfirmCharacterServer401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response ConfirmCharacterServer401JSONResponse) VisitConfirmCharacterServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmCharacterServer404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ConfirmCharacterServer404JSONResponse) VisitConfirmCharacterServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetMainCharacterRequestObject struct {
 	Id CharacterId `json:"id"`
 }
@@ -4506,6 +4665,27 @@ func (response ListMyApplications401JSONResponse) VisitListMyApplicationsRespons
 	return err
 }
 
+type ListServersRequestObject struct {
+}
+
+type ListServersResponseObject interface {
+	VisitListServersResponse(w http.ResponseWriter) error
+}
+
+type ListServers200JSONResponse []Server
+
+func (response ListServers200JSONResponse) VisitListServersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteSessionRequestObject struct {
 }
 
@@ -4858,6 +5038,9 @@ type StrictServerInterface interface {
 	// SetAvailability Liga, edita ou desliga o personagem no banco de talentos
 	// (PUT /characters/{id}/availability)
 	SetAvailability(ctx context.Context, request SetAvailabilityRequestObject) (SetAvailabilityResponseObject, error)
+	// ConfirmCharacterServer Confirma o servidor de um personagem migrado
+	// (POST /characters/{id}/confirm-server)
+	ConfirmCharacterServer(ctx context.Context, request ConfirmCharacterServerRequestObject) (ConfirmCharacterServerResponseObject, error)
 	// SetMainCharacter Torna o personagem o principal
 	// (PUT /characters/{id}/main)
 	SetMainCharacter(ctx context.Context, request SetMainCharacterRequestObject) (SetMainCharacterResponseObject, error)
@@ -4903,6 +5086,9 @@ type StrictServerInterface interface {
 	// ListMyApplications Minhas candidaturas
 	// (GET /me/applications)
 	ListMyApplications(ctx context.Context, request ListMyApplicationsRequestObject) (ListMyApplicationsResponseObject, error)
+	// ListServers Catálogo de servidores
+	// (GET /servers)
+	ListServers(ctx context.Context, request ListServersRequestObject) (ListServersResponseObject, error)
 	// DeleteSession Encerra a sessão atual
 	// (DELETE /session)
 	DeleteSession(ctx context.Context, request DeleteSessionRequestObject) (DeleteSessionResponseObject, error)
@@ -5310,6 +5496,32 @@ func (sh *strictHandler) SetAvailability(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetAvailabilityResponseObject); ok {
 		if err := validResponse.VisitSetAvailabilityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmCharacterServer operation middleware
+func (sh *strictHandler) ConfirmCharacterServer(w http.ResponseWriter, r *http.Request, id CharacterId) {
+	var request ConfirmCharacterServerRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmCharacterServer(ctx, request.(ConfirmCharacterServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmCharacterServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmCharacterServerResponseObject); ok {
+		if err := validResponse.VisitConfirmCharacterServerResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5730,6 +5942,30 @@ func (sh *strictHandler) ListMyApplications(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListMyApplicationsResponseObject); ok {
 		if err := validResponse.VisitListMyApplicationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListServers operation middleware
+func (sh *strictHandler) ListServers(w http.ResponseWriter, r *http.Request) {
+	var request ListServersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListServers(ctx, request.(ListServersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListServers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListServersResponseObject); ok {
+		if err := validResponse.VisitListServersResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

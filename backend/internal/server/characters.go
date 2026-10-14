@@ -20,6 +20,7 @@ type CharacterService interface {
 	Update(ctx context.Context, userID, id string, in characters.Input) (characters.Character, error)
 	Delete(ctx context.Context, userID, id string) error
 	SetMain(ctx context.Context, userID, id string) error
+	ConfirmServer(ctx context.Context, userID, id string) error
 }
 
 type charactersHandler struct {
@@ -50,6 +51,16 @@ func (charactersHandler) ListClasses(context.Context, api.ListClassesRequestObje
 	body := make(api.ListClasses200JSONResponse, len(classes))
 	for i, c := range classes {
 		body[i] = api.Class{Id: c.ID, Name: c.Name, Plural: c.Plural, Tier: api.ClassTier(c.Tier), Family: c.Family, Art: catalog.ArtOf(c.ID)}
+	}
+	return body, nil
+}
+
+// ListServers serve o catálogo de servidores, sem sessão (spec servidor, RN-01, CA-01.1).
+func (charactersHandler) ListServers(context.Context, api.ListServersRequestObject) (api.ListServersResponseObject, error) {
+	servers := catalog.Servers()
+	body := make(api.ListServers200JSONResponse, len(servers))
+	for i, s := range servers {
+		body[i] = api.Server{Id: api.ServerId(s.ID), Name: s.Name}
 	}
 	return body, nil
 }
@@ -164,11 +175,31 @@ func (h charactersHandler) SetMainCharacter(ctx context.Context, req api.SetMain
 	return api.SetMainCharacter204Response{}, nil
 }
 
+// ConfirmCharacterServer tira o personagem da conferência do servidor (spec servidor,
+// RN-16, CA-06.2, CA-06.6).
+func (h charactersHandler) ConfirmCharacterServer(ctx context.Context, req api.ConfirmCharacterServerRequestObject) (api.ConfirmCharacterServerResponseObject, error) {
+	userID, ok, err := h.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.ConfirmCharacterServer401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	err = h.chars.ConfirmServer(ctx, userID, req.Id)
+	switch {
+	case errors.Is(err, characters.ErrNotFound):
+		return api.ConfirmCharacterServer404JSONResponse{NotFoundJSONResponse: api.NotFoundJSONResponse(notFound)}, nil
+	case err != nil:
+		return nil, err
+	}
+	return api.ConfirmCharacterServer204Response{}, nil
+}
+
 func toInput(body *api.CharacterInput) characters.Input {
 	if body == nil {
 		return characters.Input{}
 	}
-	in := characters.Input{Nick: body.Nick, ClassID: body.ClassId, Level: body.Level, Role: string(body.Role)}
+	in := characters.Input{Nick: body.Nick, ClassID: body.ClassId, Level: body.Level, Role: string(body.Role), Server: body.Server}
 	// D-03 da retrato-por-classe: o retrato vem da classe; o campo da entrada é ignorado.
 	if body.Link != nil {
 		in.Link = *body.Link
@@ -190,6 +221,9 @@ func toAPICharacter(c characters.Character) (api.Character, error) {
 		Portrait:  api.Portrait(catalog.ArtOf(c.ClassID)), // RN-02 da retrato-por-classe
 		IsMain:    c.IsMain,
 		CreatedAt: c.CreatedAt,
+		Server:    api.ServerId(c.Server),
+
+		ServerToConfirm: c.ServerToConfirm,
 	}
 	if c.Link != "" {
 		body.Link = &c.Link

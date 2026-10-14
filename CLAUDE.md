@@ -11,7 +11,9 @@ completa (candidatar, decidir, sair, remover com bloqueio e trocas de personagem
 "Minhas candidaturas" em `/candidaturas`) o compartilhamento de lobby (convite copiado e
 preview Open Graph) e o banco de talentos (disponibilidade por personagem, afinidade com o
 lobby e catálogo em `/talentos`) o grupo livre (lobby sem
-formação por função, de 2 a 12 vagas) e o lobby sem instância (com título livre). A pilha completa roda com
+formação por função, de 2 a 12 vagas), o lobby sem instância (com título livre) e o
+servidor do jogo (Freya ou Nidhogg no personagem e no lobby, com filtro na Home e no banco
+de talentos). A pilha completa roda com
 `docker compose --profile app up` (ADR-06). Nada em andamento; os próximos passos ficam no
 Notion. O setup local e os comandos estão no `README.md`. As decisões de arquitetura ficam
 em `docs/adr/`.

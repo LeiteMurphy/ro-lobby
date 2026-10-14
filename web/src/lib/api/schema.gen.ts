@@ -104,6 +104,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catálogo de servidores
+         * @description Os servidores do Ragnarok LATAM, Freya e Nidhogg, nesta ordem (spec servidor, RN-01). Não exige sessão.
+         */
+        get: operations["listServers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/characters": {
         parameters: {
             query?: never;
@@ -172,6 +192,29 @@ export interface paths {
          */
         put: operations["setMainCharacter"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/characters/{id}/confirm-server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirma o servidor de um personagem migrado
+         * @description Tira o personagem da conferência (spec servidor, RN-16). Personagem já conferido continua conferido. Personagem de outro Usuário responde 404.
+         */
+        post: operations["confirmCharacterServer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -722,6 +765,16 @@ export interface components {
             /** @description Arte da linha da classe (spec retrato-por-classe, RN-01). */
             art: string;
         };
+        /**
+         * @description Servidor do Ragnarok LATAM (spec servidor, RN-01).
+         * @enum {string}
+         */
+        ServerId: "freya" | "nidhogg";
+        Server: {
+            id: components["schemas"]["ServerId"];
+            /** @example Nidhogg */
+            name: string;
+        };
         /** @description Dados de um personagem. A API valida todos os campos (RNF-04), com as regras RN-04 a RN-10; um valor fora delas volta 422. */
         CharacterInput: {
             /** @description 1 a 24 caracteres depois de tirar os espaços das pontas. */
@@ -734,6 +787,8 @@ export interface components {
             portrait?: components["schemas"]["Portrait"];
             /** @description Opcional; https:// e até 300 caracteres. Vazio fica sem link. */
             link?: string;
+            /** @description ID de um servidor de GET /servers (spec servidor, RN-02). Fora do catálogo volta 422. Com o personagem num lobby aberto, mudar o servidor volta 409 (RN-04). */
+            server: string;
         };
         Character: {
             /** Format: uuid */
@@ -749,6 +804,9 @@ export interface components {
             createdAt: string;
             /** @description Disponibilidade no banco de talentos; null se nunca entrou (spec banco-de-talentos, CA-01.4). */
             availability: components["schemas"]["Availability"] | null;
+            server: components["schemas"]["ServerId"];
+            /** @description Personagem que já existia antes do servidor e que o dono ainda não conferiu (spec servidor, RN-15, RN-16). */
+            serverToConfirm: boolean;
         };
         AvailabilityInput: {
             enabled: boolean;
@@ -778,6 +836,7 @@ export interface components {
             id: string;
             name: string;
         };
+        /** @description Personagem do banco; server é o servidor dele (spec servidor, RN-19). */
         Talent: {
             /** Format: uuid */
             characterId: string;
@@ -785,6 +844,7 @@ export interface components {
             classId: string;
             level: number;
             role: components["schemas"]["Role"];
+            server: components["schemas"]["ServerId"];
             portrait: components["schemas"]["Portrait"];
             link: string | null;
             days: number[];
@@ -808,7 +868,7 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title" | "server";
             /** @enum {string} */
             code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start" | "locked";
         };
@@ -926,6 +986,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             instance: components["schemas"]["LobbyInstance"];
+            /** @description Servidor do personagem do dono na criação; não muda depois (spec servidor, RN-06, RN-07). */
+            server: components["schemas"]["ServerId"];
             /** Format: date-time */
             startsAt: string;
             status: components["schemas"]["LobbyStatus"];
@@ -970,7 +1032,7 @@ export interface components {
             /** @enum {string} */
             error: "application_rule";
             /** @enum {string} */
-            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "group_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending";
+            code: "not_open" | "own_lobby" | "already_active" | "role_full" | "group_full" | "rejected_before" | "below_min_level" | "schedule_conflict" | "not_pending" | "not_owner" | "not_yours" | "blocked" | "not_member" | "swap_pending" | "wrong_server";
         };
         Application: {
             /** Format: uuid */
@@ -1423,6 +1485,26 @@ export interface operations {
             };
         };
     };
+    listServers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Todos os servidores do catálogo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Server"][];
+                };
+            };
+        };
+    };
     listCharacters: {
         parameters: {
             query?: never;
@@ -1588,6 +1670,29 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    confirmCharacterServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do personagem. Um ID desconhecido, malformado ou de outro Usuário responde 404 do mesmo jeito (RN-02, D-08). */
+                id: components["parameters"]["CharacterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personagem conferido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     setAvailability: {
         parameters: {
             query?: never;
@@ -1623,6 +1728,8 @@ export interface operations {
             query?: {
                 instanceId?: string;
                 role?: components["schemas"]["Role"];
+                /** @description Só personagens desse servidor (spec servidor, RN-18). */
+                server?: string;
                 /** @description Dia da semana, domingo = 0. */
                 day?: number;
                 /** @description Hora de Brasília, HH:MM de 30 em 30 minutos. */

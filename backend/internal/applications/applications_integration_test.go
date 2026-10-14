@@ -85,7 +85,7 @@ func (e *env) user(t *testing.T, chars ...string) who {
 		_, _ = fmt.Sscan(parts[1], &level)
 		c, err := e.q.CreateCharacter(t.Context(), db.CreateCharacterParams{
 			UserID: u.ID, Nick: parts[0], ClassID: "cavaleiro-runico", Level: level, Role: parts[2],
-			Portrait: "retrato-1", IsMain: i == 0, Now: start,
+			Portrait: "retrato-1", IsMain: i == 0, Now: start, Server: serverOf(parts, 3),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -641,4 +641,13 @@ func TestUpdate_RN18_SlotsBelowMembers(t *testing.T) {
 	}); err != nil {
 		t.Errorf("no limite: %v", err)
 	}
+}
+
+// serverOf lê o servidor opcional na posição i da especificação do personagem; sem ele, o
+// personagem fica em Freya (spec servidor, RN-15).
+func serverOf(parts []string, i int) string {
+	if len(parts) > i {
+		return parts[i]
+	}
+	return "freya"
 }

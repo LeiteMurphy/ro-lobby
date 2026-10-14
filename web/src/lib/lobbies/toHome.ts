@@ -25,6 +25,7 @@ export function toHomeLobby(lobby: ApiLobby, classNames: ReadonlyMap<string, str
 		ownerId: lobby.owner.userId,
 		...(lobby.instance.id === null ? { anyInstance: true } : {}),
 		pendingCount: lobby.pendingCount,
+		server: lobby.server,
 		composition: {
 			tank: { filled: lobby.occupied.tank, total: lobby.slots.tank },
 			support: { filled: lobby.occupied.support, total: lobby.slots.support },

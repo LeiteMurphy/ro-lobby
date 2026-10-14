@@ -121,7 +121,7 @@ func TestCatalog_MaxRows(t *testing.T) {
 	for i := range talents.MaxCatalog + 1 {
 		c, err := e.q.CreateCharacter(t.Context(), db.CreateCharacterParams{
 			UserID: uid, Nick: fmt.Sprintf("Char%03d", i), ClassID: "arquimago", Level: 200, Role: "dps",
-			Portrait: "retrato-1", Now: now,
+			Portrait: "retrato-1", Now: now, Server: "freya",
 		})
 		if err != nil {
 			t.Fatal(err)

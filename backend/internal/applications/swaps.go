@@ -156,6 +156,9 @@ func (s *Service) RequestSwap(ctx context.Context, userID, applicationID string,
 		if character.ID == app.CharacterID {
 			return fieldError(lobbies.FieldCharacterID, lobbies.CodeInvalid) // já é o personagem atual
 		}
+		if character.Server != lobby.Lobby.Server {
+			return rule(CodeWrongServer) // RN-10 da servidor
+		}
 		if character.Level < lobby.Lobby.MinLevel {
 			return rule(CodeBelowMinLevel) // RN-36; a vaga só no aceite (D-11)
 		}
@@ -317,10 +320,13 @@ func (s *Service) WithdrawSwap(ctx context.Context, userID, swapID string) (Swap
 	return toSwapRequest(withdrawn), nil
 }
 
-// checkSwap confere o personagem novo de uma troca: nível mínimo, vaga na função (a vaga
-// que sai conta como livre) e conflito de horário fora deste lobby (RN-11, RN-19, RN-23,
-// RN-36, D-11).
+// checkSwap confere o personagem novo de uma troca: servidor, nível mínimo, vaga na função
+// (a vaga que sai conta como livre) e conflito de horário fora deste lobby (RN-11, RN-19,
+// RN-23, RN-36, D-11, e RN-10 da spec servidor).
 func checkSwap(ctx context.Context, q *db.Queries, lobby db.GetLobbyRow, character db.Character, currentRole string) error {
+	if character.Server != lobby.Lobby.Server {
+		return rule(CodeWrongServer)
+	}
 	if character.Level < lobby.Lobby.MinLevel {
 		return rule(CodeBelowMinLevel)
 	}

@@ -25,6 +25,8 @@ const character = (over: Partial<Character>): Character => ({
 	isMain: false,
 	createdAt: '',
 	availability: null,
+	server: 'freya',
+	serverToConfirm: false,
 	...over
 });
 const FOGO = character({ id: 'fogo', nick: 'Fogo', role: 'dps' });
@@ -174,5 +176,15 @@ describe('diálogos do membro', () => {
 		expect(html).toMatch(/aria-invalid="true"[^>]*aria-describedby="([^"]+-reason-err)"/);
 		expect(html).toContain('Escreva de 10 a 250 caracteres');
 		expect(html).toContain('role="alert"');
+	});
+});
+
+describe('servidor no pedido de troca (spec servidor)', () => {
+	it('CA-03.6 / RN-11: no pedido e na troca do dono, o personagem de outro servidor fica desabilitado', () => {
+		const nid = character({ id: 'nid', nick: 'Nid', role: 'dps', server: 'nidhogg' });
+		for (const mode of ['request', 'owner'] as const) {
+			const [only] = swapEligibility(LOBBY, [nid], { characterId: 'fogo', role: 'dps' }, mode);
+			expect([only.ok, only.why]).toEqual([false, 'Outro servidor (Nidhogg)']);
+		}
 	});
 });

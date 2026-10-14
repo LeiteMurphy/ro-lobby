@@ -3,6 +3,7 @@
 	import Badge from '$lib/ui/Badge.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
+	import { serverName } from '$lib/catalog/servers';
 	import { instanceArt } from '../catalog';
 	import { edgeRole, lobbyIsFull, pendingFor, seats } from '../lobbies';
 	import type { Lobby } from '../types';
@@ -44,6 +45,10 @@
 		<div class="when">
 			<span class="time">{lobby.time}</span>
 			{#if relative}<span class="relative">{relative}</span>{/if}
+			<!-- RN-08 da spec servidor. -->
+			{#if lobby.server}<span class="server" data-testid="lobby-card-server"
+					>{serverName(lobby.server)}</span
+				>{/if}
 		</div>
 		<img src={art.icon} alt="" width="68" height="68" />
 		{#if pending}<span class="pending" data-testid="pending-badge">{pending}</span>{/if}
@@ -186,6 +191,12 @@
 	.relative {
 		font: 600 12px/1 var(--font-ui);
 		color: rgba(233, 238, 245, 0.78);
+	}
+	.server {
+		font: 700 11px/1 var(--font-ui);
+		letter-spacing: var(--tracking-caps);
+		text-transform: uppercase;
+		color: var(--gold-300);
 	}
 	.cover img {
 		position: absolute;

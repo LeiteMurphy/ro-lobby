@@ -30,6 +30,7 @@ interface NewCharacter {
 	classId?: string;
 	level?: number;
 	role?: 'Tank' | 'Suporte' | 'Dano';
+	server?: 'Freya' | 'Nidhogg';
 	link?: string;
 }
 
@@ -40,6 +41,7 @@ async function fillDialog(page: Page, c: NewCharacter) {
 	await d.getByLabel('Classe').selectOption(c.classId ?? 'guardiao-real');
 	await d.getByLabel('Nível').fill(String(c.level ?? 172));
 	await d.getByRole('radio', { name: c.role ?? 'Tank' }).check();
+	await d.getByRole('radio', { name: c.server ?? 'Freya' }).check();
 	if (c.link) await d.getByLabel('Link externo (opcional)').fill(c.link);
 }
 
@@ -129,7 +131,7 @@ test.describe('perfil e personagens', () => {
 		await expect(page.getByText('2 de 10 personagens')).toBeVisible();
 	});
 
-	test('CA-02.3 / CA-02.9 / CA-01.3: o nick de outra conta é recusado junto do campo', async ({
+	test('CA-02.3 / CA-02.9 / CA-01.3, CA-01.5 (servidor): o nick de outra conta no mesmo servidor é recusado junto do campo', async ({
 		browser
 	}) => {
 		const s = rand();
@@ -159,7 +161,9 @@ test.describe('perfil e personagens', () => {
 		const nick = dialog(bia).getByLabel('Nick');
 		await expect(nick).toHaveAttribute('aria-invalid', 'true');
 		const errorId = await nick.getAttribute('aria-describedby');
-		await expect(bia.locator(`[id="${errorId}"]`)).toHaveText('Esse nick já está em uso');
+		await expect(bia.locator(`[id="${errorId}"]`)).toHaveText(
+			'Esse nick já está em uso nesse servidor'
+		);
 		// RN-19: o resto continua preenchido.
 		await expect(nick).toHaveValue(`brasa${s}`);
 		await expect(dialog(bia).getByLabel('Classe')).toHaveValue('paladino');
@@ -169,6 +173,48 @@ test.describe('perfil e personagens', () => {
 			'https://exemplo.com/bia'
 		);
 		await expect(cards(bia)).toHaveCount(0);
+	});
+
+	test('CA-01.2 / CA-01.4 / CA-01.7 (servidor): mesmo nick em outro servidor, servidor na carta e na edição', async ({
+		browser
+	}) => {
+		const s = rand();
+		const ana = await (await browser.newContext()).newPage();
+		await loginAs(ana, `ana${s}`);
+		await addCharacter(ana, { nick: `Brasa${s}` });
+		await expect(card(ana, `Brasa${s}`).getByTestId('character-server')).toHaveText('Freya');
+
+		// CA-01.4: o mesmo nick, de outra conta, em Nidhogg.
+		const bia = await (await browser.newContext()).newPage();
+		await loginAs(bia, `bia${s}`);
+		await addCharacter(bia, { nick: `brasa${s}`, server: 'Nidhogg' });
+		await expect(card(bia, `brasa${s}`).getByTestId('character-server')).toHaveText('Nidhogg');
+
+		// CA-01.7: sem vínculo, a edição muda o servidor.
+		await (await openMenu(bia, `brasa${s}`)).getByRole('menuitem', { name: 'Editar' }).click();
+		await expect(dialog(bia).getByRole('radio', { name: 'Nidhogg' })).toBeChecked();
+		await dialog(bia).getByRole('radio', { name: 'Freya' }).check();
+		await dialog(bia).getByRole('button', { name: 'Salvar personagem' }).click();
+		// CA-01.6: em Freya já existe "Brasa", então o nick colide.
+		await expect(dialog(bia).getByText('Esse nick já está em uso nesse servidor')).toBeVisible();
+	});
+
+	test('CA-01.3 (servidor): sem servidor, o erro aparece junto do campo', async ({ page }) => {
+		const s = rand();
+		await loginAs(page, `a${s}`);
+		await page
+			.getByRole('main')
+			.getByRole('button', { name: 'Adicionar personagem' })
+			.first()
+			.click();
+		const d = dialog(page);
+		await d.getByLabel('Nick').fill(`Sem${s}`);
+		await d.getByLabel('Classe').selectOption('guardiao-real');
+		await d.getByLabel('Nível').fill('172');
+		await d.getByRole('radio', { name: 'Tank' }).check();
+		await d.getByRole('button', { name: 'Salvar personagem' }).click();
+		await expect(d.getByText('Escolha o servidor')).toBeVisible();
+		await expect(cards(page)).toHaveCount(0);
 	});
 
 	test('RN-19 / AJ-04: reabrir "Adicionar personagem" depois de um erro começa do zero', async ({

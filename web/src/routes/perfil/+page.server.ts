@@ -3,6 +3,7 @@ import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
 import { SESSION_COOKIE } from '$lib/auth/oauth';
 import {
+	confirmCharacterServer,
 	createCharacter,
 	deleteCharacter,
 	listCharacters,
@@ -68,6 +69,7 @@ export interface FormValues {
 	role: string;
 	portrait: string;
 	link: string;
+	server: string;
 }
 
 function readValues(data: FormData): FormValues {
@@ -78,7 +80,8 @@ function readValues(data: FormData): FormValues {
 		level: text('level'),
 		role: text('role'),
 		portrait: text('portrait'),
-		link: text('link')
+		link: text('link'),
+		server: text('server')
 	};
 }
 
@@ -91,7 +94,8 @@ function toInput(v: FormValues): CharacterInput {
 		level: v.level.trim() !== '' && Number.isInteger(level) ? level : 0,
 		role: v.role as Role,
 		...(v.portrait ? { portrait: v.portrait as Portrait } : {}),
-		link: v.link
+		link: v.link,
+		server: v.server
 	};
 }
 
@@ -101,7 +105,7 @@ type Mode = 'create' | 'update';
 function outcome(
 	result: Result<unknown>,
 	cookies: Cookies,
-	form: { mode: Mode | 'delete' | 'main'; id?: string; values?: FormValues }
+	form: { mode: Mode | 'delete' | 'main' | 'confirm'; id?: string; values?: FormValues }
 ) {
 	if (result.ok) return { done: form.mode };
 	switch (result.kind) {
@@ -181,6 +185,12 @@ export const actions: Actions = {
 			default:
 				return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
 		}
+	},
+	// RN-16 da spec servidor: "Está certo" no aviso dos personagens migrados.
+	confirm: async ({ request, cookies, fetch }) => {
+		const call = session(cookies, fetch);
+		const id = String((await request.formData()).get('id') ?? '');
+		return outcome(await confirmCharacterServer(call, id), cookies, { mode: 'confirm', id });
 	},
 	main: async ({ request, cookies, fetch }) => {
 		const call = session(cookies, fetch);

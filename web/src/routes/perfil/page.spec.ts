@@ -36,6 +36,8 @@ function character(overrides: Partial<Character>): Character {
 		isMain: false,
 		createdAt: '2026-10-06T12:00:00Z',
 		availability: null,
+		server: 'freya',
+		serverToConfirm: false,
 		...overrides
 	};
 }
@@ -209,5 +211,63 @@ describe('diálogo de personagem renderizado no servidor', () => {
 		expect(html).toMatch(/<option value="feiticeiro" selected/);
 		expect(html).toContain('value="165"');
 		expect(html).toContain('name="id"');
+	});
+});
+
+describe('servidor no /perfil (spec servidor)', () => {
+	const renderDialog = (props: Record<string, unknown>) =>
+		render(CharacterDialog, {
+			props: { mode: 'create', classes: CLASS_LIST, onclose: () => {}, ...props } as never
+		}).body;
+
+	it('CA-01.2 / RN-05: a carteirinha mostra o servidor junto da classe', () => {
+		const html = renderPage([character({ server: 'nidhogg' })]);
+		expect(cards(html)[0]).toMatch(
+			/Guardião Real · <span[^>]*data-testid="character-server"[^>]*>Nidhogg</
+		);
+	});
+
+	it('CA-01.3 / RN-02: o diálogo pede o servidor, sem nenhum marcado ao criar', () => {
+		const html = renderDialog({});
+		expect(html).toMatch(/<legend class="lbl[^"]*">Servidor<\/legend>/);
+		expect(html).toMatch(/name="server" value="freya"/);
+		expect(html).toMatch(/name="server" value="nidhogg"/);
+		expect(html).not.toMatch(/name="server"[^>]*checked/);
+	});
+
+	it('CA-01.3: sem servidor, o erro "Escolha o servidor" aparece junto do campo', () => {
+		const html = renderDialog({
+			form: { values: { nick: 'Brasa' }, errors: { server: 'Escolha o servidor' } }
+		});
+		expect(html).toMatch(/aria-describedby="[^"]+-server-err"/);
+		expect(html).toContain('Escolha o servidor');
+	});
+
+	it('CA-01.7 / RN-04: na edição, o servidor do personagem vem marcado', () => {
+		const html = renderDialog({ mode: 'update', character: character({ server: 'nidhogg' }) });
+		expect(html).toMatch(/value="nidhogg"[^>]*checked/);
+		expect(html).toContain('O nick é único em cada servidor.');
+	});
+
+	it('CA-06.1 / RN-16: o aviso lista os personagens a conferir, com "Está certo" e "Editar"', () => {
+		const html = renderPage([
+			character({ id: 'c1', nick: 'Brasa', serverToConfirm: true }),
+			character({ id: 'c2', nick: 'Lirien', serverToConfirm: true }),
+			character({ id: 'c3', nick: 'Novo' })
+		]);
+		const notice = (html.split('data-testid="server-confirm"')[1] ?? '').split('</section>')[0];
+		expect(notice).toContain('Confira o servidor dos seus personagens');
+		expect(notice).toContain('<strong>Brasa</strong> · Freya');
+		expect(notice).toContain('<strong>Lirien</strong> · Freya');
+		expect(notice).not.toContain('Novo');
+		expect(notice.match(/action="\?\/confirm"/g)).toHaveLength(2);
+		expect(notice.match(/Está certo/g)).toHaveLength(2);
+		expect(notice.match(/>Editar</g)).toHaveLength(2);
+	});
+
+	it('CA-06.3 / CA-06.4: sem personagem a conferir, não há aviso', () => {
+		const html = renderPage([character({ serverToConfirm: false })]);
+		expect(html).not.toContain('data-testid="server-confirm"');
+		expect(html).not.toContain('Confira o servidor');
 	});
 });

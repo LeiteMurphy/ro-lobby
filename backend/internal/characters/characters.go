@@ -31,7 +31,8 @@ const (
 	MaxLevel      = 275
 	MaxLinkLength = 300
 
-	nickIndex = "characters_nick_key"
+	// nickIndex é o índice do nick único por servidor (RN-03 da spec servidor).
+	nickIndex = "characters_server_nick_key"
 )
 
 var (
@@ -41,8 +42,8 @@ var (
 	// ErrLimitReached: o Usuário já tem MaxPerUser personagens (RN-11).
 	ErrLimitReached = errors.New("characters: limite de personagens atingido")
 	// ErrInOpenLobby: o personagem é dono de um lobby aberto, ou tem candidatura pendente
-	// ou aceita num lobby aberto, e não pode ser excluído nem mudar de nível ou função
-	// (RN-21 da spec lobbies, RN-25 e RN-26 da candidatura-lobby).
+	// ou aceita num lobby aberto, e não pode ser excluído nem mudar de servidor, nível ou
+	// função (RN-21 da spec lobbies, RN-25 e RN-26 da candidatura-lobby, RN-04 da servidor).
 	ErrInOpenLobby = errors.New("characters: personagem em lobby aberto")
 )
 
@@ -54,6 +55,7 @@ const (
 	FieldRole     = "role"
 	FieldPortrait = "portrait"
 	FieldLink     = "link"
+	FieldServer   = "server"
 
 	CodeRequired = "required"
 	CodeTooLong  = "too_long"
@@ -92,6 +94,8 @@ type Input struct {
 	Role     string
 	Portrait string
 	Link     string
+	// Server é um ID do catálogo de servidores (RN-02 da spec servidor).
+	Server string
 }
 
 // Character é um personagem salvo.
@@ -105,6 +109,10 @@ type Character struct {
 	Link      string
 	IsMain    bool
 	CreatedAt time.Time
+	Server    string
+	// ServerToConfirm: personagem migrado que o dono ainda não conferiu (RN-15 da spec
+	// servidor).
+	ServerToConfirm bool
 	// Availability é a disponibilidade no banco de talentos; nil se nunca entrou. Só a
 	// lista do Usuário traz (spec banco-de-talentos, CA-01.4).
 	Availability *talents.Availability
@@ -177,6 +185,7 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Characte
 			Link:     optionalText(in.Link),
 			IsMain:   count == 0,
 			Now:      s.Now().UTC(),
+			Server:   in.Server,
 		})
 		return err
 	})
@@ -209,7 +218,7 @@ func (s *Service) Update(ctx context.Context, userID, id string, in Input) (Char
 		if err != nil {
 			return err // pgx.ErrNoRows vira ErrNotFound (RN-02)
 		}
-		if current.Role != in.Role || int(current.Level) != in.Level {
+		if current.Role != in.Role || int(current.Level) != in.Level || current.Server != in.Server {
 			if err := s.checkNotInOpenLobby(ctx, q, cid); err != nil {
 				return err
 			}
@@ -223,6 +232,7 @@ func (s *Service) Update(ctx context.Context, userID, id string, in Input) (Char
 			Role:     in.Role,
 			Portrait: in.Portrait,
 			Link:     optionalText(in.Link),
+			Server:   in.Server,
 		})
 		return err
 	})
@@ -241,6 +251,27 @@ func (s *Service) checkNotInOpenLobby(ctx context.Context, q *db.Queries, cid pg
 	}
 	if inLobby {
 		return ErrInOpenLobby
+	}
+	return nil
+}
+
+// ConfirmServer tira o personagem do Usuário da conferência do servidor (RN-16 da spec
+// servidor). Confirmar de novo não muda nada.
+func (s *Service) ConfirmServer(ctx context.Context, userID, id string) error {
+	uid, err := parseUUID(userID)
+	if err != nil {
+		return fmt.Errorf("characters: id de usuário inválido: %w", err)
+	}
+	cid, err := parseUUID(id)
+	if err != nil {
+		return ErrNotFound
+	}
+	n, err := s.queries.ConfirmCharacterServer(ctx, db.ConfirmCharacterServerParams{ID: cid, UserID: uid})
+	if err != nil {
+		return fmt.Errorf("characters: confirmar servidor: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound // RN-02: inexistente ou de outro Usuário
 	}
 	return nil
 }
@@ -301,7 +332,7 @@ func (s *Service) SetMain(ctx context.Context, userID, id string) error {
 	return translate(err, "marcar principal")
 }
 
-// Validate normaliza e confere os campos (RN-04 a RN-10). Devolve *ValidationError com
+// Validate normaliza e confere os campos (RN-04 a RN-10, e RN-02 da spec servidor). Devolve *ValidationError com
 // todos os campos errados de uma vez.
 func Validate(in Input) (Input, error) {
 	var errs []FieldError
@@ -347,6 +378,12 @@ func Validate(in Input) (Input, error) {
 		} else if !validLink(in.Link) {
 			add(FieldLink, CodeInvalid)
 		}
+	}
+
+	if in.Server == "" {
+		add(FieldServer, CodeRequired)
+	} else if _, ok := catalog.ServerByID(in.Server); !ok {
+		add(FieldServer, CodeInvalid)
 	}
 
 	if len(errs) > 0 {
@@ -401,7 +438,7 @@ func translate(err error, action string) error {
 	case errors.Is(err, ErrInOpenLobby):
 		return ErrInOpenLobby
 	case errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == nickIndex:
-		return &ValidationError{Fields: []FieldError{{Field: FieldNick, Code: CodeTaken}}} // RN-05
+		return &ValidationError{Fields: []FieldError{{Field: FieldNick, Code: CodeTaken}}} // RN-03 da servidor
 	default:
 		return fmt.Errorf("characters: %s: %w", action, err)
 	}
@@ -428,5 +465,8 @@ func toCharacter(c db.Character) Character {
 		Link:      c.Link.String,
 		IsMain:    c.IsMain,
 		CreatedAt: c.CreatedAt,
+		Server:    c.Server,
+
+		ServerToConfirm: c.ServerToConfirm,
 	}
 }

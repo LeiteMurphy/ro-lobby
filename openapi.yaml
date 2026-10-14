@@ -118,6 +118,22 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Class"
+  /servers:
+    get:
+      operationId: listServers
+      summary: Catálogo de servidores
+      description: >
+        Os servidores do Ragnarok LATAM, Freya e Nidhogg, nesta ordem (spec servidor, RN-01).
+        Não exige sessão.
+      responses:
+        "200":
+          description: Todos os servidores do catálogo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Server"
   /characters:
     get:
       operationId: listCharacters
@@ -243,6 +259,24 @@ paths:
           $ref: "#/components/responses/NoSession"
         "404":
           $ref: "#/components/responses/NotFound"
+  /characters/{id}/confirm-server:
+    parameters:
+      - $ref: "#/components/parameters/CharacterId"
+    post:
+      operationId: confirmCharacterServer
+      summary: Confirma o servidor de um personagem migrado
+      description: >
+        Tira o personagem da conferência (spec servidor, RN-16). Personagem já conferido
+        continua conferido. Personagem de outro Usuário responde 404.
+      security:
+        - sessionToken: []
+      responses:
+        "204":
+          description: Personagem conferido.
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /characters/{id}/availability:
     parameters:
       - $ref: "#/components/parameters/CharacterId"
@@ -294,6 +328,11 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Role"
+        - name: server
+          in: query
+          description: Só personagens desse servidor (spec servidor, RN-18).
+          schema:
+            type: string
         - name: day
           in: query
           description: Dia da semana, domingo = 0.
@@ -1139,9 +1178,23 @@ components:
         art:
           type: string
           description: Arte da linha da classe (spec retrato-por-classe, RN-01).
+    ServerId:
+      type: string
+      enum: [freya, nidhogg]
+      description: Servidor do Ragnarok LATAM (spec servidor, RN-01).
+    Server:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          $ref: "#/components/schemas/ServerId"
+        name:
+          type: string
+          example: Nidhogg
     CharacterInput:
       type: object
-      required: [nick, classId, level, role]
+      required: [nick, classId, level, role, server]
       description: >
         Dados de um personagem. A API valida todos os campos (RNF-04), com as regras
         RN-04 a RN-10; um valor fora delas volta 422.
@@ -1162,10 +1215,15 @@ components:
         link:
           type: string
           description: Opcional; https:// e até 300 caracteres. Vazio fica sem link.
+        server:
+          type: string
+          description: >
+            ID de um servidor de GET /servers (spec servidor, RN-02). Fora do catálogo volta
+            422. Com o personagem num lobby aberto, mudar o servidor volta 409 (RN-04).
     Character:
       type: object
       additionalProperties: false
-      required: [id, nick, classId, level, role, portrait, link, isMain, createdAt, availability]
+      required: [id, nick, classId, level, role, portrait, link, isMain, createdAt, availability, server, serverToConfirm]
       properties:
         id:
           type: string
@@ -1193,6 +1251,13 @@ components:
           allOf:
             - $ref: "#/components/schemas/Availability"
           nullable: true
+        server:
+          $ref: "#/components/schemas/ServerId"
+        serverToConfirm:
+          type: boolean
+          description: >
+            Personagem que já existia antes do servidor e que o dono ainda não conferiu
+            (spec servidor, RN-15, RN-16).
     AvailabilityInput:
       type: object
       additionalProperties: false
@@ -1261,7 +1326,8 @@ components:
     Talent:
       type: object
       additionalProperties: false
-      required: [characterId, nick, classId, level, role, portrait, link, days, start, end, anyInstance, instances, removed, blocked]
+      description: Personagem do banco; server é o servidor dele (spec servidor, RN-19).
+      required: [characterId, nick, classId, level, role, server, portrait, link, days, start, end, anyInstance, instances, removed, blocked]
       properties:
         characterId:
           type: string
@@ -1274,6 +1340,8 @@ components:
           type: integer
         role:
           $ref: "#/components/schemas/Role"
+        server:
+          $ref: "#/components/schemas/ServerId"
         portrait:
           $ref: "#/components/schemas/Portrait"
         link:
@@ -1324,7 +1392,7 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots, title]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots, title, server]
         code:
           type: string
           enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start, locked]
@@ -1506,13 +1574,19 @@ components:
     Lobby:
       type: object
       additionalProperties: false
-      required: [id, instance, startsAt, status, formation, freeSlots, slots, occupied, pendingCount, minLevel, note, owner, cancelReason, createdAt]
+      required: [id, instance, server, startsAt, status, formation, freeSlots, slots, occupied, pendingCount, minLevel, note, owner, cancelReason, createdAt]
       properties:
         id:
           type: string
           format: uuid
         instance:
           $ref: "#/components/schemas/LobbyInstance"
+        server:
+          description: >
+            Servidor do personagem do dono na criação; não muda depois (spec servidor, RN-06,
+            RN-07).
+          allOf:
+            - $ref: "#/components/schemas/ServerId"
         startsAt:
           type: string
           format: date-time
@@ -1594,7 +1668,7 @@ components:
           enum: [application_rule]
         code:
           type: string
-          enum: [not_open, own_lobby, already_active, role_full, group_full, rejected_before, below_min_level, schedule_conflict, not_pending, not_owner, not_yours, blocked, not_member, swap_pending]
+          enum: [not_open, own_lobby, already_active, role_full, group_full, rejected_before, below_min_level, schedule_conflict, not_pending, not_owner, not_yours, blocked, not_member, swap_pending, wrong_server]
     Application:
       type: object
       additionalProperties: false

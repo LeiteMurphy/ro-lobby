@@ -35,17 +35,19 @@ type ApplicationEvent struct {
 }
 
 type Character struct {
-	ID        pgtype.UUID
-	Seq       int64
-	UserID    pgtype.UUID
-	Nick      string
-	ClassID   string
-	Level     int16
-	Role      string
-	Portrait  string
-	Link      pgtype.Text
-	IsMain    bool
-	CreatedAt time.Time
+	ID              pgtype.UUID
+	Seq             int64
+	UserID          pgtype.UUID
+	Nick            string
+	ClassID         string
+	Level           int16
+	Role            string
+	Portrait        string
+	Link            pgtype.Text
+	IsMain          bool
+	CreatedAt       time.Time
+	Server          string
+	ServerToConfirm bool
 }
 
 type CharacterAvailability struct {
@@ -78,6 +80,7 @@ type Lobby struct {
 	CreatedAt        time.Time
 	Formation        string
 	FreeSlots        pgtype.Int2
+	Server           string
 }
 
 type Session struct {

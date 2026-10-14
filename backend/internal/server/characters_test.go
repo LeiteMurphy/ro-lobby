@@ -31,6 +31,7 @@ type fakeChars struct {
 var brasa = characters.Character{
 	ID: charID, Nick: "Brasa", ClassID: "guardiao-real", Level: 172, Role: "tank",
 	Portrait: "retrato-1", IsMain: true, CreatedAt: time.Date(2026, 10, 6, 12, 0, 0, 0, time.UTC),
+	Server: "nidhogg",
 }
 
 func (f *fakeChars) List(_ context.Context, userID string) ([]characters.Character, error) {
@@ -58,6 +59,11 @@ func (f *fakeChars) SetMain(_ context.Context, userID, id string) error {
 	return f.err
 }
 
+func (f *fakeChars) ConfirmServer(_ context.Context, userID, id string) error {
+	f.gotUser, f.gotID = userID, id
+	return f.err
+}
+
 func newCharsServer(f *fakeChars) http.Handler {
 	return New(fakePinger(func(context.Context) error { return nil }), &fakeAuth{}, f, nil, nil, nil)
 }
@@ -70,6 +76,8 @@ var characterRoutes = []struct{ method, path, body string }{
 	{http.MethodPut, "/characters/" + charID, brasaJSON},
 	{http.MethodDelete, "/characters/" + charID, ""},
 	{http.MethodPut, "/characters/" + charID + "/main", ""},
+	// CA-06.2 / CA-06.6 (servidor): "Está certo" segue as mesmas regras de sessão e dono.
+	{http.MethodPost, "/characters/" + charID + "/confirm-server", ""},
 }
 
 // CA-07.2 / RN-01: sem sessão (ou com sessão inválida), toda rota de personagem responde
@@ -106,6 +114,21 @@ func TestClasses_CA07_1_PublicCatalog(t *testing.T) {
 	}
 }
 
+// CA-01.1 (servidor) / RN-01: GET /servers responde sem sessão, com Freya e Nidhogg nesta
+// ordem.
+func TestServers_CA01_1_CatalogWithoutSession(t *testing.T) {
+	rec, _ := call(t, newCharsServer(&fakeChars{}), http.MethodGet, "/servers", "", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d", rec.Code)
+	}
+	var got []map[string]string
+	decode(t, rec.Body.Bytes(), &got)
+	want := []map[string]string{{"id": "freya", "name": "Freya"}, {"id": "nidhogg", "name": "Nidhogg"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("corpo = %v, quer %v", got, want)
+	}
+}
+
 // RN-01 / RN-17: a lista é do Usuário da sessão, no formato do contrato.
 func TestCharacters_RN01_ListOfSessionUser(t *testing.T) {
 	f := &fakeChars{}
@@ -118,7 +141,7 @@ func TestCharacters_RN01_ListOfSessionUser(t *testing.T) {
 	want := map[string]any{
 		"id": charID, "nick": "Brasa", "classId": "guardiao-real", "level": float64(172), "role": "tank",
 		"portrait": "templario", "link": nil, "isMain": true, "createdAt": "2026-10-06T12:00:00Z",
-		"availability": nil,
+		"availability": nil, "server": "nidhogg", "serverToConfirm": false,
 	}
 	if len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Errorf("corpo = %v", got)
@@ -129,11 +152,11 @@ func TestCharacters_RN01_ListOfSessionUser(t *testing.T) {
 func TestCharacters_CA02_1_Create(t *testing.T) {
 	f := &fakeChars{}
 	rec, body := call(t, newCharsServer(f), http.MethodPost, "/characters", "token-valido",
-		`{"nick":"Lirien","classId":"arcebispo","level":178,"role":"support","portrait":"retrato-3","link":"https://exemplo.com"}`)
+		`{"nick":"Lirien","classId":"arcebispo","level":178,"role":"support","portrait":"retrato-3","link":"https://exemplo.com","server":"nidhogg"}`)
 	if rec.Code != http.StatusCreated || body["nick"] != "Brasa" {
 		t.Fatalf("status %d, corpo %v", rec.Code, body)
 	}
-	want := characters.Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "support", Link: "https://exemplo.com"}
+	want := characters.Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "support", Link: "https://exemplo.com", Server: "nidhogg"}
 	if f.gotIn != want {
 		t.Errorf("entrada = %+v", f.gotIn)
 	}

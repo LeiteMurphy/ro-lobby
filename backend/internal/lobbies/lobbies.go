@@ -201,9 +201,11 @@ type Lobby struct {
 	InstanceLevel int
 	// InstanceReset vem do catálogo; fica vazio se a instância saiu dele (D-02).
 	InstanceReset string
-	StartsAt      time.Time
-	Status        string
-	Slots         Slots
+	// Server é o servidor gravado na criação (RN-06 e RN-07 da spec servidor).
+	Server   string
+	StartsAt time.Time
+	Status   string
+	Slots    Slots
 	// Occupied são o dono e os membros aceitos por função (D-03 da candidatura). No grupo
 	// livre é só informativo; o total é a soma (D-02 da grupo-livre).
 	Occupied Slots
@@ -367,6 +369,7 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 			Now:              now,
 			Formation:        formation,
 			FreeSlots:        freeSlotsParam(formation, in.FreeSlots),
+			Server:           character.Server, // RN-06 da spec servidor
 		})
 		if err != nil {
 			return err
@@ -756,6 +759,7 @@ func (s *Service) toLobby(l db.Lobby, o owner, c counts) Lobby {
 		InstanceName:  l.InstanceName.String,
 		InstanceLevel: int(l.InstanceLevel),
 		AnyInstance:   !l.InstanceID.Valid,
+		Server:        l.Server,
 		StartsAt:      l.StartsAt.UTC(),
 		Status:        status,
 		Slots:         Slots{Tank: int(l.SlotsTank), Support: int(l.SlotsSupport), Dps: int(l.SlotsDps)},

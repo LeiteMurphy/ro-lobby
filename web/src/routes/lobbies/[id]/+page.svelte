@@ -21,6 +21,7 @@
 		type Person
 	} from '$lib/applications/detail';
 	import { buildDays } from '$lib/home/days';
+	import { serverName } from '$lib/catalog/servers';
 	import { instanceArt, ROLE_ICONS } from '$lib/home/catalog';
 	import TopBar from '$lib/home/components/TopBar.svelte';
 	import { relativeLabel, zonedNow } from '$lib/home/time';
@@ -201,6 +202,8 @@
 				<h1 id="lobby-title">{lobby.instance.name}</h1>
 				<div class="meta">
 					<span><b>{dayLabel} · {when.time}</b> (Brasília)</span>
+					<!-- RN-08 da spec servidor. -->
+					<span data-testid="lobby-server">Servidor <b>{serverName(lobby.server)}</b></span>
 					<span>Nível mínimo <b>{lobby.minLevel}</b></span>
 					{#if lobby.instance.reset}<span>{RESET_LABELS[lobby.instance.reset]}</span>{/if}
 					<span><b>{occupied} de {total}</b> vagas ocupadas</span>

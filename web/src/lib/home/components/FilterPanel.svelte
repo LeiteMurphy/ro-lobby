@@ -2,6 +2,7 @@
 	import Check from '$lib/ui/Check.svelte';
 	import { NO_INSTANCE } from '$lib/lobbies/form';
 	import Select from '$lib/ui/Select.svelte';
+	import { SERVERS } from '$lib/catalog/servers';
 	import {
 		LEVEL_OPTIONS,
 		TIME_RANGES,
@@ -17,6 +18,8 @@
 		instances: readonly string[];
 		roleCounts: Record<Role, number>;
 		timeCounts: Record<TimeRangeKey, number>;
+		/** RN-13 da spec servidor: lobbies do dia por servidor; '' é Todos. */
+		serverCounts: Record<Filters['server'], number>;
 		/** RN-12: as faixas visíveis no dia; sem elas, só as fixas. */
 		ranges?: readonly TimeRange[];
 		/** Nome do grupo de radios, único por painel (barra lateral e gaveta). */
@@ -30,11 +33,15 @@
 		instances,
 		roleCounts,
 		timeCounts,
+		serverCounts,
 		ranges = TIME_RANGES,
 		name,
 		size = 'sm',
 		onchange
 	}: Props = $props();
+
+	// RN-12 da spec servidor: Todos, Freya e Nidhogg.
+	const serverOptions = [{ id: '' as const, name: 'Todos' }, ...SERVERS];
 
 	// RN-05 da lobby-sem-instancia: a opção "Sem instância definida".
 	const instanceOptions = $derived([
@@ -49,6 +56,20 @@
 </script>
 
 <div class="panel">
+	<section data-testid="server-filter">
+		<h4>Servidor</h4>
+		{#each serverOptions as server (server.id)}
+			<Check
+				type="radio"
+				name="{name}-servidor"
+				value={server.id || 'todos'}
+				label={server.name}
+				meta={serverCounts[server.id] ?? 0}
+				checked={filters.server === server.id}
+				onchange={(on) => on && onchange({ ...filters, server: server.id })}
+			/>
+		{/each}
+	</section>
 	<section>
 		<h4>Instância</h4>
 		<Select

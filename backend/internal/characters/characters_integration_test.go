@@ -70,7 +70,7 @@ func (e *env) user(t *testing.T, discordID string) string {
 
 func (e *env) create(t *testing.T, userID, nick string) Character {
 	t.Helper()
-	c, err := e.svc.Create(t.Context(), userID, Input{Nick: nick, ClassID: "arcebispo", Level: 178, Role: "support"})
+	c, err := e.svc.Create(t.Context(), userID, Input{Nick: nick, ClassID: "arcebispo", Level: 178, Role: "support", Server: "freya"})
 	if err != nil {
 		t.Fatalf("criar %q: %v", nick, err)
 	}
@@ -112,18 +112,18 @@ func TestCreate_CA02_1_CA02_2_FirstIsMainWithDefaultPortrait(t *testing.T) {
 	e := setup(t)
 	ana := e.user(t, "1")
 
-	first, err := e.svc.Create(t.Context(), ana, Input{Nick: " Brasa ", ClassID: "guardiao-real", Level: 172, Role: "tank"})
+	first, err := e.svc.Create(t.Context(), ana, Input{Nick: " Brasa ", ClassID: "guardiao-real", Level: 172, Role: "tank", Server: "freya"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := Character{ID: first.ID, Nick: "Brasa", ClassID: "guardiao-real", Level: 172, Role: "tank",
-		Portrait: "retrato-1", IsMain: true, CreatedAt: first.CreatedAt}
+		Portrait: "retrato-1", IsMain: true, CreatedAt: first.CreatedAt, Server: "freya"}
 	if first != want {
 		t.Errorf("primeiro = %+v, quer %+v", first, want)
 	}
 
 	second, err := e.svc.Create(t.Context(), ana, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178,
-		Role: "support", Portrait: "retrato-3", Link: "https://exemplo.com/char/123"})
+		Role: "support", Portrait: "retrato-3", Link: "https://exemplo.com/char/123", Server: "freya"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,13 +132,14 @@ func TestCreate_CA02_1_CA02_2_FirstIsMainWithDefaultPortrait(t *testing.T) {
 	}
 }
 
-// CA-02.3 / RN-05: o nick de outro Usuário é recusado, sem diferenciar maiúsculas.
-func TestCreate_CA02_3_NickTakenByAnotherUser(t *testing.T) {
+// CA-02.3 / RN-05, CA-01.5 (servidor) / RN-03: o nick de outro Usuário no mesmo servidor é
+// recusado, sem diferenciar maiúsculas.
+func TestCreate_CA02_3_CA01_5_NickTakenByAnotherUser(t *testing.T) {
 	e := setup(t)
 	ana, bia := e.user(t, "1"), e.user(t, "2")
 	e.create(t, ana, "Brasa")
 
-	_, err := e.svc.Create(t.Context(), bia, Input{Nick: "brasa", ClassID: "guardiao-real", Level: 1, Role: "tank"})
+	_, err := e.svc.Create(t.Context(), bia, Input{Nick: "brasa", ClassID: "guardiao-real", Level: 1, Role: "tank", Server: "freya"})
 	wantField(t, err, FieldNick, CodeTaken)
 	if got := e.list(t, bia); len(got) != 0 {
 		t.Errorf("criou mesmo assim: %+v", got)
@@ -153,13 +154,13 @@ func TestCreate_CA02_4_to_CA02_7_InvalidFieldsSaveNothing(t *testing.T) {
 		in          Input
 		field, code string
 	}{
-		{Input{Nick: "Brasa", ClassID: "paladino-supremo", Level: 1, Role: "tank"}, FieldClassID, CodeInvalid},
-		{Input{Nick: "Brasa", ClassID: "paladino", Level: 0, Role: "tank"}, FieldLevel, CodeInvalid},
-		{Input{Nick: "Brasa", ClassID: "paladino", Level: 276, Role: "tank"}, FieldLevel, CodeInvalid},
-		{Input{Nick: "   ", ClassID: "paladino", Level: 1, Role: "tank"}, FieldNick, CodeRequired},
-		{Input{Nick: strings.Repeat("a", 25), ClassID: "paladino", Level: 1, Role: "tank"}, FieldNick, CodeTooLong},
-		{Input{Nick: "Brasa", ClassID: "paladino", Level: 1, Role: "tank", Link: "http://exemplo.com"}, FieldLink, CodeInvalid},
-		{Input{Nick: "Brasa", ClassID: "paladino", Level: 1, Role: "tank", Link: "javascript:alert(1)"}, FieldLink, CodeInvalid},
+		{Input{Nick: "Brasa", ClassID: "paladino-supremo", Level: 1, Role: "tank", Server: "freya"}, FieldClassID, CodeInvalid},
+		{Input{Nick: "Brasa", ClassID: "paladino", Level: 0, Role: "tank", Server: "freya"}, FieldLevel, CodeInvalid},
+		{Input{Nick: "Brasa", ClassID: "paladino", Level: 276, Role: "tank", Server: "freya"}, FieldLevel, CodeInvalid},
+		{Input{Nick: "   ", ClassID: "paladino", Level: 1, Role: "tank", Server: "freya"}, FieldNick, CodeRequired},
+		{Input{Nick: strings.Repeat("a", 25), ClassID: "paladino", Level: 1, Role: "tank", Server: "freya"}, FieldNick, CodeTooLong},
+		{Input{Nick: "Brasa", ClassID: "paladino", Level: 1, Role: "tank", Link: "http://exemplo.com", Server: "freya"}, FieldLink, CodeInvalid},
+		{Input{Nick: "Brasa", ClassID: "paladino", Level: 1, Role: "tank", Link: "javascript:alert(1)", Server: "freya"}, FieldLink, CodeInvalid},
 	}
 	for _, c := range cases {
 		_, err := e.svc.Create(t.Context(), ana, c.in)
@@ -177,7 +178,7 @@ func TestCreate_CA02_8_LimitOfTen(t *testing.T) {
 	for i := range MaxPerUser {
 		e.create(t, ana, fmt.Sprintf("Char%d", i))
 	}
-	_, err := e.svc.Create(t.Context(), ana, Input{Nick: "Sobra", ClassID: "aprendiz", Level: 1, Role: "dps"})
+	_, err := e.svc.Create(t.Context(), ana, Input{Nick: "Sobra", ClassID: "aprendiz", Level: 1, Role: "dps", Server: "freya"})
 	if !errors.Is(err, ErrLimitReached) {
 		t.Errorf("err = %v, quer ErrLimitReached", err)
 	}
@@ -197,7 +198,7 @@ func TestCreate_CA07_3_Concurrent(t *testing.T) {
 	errs := make([]error, 15)
 	for i := range errs {
 		wg.Go(func() {
-			_, errs[i] = e.svc.Create(t.Context(), ana, Input{Nick: fmt.Sprintf("Ana%d", i), ClassID: "aprendiz", Level: 1, Role: "dps"})
+			_, errs[i] = e.svc.Create(t.Context(), ana, Input{Nick: fmt.Sprintf("Ana%d", i), ClassID: "aprendiz", Level: 1, Role: "dps", Server: "freya"})
 		})
 	}
 	wg.Wait()
@@ -232,7 +233,7 @@ func TestCreate_CA07_3_Concurrent(t *testing.T) {
 	results := make([]error, 2)
 	for i, uid := range []string{ana, bia} {
 		wg.Go(func() {
-			_, results[i] = e.svc.Create(t.Context(), uid, Input{Nick: "Disputado", ClassID: "aprendiz", Level: 1, Role: "dps"})
+			_, results[i] = e.svc.Create(t.Context(), uid, Input{Nick: "Disputado", ClassID: "aprendiz", Level: 1, Role: "dps", Server: "freya"})
 		})
 	}
 	wg.Wait()
@@ -278,12 +279,12 @@ func TestList_CA01_3_RN17_OnlyOwnMainFirst(t *testing.T) {
 func TestUpdate_CA03_1_CA03_2(t *testing.T) {
 	e := setup(t)
 	ana := e.user(t, "1")
-	faisca, err := e.svc.Create(t.Context(), ana, Input{Nick: "Faísca", ClassID: "feiticeiro", Level: 165, Role: "dps"})
+	faisca, err := e.svc.Create(t.Context(), ana, Input{Nick: "Faísca", ClassID: "feiticeiro", Level: 165, Role: "dps", Server: "freya"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := e.svc.Update(t.Context(), ana, faisca.ID, Input{Nick: "Faísca", ClassID: "elementalista", Level: 170, Role: "dps", Portrait: "retrato-2"})
+	got, err := e.svc.Update(t.Context(), ana, faisca.ID, Input{Nick: "Faísca", ClassID: "elementalista", Level: 170, Role: "dps", Portrait: "retrato-2", Server: "freya"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,20 +292,21 @@ func TestUpdate_CA03_1_CA03_2(t *testing.T) {
 		t.Errorf("editado = %+v", got)
 	}
 
-	got, err = e.svc.Update(t.Context(), ana, faisca.ID, Input{Nick: "FAÍSCA", ClassID: "elementalista", Level: 170, Role: "dps"})
+	got, err = e.svc.Update(t.Context(), ana, faisca.ID, Input{Nick: "FAÍSCA", ClassID: "elementalista", Level: 170, Role: "dps", Server: "freya"})
 	if err != nil || got.Nick != "FAÍSCA" {
 		t.Errorf("mudar só a caixa do próprio nick: %+v, %v", got, err)
 	}
 }
 
-// RN-05 / RN-15: editar para o nick de outro personagem é recusado.
-func TestUpdate_RN05_NickOfAnotherCharacter(t *testing.T) {
+// RN-05 / RN-15, CA-01.5 (servidor) / RN-03: editar para o nick de outro personagem do
+// mesmo servidor é recusado.
+func TestUpdate_RN05_CA01_5_NickOfAnotherCharacter(t *testing.T) {
 	e := setup(t)
 	ana, bia := e.user(t, "1"), e.user(t, "2")
 	e.create(t, bia, "Brasa")
 	mine := e.create(t, ana, "Lirien")
 
-	_, err := e.svc.Update(t.Context(), ana, mine.ID, Input{Nick: "BRASA", ClassID: "arcebispo", Level: 178, Role: "support"})
+	_, err := e.svc.Update(t.Context(), ana, mine.ID, Input{Nick: "BRASA", ClassID: "arcebispo", Level: 178, Role: "support", Server: "freya"})
 	wantField(t, err, FieldNick, CodeTaken)
 }
 
@@ -320,7 +322,7 @@ func TestUpdate_RN06_RemovedClassAsksForValidOne(t *testing.T) {
 	if got := e.list(t, ana); got[0].ClassID != "classe-removida" {
 		t.Fatalf("lista = %+v", got)
 	}
-	_, err := e.svc.Update(t.Context(), ana, c.ID, Input{Nick: "Antigo", ClassID: "classe-removida", Level: 2, Role: "support"})
+	_, err := e.svc.Update(t.Context(), ana, c.ID, Input{Nick: "Antigo", ClassID: "classe-removida", Level: 2, Role: "support", Server: "freya"})
 	wantField(t, err, FieldClassID, CodeInvalid)
 }
 
@@ -333,7 +335,7 @@ func TestOtherUsersCharacter_CA03_3_CA04_4_NotFound(t *testing.T) {
 	e.create(t, ana, "Lirien")
 	e.create(t, bia, "Outro")
 
-	in := Input{Nick: "Roubado", ClassID: "aprendiz", Level: 1, Role: "dps"}
+	in := Input{Nick: "Roubado", ClassID: "aprendiz", Level: 1, Role: "dps", Server: "freya"}
 	for _, id := range []string{brasa.ID, "00000000-0000-0000-0000-000000000000", "nao-e-uuid"} {
 		if _, err := e.svc.Update(t.Context(), bia, id, in); !errors.Is(err, ErrNotFound) {
 			t.Errorf("editar %s: err = %v", id, err)
@@ -442,7 +444,7 @@ func TestCreate_RN01_UnknownUser(t *testing.T) {
 	e := setup(t)
 	var id pgtype.UUID
 	_ = id.Scan("00000000-0000-0000-0000-000000000001")
-	_, err := e.svc.Create(t.Context(), id.String(), Input{Nick: "Fantasma", ClassID: "aprendiz", Level: 1, Role: "dps"})
+	_, err := e.svc.Create(t.Context(), id.String(), Input{Nick: "Fantasma", ClassID: "aprendiz", Level: 1, Role: "dps", Server: "freya"})
 	if !errors.Is(err, ErrNotFound) {
 		t.Errorf("err = %v", err)
 	}
@@ -460,6 +462,7 @@ func (e *env) ownLobby(t *testing.T, userID, characterID string, role string, st
 		OwnerID: uid, InstanceID: pgtype.Text{String: "templo-do-demonio-rei", Valid: true}, InstanceName: pgtype.Text{String: "Templo do Demônio Rei", Valid: true},
 		InstanceLevel: 160, StartsAt: startsAt, SlotsTank: 1, SlotsSupport: 2, SlotsDps: 3,
 		MinLevel: 160, OwnerCharacterID: cid, OwnerRole: role, Now: e.clock,
+		Server: "freya",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -483,15 +486,15 @@ func TestOwnerOfOpenLobby_CA06_4_Locked(t *testing.T) {
 	if err := e.svc.Delete(t.Context(), ana, lirien.ID); !errors.Is(err, ErrInOpenLobby) {
 		t.Errorf("excluir: err = %v, quer ErrInOpenLobby", err)
 	}
-	_, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "dps"})
+	_, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "dps", Server: "freya"})
 	if !errors.Is(err, ErrInOpenLobby) {
 		t.Errorf("mudar a função: err = %v, quer ErrInOpenLobby", err)
 	}
-	_, err = e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 180, Role: "support"})
+	_, err = e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 180, Role: "support", Server: "freya"})
 	if !errors.Is(err, ErrInOpenLobby) {
 		t.Errorf("mudar o nível: err = %v, quer ErrInOpenLobby", err)
 	}
-	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien Nova", ClassID: "arcebispo", Level: 178, Role: "support", Portrait: "retrato-2", Link: "https://ragnaplace.com/x"})
+	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien Nova", ClassID: "arcebispo", Level: 178, Role: "support", Portrait: "retrato-2", Link: "https://ragnaplace.com/x", Server: "freya"})
 	if err != nil || got.Nick != "Lirien Nova" || got.Portrait != "retrato-2" || got.Level != 178 {
 		t.Errorf("mudar os outros campos: %+v, %v", got, err)
 	}
@@ -509,7 +512,7 @@ func TestOwnerOfStartedOrCancelledLobby_RN21_Free(t *testing.T) {
 	e.ownLobby(t, ana, started.ID, "support", e.clock.Add(-time.Hour), false)
 	e.ownLobby(t, ana, cancelled.ID, "support", e.clock.Add(48*time.Hour), true)
 
-	if _, err := e.svc.Update(t.Context(), ana, cancelled.ID, Input{Nick: "Brasa", ClassID: "arcebispo", Level: 178, Role: "tank"}); err != nil {
+	if _, err := e.svc.Update(t.Context(), ana, cancelled.ID, Input{Nick: "Brasa", ClassID: "arcebispo", Level: 178, Role: "tank", Server: "freya"}); err != nil {
 		t.Errorf("mudar a função com o lobby cancelado: %v", err)
 	}
 	for _, c := range []Character{started, cancelled} {
@@ -529,7 +532,7 @@ func TestOwnerOfOpenLobby_RN02_OtherUserStillNotFound(t *testing.T) {
 	if err := e.svc.Delete(t.Context(), bia, lirien.ID); !errors.Is(err, ErrNotFound) {
 		t.Errorf("excluir de outro: %v", err)
 	}
-	if _, err := e.svc.Update(t.Context(), bia, lirien.ID, Input{Nick: "X", ClassID: "aprendiz", Level: 1, Role: "dps"}); !errors.Is(err, ErrNotFound) {
+	if _, err := e.svc.Update(t.Context(), bia, lirien.ID, Input{Nick: "X", ClassID: "aprendiz", Level: 1, Role: "dps", Server: "freya"}); !errors.Is(err, ErrNotFound) {
 		t.Errorf("editar de outro: %v", err)
 	}
 }
@@ -593,14 +596,14 @@ func TestSwapTarget_CA09_1_CA09_3_Locked(t *testing.T) {
 	e.swapTo(t, app, brasa.ID, "pending")
 
 	for name, in := range map[string]Input{
-		"nível":  {Nick: "Brasa", ClassID: "arcebispo", Level: 179, Role: "support"},
-		"função": {Nick: "Brasa", ClassID: "arcebispo", Level: 178, Role: "dps"},
+		"nível":  {Nick: "Brasa", ClassID: "arcebispo", Level: 179, Role: "support", Server: "freya"},
+		"função": {Nick: "Brasa", ClassID: "arcebispo", Level: 178, Role: "dps", Server: "freya"},
 	} {
 		if _, err := e.svc.Update(t.Context(), ana, brasa.ID, in); !errors.Is(err, ErrInOpenLobby) {
 			t.Errorf("mudar %s: err = %v, quer ErrInOpenLobby", name, err)
 		}
 	}
-	if _, err := e.svc.Update(t.Context(), ana, brasa.ID, Input{Nick: "Brasa Nova", ClassID: "arcebispo", Level: 178, Role: "support"}); err != nil {
+	if _, err := e.svc.Update(t.Context(), ana, brasa.ID, Input{Nick: "Brasa Nova", ClassID: "arcebispo", Level: 178, Role: "support", Server: "freya"}); err != nil {
 		t.Errorf("outros campos: %v", err)
 	}
 	if err := e.svc.Delete(t.Context(), ana, brasa.ID); !errors.Is(err, ErrInOpenLobby) {
@@ -632,7 +635,7 @@ func TestSwapTarget_CA09_2_CA09_4_Free(t *testing.T) {
 			app := e.applyTo(t, lobby, ana, lirien.ID, "accepted")
 			e.swapTo(t, app, brasa.ID, c.status)
 
-			got, err := e.svc.Update(t.Context(), ana, brasa.ID, Input{Nick: "Brasa", ClassID: "arcebispo", Level: 200, Role: "dps"})
+			got, err := e.svc.Update(t.Context(), ana, brasa.ID, Input{Nick: "Brasa", ClassID: "arcebispo", Level: 200, Role: "dps", Server: "freya"})
 			if err != nil || got.Level != 200 || got.Role != "dps" {
 				t.Errorf("mudar nível e função: %+v, %v", got, err)
 			}
@@ -656,14 +659,14 @@ func TestApplicant_CA09_1_CA09_3_Locked(t *testing.T) {
 			e.applyTo(t, lobby, ana, lirien.ID, status)
 
 			for name, in := range map[string]Input{
-				"nível":  {Nick: "Lirien", ClassID: "arcebispo", Level: 179, Role: "support"},
-				"função": {Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "dps"},
+				"nível":  {Nick: "Lirien", ClassID: "arcebispo", Level: 179, Role: "support", Server: "freya"},
+				"função": {Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "dps", Server: "freya"},
 			} {
 				if _, err := e.svc.Update(t.Context(), ana, lirien.ID, in); !errors.Is(err, ErrInOpenLobby) {
 					t.Errorf("mudar %s: err = %v, quer ErrInOpenLobby", name, err)
 				}
 			}
-			got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien Nova", ClassID: "sumo-sacerdote", Level: 178, Role: "support", Portrait: "retrato-3", Link: "https://ragnaplace.com/y"})
+			got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien Nova", ClassID: "sumo-sacerdote", Level: 178, Role: "support", Portrait: "retrato-3", Link: "https://ragnaplace.com/y", Server: "freya"})
 			if err != nil || got.Nick != "Lirien Nova" || got.ClassID != "sumo-sacerdote" {
 				t.Errorf("outros campos: %+v, %v", got, err)
 			}
@@ -685,7 +688,7 @@ func TestApplicant_CA09_2_FreeWithoutActiveLinks(t *testing.T) {
 		lobby := e.ownLobby(t, bia, host.ID, "support", e.clock.Add(time.Duration(48+3*i)*time.Hour), false)
 		e.applyTo(t, lobby, ana, lirien.ID, status)
 	}
-	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 200, Role: "dps"})
+	got, err := e.svc.Update(t.Context(), ana, lirien.ID, Input{Nick: "Lirien", ClassID: "arcebispo", Level: 200, Role: "dps", Server: "freya"})
 	if err != nil || got.Level != 200 || got.Role != "dps" {
 		t.Errorf("mudar nível e função: %+v, %v", got, err)
 	}

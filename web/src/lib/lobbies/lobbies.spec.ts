@@ -51,6 +51,7 @@ describe('lobby da API para a Home (RN-22, D-09)', () => {
 			hostClass: 'Arcebispo',
 			minLevel: 160,
 			ownerId: TEMPLE.owner.userId,
+			server: 'freya',
 			pendingCount: 0,
 			composition: {
 				tank: { filled: 0, total: 1 },

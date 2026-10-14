@@ -19,7 +19,8 @@ import (
 const lobbyID = "4b1c2d3e-5f60-4a7b-8c9d-0e1f2a3b4c5d"
 
 var temple = lobbies.Lobby{
-	ID: lobbyID, InstanceID: "templo-do-demonio-rei", InstanceName: "Templo do Demônio Rei",
+	Server: "nidhogg",
+	ID:     lobbyID, InstanceID: "templo-do-demonio-rei", InstanceName: "Templo do Demônio Rei",
 	InstanceLevel: 160, InstanceReset: "daily", StartsAt: time.Date(2026, 10, 7, 23, 0, 0, 0, time.UTC),
 	Status: lobbies.StatusOpen, Formation: lobbies.FormationRoles, Slots: lobbies.Slots{Tank: 1, Support: 2, Dps: 3},
 	Occupied: lobbies.Slots{Support: 1}, MinLevel: 160,
@@ -123,6 +124,7 @@ func TestLobbies_RN22_PublicList(t *testing.T) {
 	want := map[string]any{
 		"id":       lobbyID,
 		"instance": map[string]any{"id": "templo-do-demonio-rei", "name": "Templo do Demônio Rei", "level": float64(160), "reset": "daily"},
+		"server":   "nidhogg", // CA-02.4 (servidor)
 		"startsAt": "2026-10-07T23:00:00Z", "status": "open", "formation": "roles", "freeSlots": nil,
 		"slots":        map[string]any{"tank": float64(1), "support": float64(2), "dps": float64(3)},
 		"occupied":     map[string]any{"tank": float64(0), "support": float64(1), "dps": float64(0)},

@@ -1,6 +1,7 @@
 // Modelo do detalhe do lobby com candidaturas: pessoas do painel, composição e quem pode se
 // candidatar (spec candidatura-lobby, RN-05, RN-28, RN-30, RN-31, design D-06).
 import { isFree, roomFor, totalSeats } from '$lib/lobbies/seats';
+import { serverName } from '$lib/catalog/servers';
 import type { Character } from '$lib/characters/api';
 import { ROLE_LABELS, ROLES, type Role } from '$lib/home/types';
 import type { ApiLobby } from '$lib/lobbies/api';
@@ -98,6 +99,12 @@ export function freeComposition(lobby: ApiLobby, list: Person[]): (Person | null
 	);
 }
 
+/** RN-11 da spec servidor: personagem de outro servidor fica desabilitado, com o motivo. */
+function otherServer(lobby: ApiLobby, character: Character): Eligibility | null {
+	if (character.server === lobby.server) return null;
+	return { character, ok: false, why: `Outro servidor (${serverName(character.server)})` };
+}
+
 export interface Eligibility {
 	character: Character;
 	ok: boolean;
@@ -120,6 +127,8 @@ export function swapEligibility(
 		.filter((c) => c.id !== current.characterId)
 		.map((character) => {
 			const label = ROLE_LABELS[character.role];
+			const wrongServer = otherServer(lobby, character);
+			if (wrongServer) return wrongServer;
 			if (character.level < lobby.minLevel) {
 				return { character, ok: false, why: `abaixo do nível ${lobby.minLevel}` };
 			}
@@ -147,6 +156,8 @@ export function eligibility(lobby: ApiLobby, characters: Character[]): Eligibili
 	return characters.map((character) => {
 		const free = roomFor(lobby, character.role);
 		const label = ROLE_LABELS[character.role];
+		const wrongServer = otherServer(lobby, character);
+		if (wrongServer) return wrongServer;
 		if (character.level < lobby.minLevel) {
 			return { character, ok: false, why: `abaixo do nível ${lobby.minLevel}` };
 		}

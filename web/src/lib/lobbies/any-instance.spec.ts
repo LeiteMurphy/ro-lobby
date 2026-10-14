@@ -49,7 +49,9 @@ const LIRIEN: Character = {
 	link: null,
 	isMain: true,
 	createdAt: '',
-	availability: null
+	availability: null,
+	server: 'freya',
+	serverToConfirm: false
 };
 
 const formData = (v: LobbyFormValues) => {

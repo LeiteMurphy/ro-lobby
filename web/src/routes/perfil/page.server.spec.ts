@@ -66,7 +66,8 @@ const BRASA_FORM = {
 	level: '172',
 	role: 'tank',
 	portrait: '',
-	link: ''
+	link: '',
+	server: 'nidhogg'
 };
 
 type LoadEvent = Parameters<typeof load>[0];
@@ -114,7 +115,7 @@ describe('load de /perfil', () => {
 });
 
 describe('actions de /perfil', () => {
-	it('CA-02.1: criar manda os campos para a API', async () => {
+	it('CA-02.1 / CA-01.2 (servidor): criar manda os campos para a API, com o servidor', async () => {
 		const { fn, calls } = fakeFetch({ 'POST /characters': json(201, { id: 'c1' }) });
 		const result = await actions.create(
 			actionEvent(form({ ...BRASA_FORM, link: 'https://exemplo.com' }), fakeCookies('tok'), fn)
@@ -125,7 +126,8 @@ describe('actions de /perfil', () => {
 			classId: 'guardiao-real',
 			level: 172,
 			role: 'tank',
-			link: 'https://exemplo.com'
+			link: 'https://exemplo.com',
+			server: 'nidhogg'
 		});
 		expect(calls[0].auth).toBe('Bearer tok');
 	});
@@ -159,7 +161,7 @@ describe('actions de /perfil', () => {
 		const result = await actions.create(actionEvent(form(values), fakeCookies('t'), fn));
 		expect(result).toMatchObject({
 			status: 422,
-			data: { mode: 'create', values, errors: { nick: 'Esse nick já está em uso' } }
+			data: { mode: 'create', values, errors: { nick: 'Esse nick já está em uso nesse servidor' } }
 		});
 	});
 
@@ -173,7 +175,7 @@ describe('actions de /perfil', () => {
 		const blocked = json(409, { error: 'character_in_open_lobby' });
 		const { fn } = fakeFetch({ 'DELETE /characters/c1': blocked, 'PUT /characters/c1': blocked });
 		const message =
-			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função.';
+			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar servidor, nível ou função.';
 		expect(
 			await actions.delete(actionEvent(form({ id: 'c1' }), fakeCookies('t'), fn))
 		).toMatchObject({
@@ -228,6 +230,56 @@ describe('actions de /perfil', () => {
 			).toBe(LOGIN);
 		}
 		expect(calls).toEqual([]);
+	});
+});
+
+describe('servidor no /perfil (spec servidor)', () => {
+	it('CA-06.2 / RN-16: "Está certo" chama a API com o personagem', async () => {
+		const { fn, calls } = fakeFetch({ 'POST /characters/c1/confirm-server': json(204) });
+		const result = await actions.confirm(actionEvent(form({ id: 'c1' }), fakeCookies('tok'), fn));
+		expect(result).toEqual({ done: 'confirm' });
+		expect(calls[0].auth).toBe('Bearer tok');
+	});
+
+	it('CA-06.6: personagem de outro Usuário mostra que não existe', async () => {
+		const { fn } = fakeFetch({
+			'POST /characters/c9/confirm-server': json(404, { error: 'not_found' })
+		});
+		const result = await actions.confirm(actionEvent(form({ id: 'c9' }), fakeCookies('tok'), fn));
+		expect(result).toMatchObject({
+			status: 404,
+			data: { mode: 'confirm', id: 'c9', message: 'Esse personagem não existe mais.' }
+		});
+	});
+
+	it('CA-01.5: nick repetido no servidor volta com a mensagem do servidor', async () => {
+		const { fn } = fakeFetch({
+			'POST /characters': json(422, {
+				error: 'validation',
+				fields: [{ field: 'nick', code: 'taken' }]
+			})
+		});
+		const result = await actions.create(actionEvent(form(BRASA_FORM), fakeCookies('tok'), fn));
+		expect(result).toMatchObject({
+			status: 422,
+			data: { errors: { nick: 'Esse nick já está em uso nesse servidor' } }
+		});
+	});
+
+	it('CA-01.8 / RN-04: servidor travado mostra a mensagem com servidor, nível ou função', async () => {
+		const { fn } = fakeFetch({
+			'PUT /characters/c1': json(409, { error: 'character_in_open_lobby' })
+		});
+		const result = await actions.update(
+			actionEvent(form({ ...BRASA_FORM, id: 'c1' }), fakeCookies('tok'), fn)
+		);
+		expect(result).toMatchObject({
+			status: 409,
+			data: {
+				message:
+					'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar servidor, nível ou função.'
+			}
+		});
 	});
 });
 

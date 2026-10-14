@@ -27,6 +27,7 @@ func newLobby(ownerID, characterID pgtype.UUID) CreateLobbyParams {
 		OwnerCharacterID: characterID,
 		OwnerRole:        "support",
 		Now:              t0,
+		Server:           "freya",
 	}
 }
 
@@ -36,6 +37,7 @@ func lobbyOwner(t *testing.T, q *Queries) (User, Character) {
 	c, err := q.CreateCharacter(t.Context(), CreateCharacterParams{
 		UserID: u.ID, Nick: "Lirien", ClassID: "arcebispo", Level: 178, Role: "support",
 		Portrait: "retrato-1", IsMain: true, Now: t0,
+		Server: "freya",
 	})
 	if err != nil {
 		t.Fatal(err)

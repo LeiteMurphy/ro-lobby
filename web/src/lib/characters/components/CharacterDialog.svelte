@@ -3,7 +3,9 @@
 
 	/** O que a action devolve para o diálogo reabrir com os valores e os erros (RN-19). */
 	export interface DialogForm {
-		values?: Partial<Record<'nick' | 'classId' | 'level' | 'role' | 'portrait' | 'link', string>>;
+		values?: Partial<
+			Record<'nick' | 'classId' | 'level' | 'role' | 'portrait' | 'link' | 'server', string>
+		>;
 		errors?: Partial<Record<FieldError['field'], string>>;
 		message?: string | null;
 	}
@@ -14,6 +16,7 @@
 	import { enhance } from '$app/forms';
 	import { ROLE_ICONS } from '$lib/home/catalog';
 	import { ROLE_LABELS, ROLES } from '$lib/home/types';
+	import { SERVERS } from '$lib/catalog/servers';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { Character, RoClassEntry } from '../api';
@@ -43,6 +46,7 @@
 			classId: v?.classId ?? character?.classId ?? '',
 			level: v?.level ?? (character ? String(character.level) : ''),
 			role: v?.role ?? character?.role ?? '',
+			server: v?.server ?? character?.server ?? '',
 			link: v?.link ?? character?.link ?? ''
 		};
 	})();
@@ -98,7 +102,7 @@
 		<header class="dlg-h">
 			<div class="titles">
 				<h2 id="{uid}-title">{title}</h2>
-				<p>A classe vem da lista do bROWiki. O nick é único no RO Lobby.</p>
+				<p>A classe vem da lista do bROWiki. O nick é único em cada servidor.</p>
 			</div>
 			<button type="button" class="x" aria-label="Fechar" onclick={() => dialog?.close()}>
 				<Icon name="x" size={18} />
@@ -202,6 +206,28 @@
 				</div>
 				{#if errors.role}<span class="hint-err" id={errId('role')}
 						><Icon name="circle-x" size={14} />{errors.role}</span
+					>{/if}
+			</fieldset>
+
+			<!-- RN-02 da spec servidor: obrigatório, Freya ou Nidhogg. -->
+			<fieldset class="field" aria-describedby={errors.server ? errId('server') : undefined}>
+				<legend class="lbl">Servidor</legend>
+				<div class="roles">
+					{#each SERVERS as server (server.id)}
+						<label class="radio">
+							<input
+								type="radio"
+								name="server"
+								value={server.id}
+								checked={start.server === server.id}
+								required
+							/>
+							{server.name}
+						</label>
+					{/each}
+				</div>
+				{#if errors.server}<span class="hint-err" id={errId('server')}
+						><Icon name="circle-x" size={14} />{errors.server}</span
 					>{/if}
 			</fieldset>
 

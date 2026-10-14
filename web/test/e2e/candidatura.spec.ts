@@ -191,7 +191,7 @@ test.describe('candidatura', () => {
 		await edit.getByLabel('Nível').fill('251');
 		await edit.getByRole('button', { name: 'Salvar personagem' }).click();
 		await expect(edit.getByRole('alert')).toHaveText(
-			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar nível ou função.'
+			'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar servidor, nível ou função.'
 		);
 	});
 

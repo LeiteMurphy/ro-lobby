@@ -15,11 +15,11 @@ func TestPart2FlowIntegration_CA05_1_CA06_1_CA07_5_CA08_12(t *testing.T) {
 	f := newFlow(t)
 	h := f.h
 	ana, bia, caio, duda := f.session(t, "1", "Ana"), f.session(t, "2", "Bia"), f.session(t, "3", "Caio"), f.session(t, "4", "Duda")
-	host := f.character(t, ana, `{"nick":"Anfitria","classId":"arcebispo","level":200,"role":"support"}`)
-	hostDps := f.character(t, ana, `{"nick":"Lamina","classId":"sicario","level":200,"role":"dps"}`)
-	fogo := f.character(t, bia, `{"nick":"Fogo","classId":"arquimago","level":200,"role":"dps"}`)
-	brasa := f.character(t, bia, `{"nick":"Brasa","classId":"guardiao-real","level":200,"role":"tank"}`)
-	cura := f.character(t, caio, `{"nick":"Cura","classId":"arcebispo","level":200,"role":"support"}`)
+	host := f.character(t, ana, `{"nick":"Anfitria","classId":"arcebispo","level":200,"role":"support","server":"freya"}`)
+	hostDps := f.character(t, ana, `{"nick":"Lamina","classId":"sicario","level":200,"role":"dps","server":"freya"}`)
+	fogo := f.character(t, bia, `{"nick":"Fogo","classId":"arquimago","level":200,"role":"dps","server":"freya"}`)
+	brasa := f.character(t, bia, `{"nick":"Brasa","classId":"guardiao-real","level":200,"role":"tank","server":"freya"}`)
+	cura := f.character(t, caio, `{"nick":"Cura","classId":"arcebispo","level":200,"role":"support","server":"freya"}`)
 	path, _ := f.lobby(t, ana, host)
 
 	member := func(token, characterID string) string {

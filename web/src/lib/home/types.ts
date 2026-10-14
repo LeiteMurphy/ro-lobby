@@ -1,3 +1,5 @@
+import type { ServerId } from '$lib/catalog/servers';
+
 export type Role = 'tank' | 'support' | 'dps';
 
 /** Ordem fixa das funções: vale para exibição e para desempate (RN-14). */
@@ -38,4 +40,6 @@ export interface Lobby {
 	ownerId?: string;
 	/** Candidaturas pendentes (RN-28 da candidatura-lobby). */
 	pendingCount?: number;
+	/** Servidor do lobby (spec servidor, RN-08); ausente só nos dados de exemplo. */
+	server?: ServerId;
 }

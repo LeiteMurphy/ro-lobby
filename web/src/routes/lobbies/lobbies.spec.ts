@@ -22,7 +22,8 @@ const LIRIEN = {
 	portrait: 'retrato-2',
 	link: null,
 	isMain: true,
-	createdAt: ''
+	createdAt: '',
+	server: 'freya'
 } as const;
 const DAYS = [
 	{ date: '2026-10-06', label: 'Hoje, ter, 6 out' },
@@ -592,7 +593,7 @@ describe('/lobbies/[id] compartilhável (spec compartilhar-lobby)', () => {
 
 	it('CA-02.1: o HTML sem sessão traz as meta tags Open Graph do lobby aberto', () => {
 		const { head } = renderShared({}, null);
-		expect(meta(head, 'og:title')).toBe('Glast Heim · sábado, 10/10 às 20:00');
+		expect(meta(head, 'og:title')).toBe('Glast Heim · Freya · sábado, 10/10 às 20:00');
 		expect(meta(head, 'og:description')).toBe(
 			'Vagas: 1 Tank, 2 Dano · Nível mínimo 160 · Anfitrião Brasa'
 		);
@@ -819,5 +820,39 @@ describe('/lobbies/[id] do grupo livre com o banco de talentos (spec grupo-livre
 		expect(html('free')).toContain('o grupo com vaga livre');
 		expect(html('free')).not.toContain('uma função com vaga');
 		expect(html('roles')).toContain('uma função com vaga');
+	});
+});
+
+describe('servidor no lobby (spec servidor)', () => {
+	it('CA-02.2 / RN-06: a criação mostra o servidor do personagem escolhido, e cada personagem o seu', () => {
+		const brasa = { ...LIRIEN, id: 'c2', nick: 'Brasa', isMain: false, server: 'nidhogg' };
+		const html = renderForm({ characters: [LIRIEN, brasa] });
+		expect(html).toMatch(/data-testid="lobby-server"[^>]*>O lobby fica em <b>Freya<\/b>/);
+		expect(html).toContain('Arcebispo · Nv 178 · Suporte · Nidhogg');
+		const other = renderForm({
+			characters: [LIRIEN, brasa],
+			values: { ...VALUES, characterId: 'c2' }
+		});
+		expect(other).toMatch(/data-testid="lobby-server"[^>]*>O lobby fica em <b>Nidhogg<\/b>/);
+	});
+
+	it('CA-02.4 / RN-08: o detalhe mostra o servidor do lobby', () => {
+		const html = render(Detalhe, {
+			props: {
+				data: {
+					user: null,
+					lobby: { ...TEMPLE, server: 'nidhogg' },
+					ownerClass: 'Arcebispo',
+					classNames: { arcebispo: 'Arcebispo' },
+					characters: [],
+					isOwner: false,
+					now: '2026-10-06T19:40:00.000Z',
+					loginHref: '/'
+				},
+				form: null,
+				params: { id: TEMPLE.id }
+			} as never
+		}).body;
+		expect(html).toMatch(/data-testid="lobby-server"[^>]*>Servidor <b[^>]*>Nidhogg<\/b>/);
 	});
 });
