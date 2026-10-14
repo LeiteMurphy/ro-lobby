@@ -1,7 +1,7 @@
 # Spec — Servidor do jogo
 
-- Feature: `servidor` · Nível: M · Status: Rascunho
-- Notion: (criado na fase de Tasks)
+- Feature: `servidor` · Nível: M · Status: Aprovada (2026-10-14)
+- Notion: https://app.notion.com/p/3f4d4a3a5eff813abe61c566699df094
 - Última revisão: 2026-10-14 — dados de produção com aviso para conferir (RN-15, RN-16),
   banco de talentos (US-05, RN-17 a RN-19) e servidor no convite e no preview (RN-20)
 
