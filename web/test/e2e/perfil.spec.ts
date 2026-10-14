@@ -131,7 +131,7 @@ test.describe('perfil e personagens', () => {
 		await expect(page.getByText('2 de 10 personagens')).toBeVisible();
 	});
 
-	test('CA-02.3 / CA-02.9 / CA-01.3: o nick de outra conta é recusado junto do campo', async ({
+	test('CA-02.3 / CA-02.9 / CA-01.3, CA-01.5 (servidor): o nick de outra conta no mesmo servidor é recusado junto do campo', async ({
 		browser
 	}) => {
 		const s = rand();

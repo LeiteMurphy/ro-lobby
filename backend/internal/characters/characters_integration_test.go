@@ -132,8 +132,9 @@ func TestCreate_CA02_1_CA02_2_FirstIsMainWithDefaultPortrait(t *testing.T) {
 	}
 }
 
-// CA-02.3 / RN-05: o nick de outro Usuário é recusado, sem diferenciar maiúsculas.
-func TestCreate_CA02_3_NickTakenByAnotherUser(t *testing.T) {
+// CA-02.3 / RN-05, CA-01.5 (servidor) / RN-03: o nick de outro Usuário no mesmo servidor é
+// recusado, sem diferenciar maiúsculas.
+func TestCreate_CA02_3_CA01_5_NickTakenByAnotherUser(t *testing.T) {
 	e := setup(t)
 	ana, bia := e.user(t, "1"), e.user(t, "2")
 	e.create(t, ana, "Brasa")
@@ -297,8 +298,9 @@ func TestUpdate_CA03_1_CA03_2(t *testing.T) {
 	}
 }
 
-// RN-05 / RN-15: editar para o nick de outro personagem é recusado.
-func TestUpdate_RN05_NickOfAnotherCharacter(t *testing.T) {
+// RN-05 / RN-15, CA-01.5 (servidor) / RN-03: editar para o nick de outro personagem do
+// mesmo servidor é recusado.
+func TestUpdate_RN05_CA01_5_NickOfAnotherCharacter(t *testing.T) {
 	e := setup(t)
 	ana, bia := e.user(t, "1"), e.user(t, "2")
 	e.create(t, bia, "Brasa")

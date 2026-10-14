@@ -12,6 +12,7 @@ import {
 	serverCounts,
 	timeRangeCounts
 } from './filters';
+import { buildDays } from './days';
 import { featuredLobby } from './lobbies';
 import type { Lobby } from './types';
 
@@ -79,6 +80,17 @@ describe('filtro de servidor da Home', () => {
 		expect(featuredLobby(scoped, NOW)?.server).toBe('nidhogg');
 		expect(roleCounts(scoped).tank).toBe(0);
 		expect(featuredLobby(byServer(DAY, ''), NOW)?.id).toBe('f1');
+	});
+
+	it('RN-14: o seletor de dias conta só os lobbies do servidor escolhido', () => {
+		const week = [...DAY, { ...lobby('n3', 'nidhogg'), date: '2026-10-08' }];
+		const count = (server: '' | 'freya' | 'nidhogg') =>
+			buildDays('2026-10-07', byServer(week, server))
+				.slice(0, 2)
+				.map((d) => d.count);
+		expect(count('')).toEqual([5, 1]);
+		expect(count('freya')).toEqual([3, 0]);
+		expect(count('nidhogg')).toEqual([2, 1]);
 	});
 
 	it('borda da RN-14: servidor sem lobby num dia com lobby é o estado vazio de filtros', () => {
