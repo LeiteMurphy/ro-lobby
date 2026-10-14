@@ -46,7 +46,8 @@ test.describe('compartilhar lobby', () => {
 		const copied = await page.evaluate(() => navigator.clipboard.readText());
 		expect(copied.replace(/\r\n/g, '\n')).toBe(
 			[
-				`Grupo para Templo do Demônio Rei · ${weekday}, ${date} às 20:00 (horário de Brasília)`,
+				// spec servidor, RN-20: o servidor logo depois do título.
+				`Grupo para Templo do Demônio Rei · Freya · ${weekday}, ${date} às 20:00 (horário de Brasília)`,
 				'Vagas: 1 Tank, 1 Suporte, 3 Dano · Nível mínimo 160',
 				`Candidate-se: ${baseURL}/lobbies/${lobby.id}`
 			].join('\n')

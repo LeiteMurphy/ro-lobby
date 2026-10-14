@@ -5,6 +5,7 @@
 	import { ROLE_ICONS } from '$lib/home/catalog';
 	import LobbyCard from '$lib/home/components/LobbyCard.svelte';
 	import { ROLE_LABELS, ROLES, type Lobby as HomeLobby, type Role } from '$lib/home/types';
+	import { serverName } from '$lib/catalog/servers';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { FieldError } from '$lib/api/request';
@@ -411,6 +412,12 @@
 
 		<fieldset class="field" aria-describedby={describe('characterId')}>
 			<legend class="lbl">Seu personagem</legend>
+			{#if character}
+				<!-- RN-06 da spec servidor: o lobby fica no servidor do personagem escolhido. -->
+				<span class="server-note" data-testid="lobby-server"
+					>O lobby fica em <b>{serverName(character.server)}</b>, o servidor desse personagem.</span
+				>
+			{/if}
 			<div class="chars">
 				{#each characters as c (c.id)}
 					<label class="char" class:on={characterId === c.id} class:fixed={mode === 'update'}>
@@ -431,7 +438,11 @@
 							<span class="nm"
 								>{c.nick}{#if c.isMain}<span class="badge">Principal</span>{/if}</span
 							>
-							<span class="sub">{className(c.classId)} · Nv {c.level} · {ROLE_LABELS[c.role]}</span>
+							<span class="sub"
+								>{className(c.classId)} · Nv {c.level} · {ROLE_LABELS[c.role]} · {serverName(
+									c.server
+								)}</span
+							>
 						</span>
 					</label>
 				{/each}
@@ -484,6 +495,10 @@
 		border-radius: var(--radius-lg);
 		background: var(--surface-card);
 		border: 1px solid var(--border-default);
+	}
+	.server-note {
+		font: var(--type-caption);
+		color: var(--fg-2);
 	}
 	.preview {
 		display: flex;

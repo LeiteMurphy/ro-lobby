@@ -95,7 +95,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3f9d4a3a5eff81ec8656e940177df6d9
 
-### T-06 — Lobby: criação, detalhe, escolha de personagem, convite e preview  [P] [ ]
+### T-06 — Lobby: criação, detalhe, escolha de personagem, convite e preview  [P] [x]
 - Cobre: US-02, US-03, RN-06, RN-08, RN-11, RN-20, CA-02.2, CA-02.4 (detalhe), CA-02.5,
   CA-03.6
 - Depende de: T-03

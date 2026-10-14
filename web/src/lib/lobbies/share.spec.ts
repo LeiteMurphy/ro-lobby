@@ -19,10 +19,10 @@ const GLAST: ApiLobby = {
 };
 
 describe('convite do lobby', () => {
-	it('CA-01.3: copia o convite de três linhas', () => {
+	it('CA-01.3 / CA-02.5 (servidor): copia o convite de três linhas, com o servidor', () => {
 		expect(inviteText(GLAST, origin)).toBe(
 			[
-				'Grupo para Glast Heim · sábado, 10/10 às 20:00 (horário de Brasília)',
+				'Grupo para Glast Heim · Freya · sábado, 10/10 às 20:00 (horário de Brasília)',
 				'Vagas: 1 Tank, 2 Dano · Nível mínimo 160',
 				'Candidate-se: https://rolobby.com.br/lobbies/abc-123'
 			].join('\n')
@@ -51,9 +51,9 @@ describe('convite do lobby', () => {
 });
 
 describe('preview do lobby (Open Graph)', () => {
-	it('CA-02.1: título, descrição e link do lobby aberto', () => {
+	it('CA-02.1 / CA-02.5 (servidor): título, descrição e link do lobby aberto', () => {
 		expect(shareMeta(GLAST, origin)).toEqual({
-			title: 'Glast Heim · sábado, 10/10 às 20:00',
+			title: 'Glast Heim · Freya · sábado, 10/10 às 20:00',
 			description: 'Vagas: 1 Tank, 2 Dano · Nível mínimo 160 · Anfitrião Brasa',
 			url: 'https://rolobby.com.br/lobbies/abc-123'
 		});
@@ -91,5 +91,17 @@ describe('convite do grupo livre (spec grupo-livre, RN-12)', () => {
 	it('CA-05.1 / RN-12: uma vaga é "1 livre"; sem vaga, "Grupo lotado"', () => {
 		expect(openSlotsLabel({ ...FREE, freeSlots: 5 })).toBe('Vagas: 1 livre');
 		expect(openSlotsLabel({ ...FREE, freeSlots: 4 })).toBe('Grupo lotado');
+	});
+});
+
+describe('servidor no convite e no preview (spec servidor)', () => {
+	it('CA-02.5 / RN-20: lobby em Nidhogg traz "Nidhogg" logo depois do título', () => {
+		const nid = { ...TEMPLE, server: 'nidhogg' as const };
+		expect(inviteText(nid, 'https://rolobby.com.br').split('\n')[0]).toMatch(
+			/^Grupo para Templo do Demônio Rei · Nidhogg · /
+		);
+		expect(shareMeta(nid, 'https://rolobby.com.br').title).toMatch(
+			/^Templo do Demônio Rei · Nidhogg · /
+		);
 	});
 });

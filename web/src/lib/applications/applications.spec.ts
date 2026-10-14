@@ -261,3 +261,16 @@ describe('diálogos', () => {
 		expect(html).toContain('Escreva de 10 a 250 caracteres');
 	});
 });
+
+describe('servidor na escolha de personagem (spec servidor)', () => {
+	it('CA-03.6 / RN-11: na candidatura, o personagem de outro servidor fica desabilitado com o motivo', () => {
+		const list = eligibility(WITH_MEMBER, [
+			character({ id: 'nid', nick: 'Nid', role: 'dps', server: 'nidhogg' }),
+			character({ id: 'fre', nick: 'Fre', role: 'dps', server: 'freya' })
+		]);
+		expect(list.map((e) => [e.character.id, e.ok, e.why])).toEqual([
+			['nid', false, 'Outro servidor (Nidhogg)'],
+			['fre', true, '3 vagas de Dano']
+		]);
+	});
+});
