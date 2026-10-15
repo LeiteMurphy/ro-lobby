@@ -19,6 +19,7 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/catalog"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordroom"
 )
 
 const (
@@ -492,6 +493,12 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 		}); err != nil {
 			return err
 		}
+		if !current.Lobby.StartsAt.Equal(in.StartsAt) {
+			// RN-15 da discord-bot: a sala recebe o horário novo.
+			if err := discordroom.OnStartChanged(ctx, q, lid, in.StartsAt.UTC(), now); err != nil {
+				return err
+			}
+		}
 		updated, err = s.get(ctx, q, lid)
 		return err
 	})
@@ -559,6 +566,10 @@ func (s *Service) Cancel(ctx context.Context, userID, id, reason string) (Lobby,
 			}); err != nil {
 				return err
 			}
+		}
+		// RN-17 da discord-bot: a sala recebe o motivo e fica encerrando.
+		if err := discordroom.OnCancelled(ctx, q, lid, reason, now); err != nil {
+			return err
 		}
 		cancelled, err = s.get(ctx, q, lid)
 		return err

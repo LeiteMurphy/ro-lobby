@@ -12,6 +12,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const closeDiscordRoom = `-- name: CloseDiscordRoom :exec
+UPDATE discord_rooms SET status = 'closing', closing_at = $1::timestamptz
+WHERE lobby_id = $2 AND status = 'open'
+`
+
+type CloseDiscordRoomParams struct {
+	Now     time.Time
+	LobbyID pgtype.UUID
+}
+
+// RN-17: lobby cancelado deixa a sala encerrando.
+func (q *Queries) CloseDiscordRoom(ctx context.Context, arg CloseDiscordRoomParams) error {
+	_, err := q.db.Exec(ctx, closeDiscordRoom, arg.Now, arg.LobbyID)
+	return err
+}
+
 const dueReminders = `-- name: DueReminders :many
 SELECT r.lobby_id, r.text_channel_id, l.starts_at
 FROM discord_rooms r
@@ -185,6 +201,29 @@ func (q *Queries) GetDiscordRoom(ctx context.Context, lobbyID pgtype.UUID) (Disc
 	return i, err
 }
 
+const getOpenDiscordRoom = `-- name: GetOpenDiscordRoom :one
+SELECT lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at, closing_at, deleted_at, reminder_sent_at, last_alert_at FROM discord_rooms WHERE lobby_id = $1 AND status = 'open'
+`
+
+// Os ganchos só mexem na sala aberta (RN-10, RN-11, RN-15, RN-17).
+func (q *Queries) GetOpenDiscordRoom(ctx context.Context, lobbyID pgtype.UUID) (DiscordRoom, error) {
+	row := q.db.QueryRow(ctx, getOpenDiscordRoom, lobbyID)
+	var i DiscordRoom
+	err := row.Scan(
+		&i.LobbyID,
+		&i.CategoryID,
+		&i.TextChannelID,
+		&i.VoiceChannelID,
+		&i.Status,
+		&i.OpenedAt,
+		&i.ClosingAt,
+		&i.DeletedAt,
+		&i.ReminderSentAt,
+		&i.LastAlertAt,
+	)
+	return i, err
+}
+
 const insertDiscordRoom = `-- name: InsertDiscordRoom :exec
 INSERT INTO discord_rooms (lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at)
 VALUES ($1, $2, $3, $4, 'open', $5)
@@ -208,6 +247,27 @@ func (q *Queries) InsertDiscordRoom(ctx context.Context, arg InsertDiscordRoomPa
 		arg.Now,
 	)
 	return err
+}
+
+const lastMemberNick = `-- name: LastMemberNick :one
+SELECT c.nick FROM applications a
+LEFT JOIN characters c ON c.id = a.character_id
+WHERE a.lobby_id = $1 AND a.user_id = $2
+ORDER BY a.created_at DESC
+LIMIT 1
+`
+
+type LastMemberNickParams struct {
+	LobbyID pgtype.UUID
+	UserID  pgtype.UUID
+}
+
+// RN-11: o nick da candidatura mais recente do Usuário no lobby.
+func (q *Queries) LastMemberNick(ctx context.Context, arg LastMemberNickParams) (pgtype.Text, error) {
+	row := q.db.QueryRow(ctx, lastMemberNick, arg.LobbyID, arg.UserID)
+	var nick pgtype.Text
+	err := row.Scan(&nick)
+	return nick, err
 }
 
 const lockLobbyForRoom = `-- name: LockLobbyForRoom :one
@@ -313,6 +373,46 @@ func (q *Queries) NextDiscordJob(ctx context.Context, now time.Time) (NextDiscor
 		&i.VoiceChannelID,
 	)
 	return i, err
+}
+
+const openRoomsOfMember = `-- name: OpenRoomsOfMember :many
+SELECT r.lobby_id FROM discord_rooms r
+JOIN lobbies l ON l.id = r.lobby_id
+WHERE r.status = 'open'
+  AND (l.owner_id = $1
+       OR EXISTS (SELECT 1 FROM applications a
+                  WHERE a.lobby_id = l.id AND a.user_id = $1 AND a.status = 'accepted'))
+`
+
+// RN-13: as salas abertas dos lobbies em que o Usuário é dono ou membro aceito.
+func (q *Queries) OpenRoomsOfMember(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, openRoomsOfMember, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var lobby_id pgtype.UUID
+		if err := rows.Scan(&lobby_id); err != nil {
+			return nil, err
+		}
+		items = append(items, lobby_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const resetDiscordReminder = `-- name: ResetDiscordReminder :exec
+UPDATE discord_rooms SET reminder_sent_at = NULL WHERE lobby_id = $1
+`
+
+// RN-15: o lembrete segue o horário novo.
+func (q *Queries) ResetDiscordReminder(ctx context.Context, lobbyID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, resetDiscordReminder, lobbyID)
+	return err
 }
 
 const retryDiscordJob = `-- name: RetryDiscordJob :exec

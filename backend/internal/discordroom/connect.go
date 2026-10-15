@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordbot"
@@ -84,7 +86,15 @@ func (s *Service) Connect(ctx context.Context, userID, code, redirectURI string)
 	case err != nil:
 		return Connection{}, fmt.Errorf("discordroom: conectar: %w", err)
 	}
-	at, err := s.queries.SetDiscordConnected(ctx, db.SetDiscordConnectedParams{UserID: uid, Now: s.Now().UTC()})
+	now := s.Now().UTC()
+	var at pgtype.Timestamptz
+	err = s.inTx(ctx, func(q *db.Queries) error {
+		var err error
+		if at, err = q.SetDiscordConnected(ctx, db.SetDiscordConnectedParams{UserID: uid, Now: now}); err != nil {
+			return err
+		}
+		return onConnected(ctx, q, uid, row.DiscordID, now) // RN-13
+	})
 	if err != nil {
 		return Connection{}, fmt.Errorf("discordroom: gravar conexão: %w", err)
 	}

@@ -102,3 +102,33 @@ SELECT discord_id, discord_connected_at FROM users WHERE id = @user_id;
 -- RN-02 / RN-04: só a data da conexão; reconectar atualiza.
 UPDATE users SET discord_connected_at = sqlc.arg(now)::timestamptz WHERE id = @user_id
 RETURNING discord_connected_at;
+
+-- name: GetOpenDiscordRoom :one
+-- Os ganchos só mexem na sala aberta (RN-10, RN-11, RN-15, RN-17).
+SELECT * FROM discord_rooms WHERE lobby_id = @lobby_id AND status = 'open';
+
+-- name: CloseDiscordRoom :exec
+-- RN-17: lobby cancelado deixa a sala encerrando.
+UPDATE discord_rooms SET status = 'closing', closing_at = sqlc.arg(now)::timestamptz
+WHERE lobby_id = @lobby_id AND status = 'open';
+
+-- name: ResetDiscordReminder :exec
+-- RN-15: o lembrete segue o horário novo.
+UPDATE discord_rooms SET reminder_sent_at = NULL WHERE lobby_id = @lobby_id;
+
+-- name: LastMemberNick :one
+-- RN-11: o nick da candidatura mais recente do Usuário no lobby.
+SELECT c.nick FROM applications a
+LEFT JOIN characters c ON c.id = a.character_id
+WHERE a.lobby_id = @lobby_id AND a.user_id = @user_id
+ORDER BY a.created_at DESC
+LIMIT 1;
+
+-- name: OpenRoomsOfMember :many
+-- RN-13: as salas abertas dos lobbies em que o Usuário é dono ou membro aceito.
+SELECT r.lobby_id FROM discord_rooms r
+JOIN lobbies l ON l.id = r.lobby_id
+WHERE r.status = 'open'
+  AND (l.owner_id = @user_id
+       OR EXISTS (SELECT 1 FROM applications a
+                  WHERE a.lobby_id = l.id AND a.user_id = @user_id AND a.status = 'accepted'));

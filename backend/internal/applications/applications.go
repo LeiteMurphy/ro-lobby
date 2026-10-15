@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordroom"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 )
 
@@ -321,7 +322,11 @@ func (s *Service) decide(ctx context.Context, ownerID, applicationID string,
 			}
 		}
 		decided, err = transition(ctx, q, app, to, uid, reason, now)
-		return err
+		if err != nil || to != StatusAccepted {
+			return err
+		}
+		// RN-10 da discord-bot: quem vira membro entra na sala aberta.
+		return discordroom.OnMemberJoined(ctx, q, app.LobbyID, app.UserID, now)
 	})
 	if err != nil {
 		return Application{}, wrap(err, "decidir")
@@ -465,7 +470,8 @@ func (s *Service) endMembership(ctx context.Context, applicationID, action strin
 			}
 			ended.Blocked = true
 		}
-		return nil
+		// RN-11 da discord-bot: quem sai ou é removido perde a sala, sem o motivo no Discord.
+		return discordroom.OnMemberLeft(ctx, q, app.LobbyID, app.UserID, now)
 	})
 	if err != nil {
 		return Application{}, wrap(err, action)

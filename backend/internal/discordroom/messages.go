@@ -4,27 +4,37 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	_ "time/tzdata" // o fuso de Brasília dentro do binário, como em lobbies
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/catalog"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
-	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 )
 
 // Textos que o bot posta na sala (spec discord-bot, RN-08, RN-10, RN-11, RN-14, RN-15,
 // RN-17, RN-26). Todo texto vindo do usuário passa por escape (D-06).
 
+// brasilia é o fuso dos horários na tela (RN-09 da home-local). É o mesmo de
+// lobbies.Location; fica aqui porque o pacote lobbies chama os ganchos da sala.
+var brasilia = func() *time.Location {
+	loc, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		panic(err)
+	}
+	return loc
+}()
+
 var weekdays = []string{"domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"}
 
 // when é "sábado, 10/10 às 20:00 (horário de Brasília)" (RN-09 da home-local).
 func when(t time.Time) string {
-	local := t.In(lobbies.Location)
+	local := t.In(brasilia)
 	return fmt.Sprintf("%s, %02d/%02d às %02d:%02d (horário de Brasília)",
 		weekdays[local.Weekday()], local.Day(), int(local.Month()), local.Hour(), local.Minute())
 }
 
 // clock é "20:00" em Brasília.
 func clock(t time.Time) string {
-	local := t.In(lobbies.Location)
+	local := t.In(brasilia)
 	return fmt.Sprintf("%02d:%02d", local.Hour(), local.Minute())
 }
 
@@ -123,4 +133,41 @@ func nickOf(m db.RoomMembersRow) string {
 		return m.Nick.String
 	}
 	return "Personagem excluído"
+}
+
+// joinedMessage é a entrada de um membro (RN-10); só menciona quem está conectado.
+func joinedMessage(nick, discordID string, connected bool) postPayload {
+	content := fmt.Sprintf("➕ **%s** entrou no grupo.", escape(nick))
+	if !connected {
+		return postPayload{Content: content + " Para entrar na sala, conecte-se pelo perfil do RO Lobby."}
+	}
+	return postPayload{Content: content + " " + mention(discordID), Mentions: []string{discordID}}
+}
+
+// leftMessage é a saída de um membro (RN-11), sem o motivo de uma remoção.
+func leftMessage(nick string) postPayload {
+	return postPayload{Content: fmt.Sprintf("➖ **%s** saiu do grupo.", escape(nick))}
+}
+
+// connectedMessage é o membro que se conectou depois da sala aberta (RN-13).
+func connectedMessage(nick, discordID string) postPayload {
+	return postPayload{Content: fmt.Sprintf("🔗 **%s** entrou na sala. %s", escape(nick), mention(discordID)), Mentions: []string{discordID}}
+}
+
+// startChangedMessage é o horário novo (RN-15).
+func startChangedMessage(startsAt time.Time, ids []string) postPayload {
+	content := "🕒 **Horário novo:** " + when(startsAt) + "."
+	if len(ids) > 0 {
+		content += "\n" + mentions(ids)
+	}
+	return postPayload{Content: content, Mentions: ids}
+}
+
+// cancelledMessage é o cancelamento com o motivo (RN-17).
+func cancelledMessage(reason string, ids []string) postPayload {
+	content := "❌ **O lobby foi cancelado.** Motivo: " + escape(reason) + "\nA sala será apagada em 1 hora."
+	if len(ids) > 0 {
+		content += "\n" + mentions(ids)
+	}
+	return postPayload{Content: content, Mentions: ids}
 }

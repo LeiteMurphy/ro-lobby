@@ -11,11 +11,13 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordbot"
-	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 )
 
 // Abrir a sala e mostrar a sala no detalhe (spec discord-bot, RN-05 a RN-09, RN-18 a RN-20,
 // D-05).
+
+// anyInstanceName é o nome do lobby sem instância e sem título (lobbies.AnyInstanceName).
+const anyInstanceName = "Qualquer instância"
 
 // OpenTimeout é o prazo da abertura, somando as chamadas ao Discord (RNF-02).
 const OpenTimeout = 10 * time.Second
@@ -147,7 +149,7 @@ func lobbyTitle(name pgtype.Text) string {
 	if name.Valid && name.String != "" {
 		return name.String
 	}
-	return lobbies.AnyInstanceName
+	return anyInstanceName
 }
 
 // roomName é o título com o código curto do lobby (RN-05): "Templo do Demônio Rei · a1b2".

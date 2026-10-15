@@ -101,7 +101,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff81d38ed4dbbae8e1d813
 
-### T-06 — A sala acompanha o grupo  [ ]
+### T-06 — A sala acompanha o grupo  [x]
 - Cobre: US-04, US-05, US-06, RN-10, RN-11, RN-12, RN-13, RN-15, RN-17, RN-21, CA-04.1 a
   CA-04.6, CA-05.3, CA-06.4
 - Depende de: T-04, T-05
