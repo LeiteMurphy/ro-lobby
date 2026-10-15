@@ -201,6 +201,18 @@ func (q *Queries) GetDiscordRoom(ctx context.Context, lobbyID pgtype.UUID) (Disc
 	return i, err
 }
 
+const getLobbyDiscordLink = `-- name: GetLobbyDiscordLink :one
+SELECT discord_link FROM lobbies WHERE id = $1
+`
+
+// RN-23 / RN-24: o link do Discord do dono, só para o bloco discord dos membros.
+func (q *Queries) GetLobbyDiscordLink(ctx context.Context, id pgtype.UUID) (pgtype.Text, error) {
+	row := q.db.QueryRow(ctx, getLobbyDiscordLink, id)
+	var discord_link pgtype.Text
+	err := row.Scan(&discord_link)
+	return discord_link, err
+}
+
 const getOpenDiscordRoom = `-- name: GetOpenDiscordRoom :one
 SELECT lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at, closing_at, deleted_at, reminder_sent_at, last_alert_at FROM discord_rooms WHERE lobby_id = $1 AND status = 'open'
 `

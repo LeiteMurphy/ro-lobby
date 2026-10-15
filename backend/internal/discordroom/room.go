@@ -179,6 +179,8 @@ type View struct {
 	Room            *RoomView
 	Members         []Member
 	ViewerConnected bool
+	// OwnerLink é o link do Discord do dono (RN-23), mesmo com a sala desligada (RN-24).
+	OwnerLink string
 }
 
 // RoomView é a sala como o membro vê.
@@ -205,6 +207,11 @@ func (s *Service) View(ctx context.Context, lobbyID, viewerID string) (View, err
 			out.ViewerConnected = m.Connected
 		}
 	}
+	link, err := s.queries.GetLobbyDiscordLink(ctx, lid)
+	if err != nil {
+		return out, fmt.Errorf("discordroom: link do dono: %w", err)
+	}
+	out.OwnerLink = link.String
 	if !s.Enabled() {
 		return out, nil
 	}

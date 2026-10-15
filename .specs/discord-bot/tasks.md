@@ -120,7 +120,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff818291abc786b9174adb
 
-### T-07 — Link do Discord do dono (API)  [P] [ ]
+### T-07 — Link do Discord do dono (API)  [P] [x]
 - Cobre: US-07, RN-23, RN-24, RN-25, CA-07.1 a CA-07.7 (API)
 - Depende de: T-04
 - Paralelizável: [P] com T-05 e T-06 (só `lobbies` e o bloco `discord`)

@@ -116,6 +116,7 @@ func (h lobbiesHandler) CreateLobby(ctx context.Context, req api.CreateLobbyRequ
 			CharacterID: b.CharacterId,
 			Note:        deref(b.Note),
 			FreeSlots:   valueOf(b.FreeSlots),
+			DiscordLink: deref(b.DiscordLink),
 		}
 		if b.Formation != nil {
 			in.Formation = string(*b.Formation)
@@ -149,6 +150,7 @@ func (h lobbiesHandler) UpdateLobby(ctx context.Context, req api.UpdateLobbyRequ
 		in = lobbies.UpdateInput{
 			InstanceID: deref(b.InstanceId), StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel,
 			Note: deref(b.Note), FreeSlots: valueOf(b.FreeSlots), AnyInstance: valueOf(b.AnyInstance), Title: deref(b.Title),
+			DiscordLink: deref(b.DiscordLink),
 		}
 		if b.Formation != nil {
 			in.Formation = string(*b.Formation)

@@ -915,7 +915,7 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title" | "server";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title" | "server" | "discordLink";
             /** @enum {string} */
             code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start" | "locked";
         };
@@ -967,6 +967,8 @@ export interface components {
             anyInstance?: boolean;
             /** @description Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02). */
             title?: string;
+            /** @description Link opcional do Discord do dono (spec discord-bot, RN-23): https://discord.gg/…, https://discord.com/invite/… ou https://discord.com/channels/…/…, até 200 caracteres. Só os membros veem (RN-19). */
+            discordLink?: string;
         };
         LobbyUpdate: {
             /** @description ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17). */
@@ -983,6 +985,8 @@ export interface components {
             anyInstance?: boolean;
             /** @description Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02). */
             title?: string;
+            /** @description Link do Discord do dono (RN-23 da discord-bot); vazio ou ausente apaga. */
+            discordLink?: string;
         };
         /**
          * @description Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
@@ -1069,6 +1073,8 @@ export interface components {
             room: components["schemas"]["DiscordRoom"] | null;
             members: components["schemas"]["DiscordMember"][];
             viewerConnected: boolean;
+            /** @description Link do Discord do dono (RN-23); vem mesmo com a sala desligada (RN-24). */
+            ownerLink: string | null;
         };
         DiscordRoom: {
             /** @enum {string} */

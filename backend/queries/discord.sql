@@ -103,6 +103,10 @@ SELECT discord_id, discord_connected_at FROM users WHERE id = @user_id;
 UPDATE users SET discord_connected_at = sqlc.arg(now)::timestamptz WHERE id = @user_id
 RETURNING discord_connected_at;
 
+-- name: GetLobbyDiscordLink :one
+-- RN-23 / RN-24: o link do Discord do dono, só para o bloco discord dos membros.
+SELECT discord_link FROM lobbies WHERE id = @id;
+
 -- name: GetOpenDiscordRoom :one
 -- Os ganchos só mexem na sala aberta (RN-10, RN-11, RN-15, RN-17).
 SELECT * FROM discord_rooms WHERE lobby_id = @lobby_id AND status = 'open';

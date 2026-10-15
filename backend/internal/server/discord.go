@@ -164,6 +164,10 @@ func toAPIDiscord(v discordroom.View) (api.LobbyDiscord, error) {
 		}
 		out.Members[i] = api.DiscordMember{UserId: id, Nick: m.Nick, Connected: m.Connected}
 	}
+	if v.OwnerLink != "" {
+		link := v.OwnerLink
+		out.OwnerLink = &link
+	}
 	if v.Room != nil {
 		room := api.DiscordRoom{Status: api.DiscordRoomStatus(v.Room.Status)}
 		if v.Room.URL != "" {

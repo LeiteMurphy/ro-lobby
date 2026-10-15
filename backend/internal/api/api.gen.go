@@ -339,6 +339,7 @@ const (
 	FieldErrorFieldClassId     FieldErrorField = "classId"
 	FieldErrorFieldDay         FieldErrorField = "day"
 	FieldErrorFieldDays        FieldErrorField = "days"
+	FieldErrorFieldDiscordLink FieldErrorField = "discordLink"
 	FieldErrorFieldEnd         FieldErrorField = "end"
 	FieldErrorFieldFormation   FieldErrorField = "formation"
 	FieldErrorFieldFreeSlots   FieldErrorField = "freeSlots"
@@ -371,6 +372,8 @@ func (e FieldErrorField) Valid() bool {
 	case FieldErrorFieldDay:
 		return true
 	case FieldErrorFieldDays:
+		return true
+	case FieldErrorFieldDiscordLink:
 		return true
 	case FieldErrorFieldEnd:
 		return true
@@ -1480,6 +1483,9 @@ type LobbyDiscord struct {
 	Enabled bool            `json:"enabled"`
 	Members []DiscordMember `json:"members"`
 
+	// OwnerLink Link do Discord do dono (RN-23); vem mesmo com a sala desligada (RN-24).
+	OwnerLink *string `json:"ownerLink"`
+
 	// Room Nula sem sala ou com a sala desligada.
 	Room            *DiscordRoom `json:"room"`
 	ViewerConnected bool         `json:"viewerConnected"`
@@ -1492,6 +1498,9 @@ type LobbyInput struct {
 
 	// CharacterId Um dos personagens do Usuário da sessão.
 	CharacterId string `json:"characterId"`
+
+	// DiscordLink Link opcional do Discord do dono (spec discord-bot, RN-23): https://discord.gg/…, https://discord.com/invite/… ou https://discord.com/channels/…/…, até 200 caracteres. Só os membros veem (RN-19).
+	DiscordLink *string `json:"discordLink,omitempty"`
 
 	// Formation Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
 	Formation *Formation `json:"formation,omitempty"`
@@ -1603,6 +1612,9 @@ type LobbySwapRequest struct {
 type LobbyUpdate struct {
 	// AnyInstance Lobby sem instância; passa para sem instância; sem ele e sem instanceId, continua a atual (spec lobby-sem-instancia, RN-01).
 	AnyInstance *bool `json:"anyInstance,omitempty"`
+
+	// DiscordLink Link do Discord do dono (RN-23 da discord-bot); vazio ou ausente apaga.
+	DiscordLink *string `json:"discordLink,omitempty"`
 
 	// Formation Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
 	Formation *Formation `json:"formation,omitempty"`

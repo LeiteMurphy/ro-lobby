@@ -1496,7 +1496,7 @@ components:
       properties:
         field:
           type: string
-          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots, title, server]
+          enum: [nick, classId, level, role, portrait, link, instanceId, startsAt, slots, minLevel, characterId, note, reason, message, days, start, end, instanceIds, day, time, formation, freeSlots, title, server, discordLink]
         code:
           type: string
           enum: [required, too_long, too_short, invalid, taken, conflict, below_occupied, above_owner, level_too_low, same_as_start, locked]
@@ -1576,6 +1576,12 @@ components:
         title:
           type: string
           description: Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02).
+        discordLink:
+          type: string
+          description: >
+            Link opcional do Discord do dono (spec discord-bot, RN-23): https://discord.gg/…,
+            https://discord.com/invite/… ou https://discord.com/channels/…/…, até 200 caracteres.
+            Só os membros veem (RN-19).
     LobbyUpdate:
       type: object
       required: [startsAt, slots, minLevel]
@@ -1603,6 +1609,9 @@ components:
         title:
           type: string
           description: Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02).
+        discordLink:
+          type: string
+          description: Link do Discord do dono (RN-23 da discord-bot); vazio ou ausente apaga.
     Formation:
       type: string
       enum: [roles, free]
@@ -1746,7 +1755,7 @@ components:
     LobbyDiscord:
       type: object
       additionalProperties: false
-      required: [enabled, room, members, viewerConnected]
+      required: [enabled, room, members, viewerConnected, ownerLink]
       description: >
         Sala do grupo no Discord. Só no detalhe e só para o dono e os membros aceitos (spec
         discord-bot, RN-18, RN-19, D-05).
@@ -1765,6 +1774,10 @@ components:
             $ref: "#/components/schemas/DiscordMember"
         viewerConnected:
           type: boolean
+        ownerLink:
+          type: string
+          nullable: true
+          description: Link do Discord do dono (RN-23); vem mesmo com a sala desligada (RN-24).
     DiscordRoom:
       type: object
       additionalProperties: false
