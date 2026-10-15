@@ -105,3 +105,21 @@ describe('servidor no convite e no preview (spec servidor)', () => {
 		);
 	});
 });
+
+describe('link do Discord do dono fora do convite (spec discord-bot)', () => {
+	it('CA-07.6 / RN-25: nem o convite copiado nem o preview trazem o link do dono', () => {
+		const withLink = {
+			...TEMPLE,
+			discord: {
+				enabled: true,
+				room: null,
+				members: [],
+				viewerConnected: true,
+				ownerLink: 'https://discord.gg/abc123'
+			}
+		};
+		const origin = 'https://rolobby.com.br';
+		expect(inviteText(withLink, origin)).not.toContain('discord.gg');
+		expect(JSON.stringify(shareMeta(withLink, origin))).not.toContain('discord.gg');
+	});
+});
