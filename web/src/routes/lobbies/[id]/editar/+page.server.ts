@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		listInstances(fetch, apiBaseUrl)
 	]);
 	if (!lobby.ok && lobby.kind === 'not_found') error(404, 'Lobby não encontrado');
-	if (!lobby.ok) error(503, UNAVAILABLE_MESSAGE);
+	if (!lobby.ok) error(503, unavailableMessage(lobby));
 	// RN-20: só o dono edita; para os outros, o lobby "não existe" aqui.
 	if (lobby.data.owner.userId !== locals.user.id) error(404, 'Lobby não encontrado');
 	// RN-17: lobby iniciado ou cancelado não se edita; volta para o detalhe.

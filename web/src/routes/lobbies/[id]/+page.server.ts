@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch, url
 		listClasses(fetch, apiBaseUrl)
 	]);
 	if (!lobby.ok && lobby.kind === 'not_found') error(404, 'Lobby não encontrado');
-	if (!lobby.ok) error(503, UNAVAILABLE_MESSAGE);
+	if (!lobby.ok) error(503, unavailableMessage(lobby));
 	const isOwner = locals.user?.id === lobby.data.owner.userId;
 
 	// Os diálogos de candidatura e de troca listam os personagens de quem olha; o dono

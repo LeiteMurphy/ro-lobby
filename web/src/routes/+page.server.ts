@@ -1,7 +1,7 @@
 import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
 import { listClasses } from '$lib/characters/api';
-import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { loadErrorMessage } from '$lib/characters/messages';
 import { DAYS_AHEAD } from '$lib/home/days';
 import { addDays, zonedNow } from '$lib/home/time';
 import { listLobbies } from '$lib/lobbies/api';
@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ url, fetch }) => {
 		now: now.toISOString(),
 		today,
 		lobbies: lobbies.ok ? lobbies.data.map((l) => toHomeLobby(l, classNames)) : [],
-		loadError: lobbies.ok ? null : UNAVAILABLE_MESSAGE,
+		loadError: loadErrorMessage(lobbies),
 		// spec login-discord: link de login que volta para cá (RN-12) e aviso de falha (RN-13).
 		loginHref: loginHref(url),
 		loginError: url.searchParams.get('login') === 'erro'

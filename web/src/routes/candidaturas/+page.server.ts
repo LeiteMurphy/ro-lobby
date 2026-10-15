@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
 		listClasses(fetch, call.apiBaseUrl)
 	]);
 	if (!mine.ok && mine.kind === 'no_session') toLogin(cookies, PATH);
-	if (!mine.ok) error(503, UNAVAILABLE_MESSAGE);
+	if (!mine.ok) error(503, unavailableMessage(mine));
 	return {
 		applications: mine.data,
 		classNames: Object.fromEntries(

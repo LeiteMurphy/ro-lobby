@@ -32,3 +32,14 @@ describe('excesso de requisições (spec endurecimento, RN-15)', () => {
 		expect(unavailableMessage({ kind: 'unavailable' })).toBe(UNAVAILABLE_MESSAGE);
 	});
 });
+
+describe('erro de carregamento de página (spec endurecimento, RN-15)', () => {
+	it('CA-05.2: página barrada pelo limite mostra "Muitas tentativas"', async () => {
+		const { loadErrorMessage } = await import('$lib/characters/messages');
+		expect(loadErrorMessage({ ok: true }, { ok: false, kind: 'rate_limited' })).toBe(
+			RATE_LIMITED_MESSAGE
+		);
+		expect(loadErrorMessage({ ok: false, kind: 'unavailable' })).toBe(UNAVAILABLE_MESSAGE);
+		expect(loadErrorMessage({ ok: true }, { ok: true })).toBeNull();
+	});
+});

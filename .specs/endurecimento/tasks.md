@@ -209,3 +209,7 @@
   adapter-node, e os valores ficam num arquivo só (`web/security-headers.js`), usado pelo
   hook e pelo servidor. O Dockerfile sobe com `node server.js`, e o `smoke-app.sh` confere
   os cabeçalhos num estático da imagem real.
+- 2026-10-15 — Validação, ciclo 2 (APROVADO), pendência P2: o carregamento das páginas
+  barrado pelo limite geral mostrava a mensagem genérica. Corrigido depois do relatório:
+  os `load` usam `unavailableMessage`/`loadErrorMessage` e mostram "Muitas tentativas"
+  também nesse caso (RN-15).

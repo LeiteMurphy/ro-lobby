@@ -40,8 +40,14 @@ export const UNAVAILABLE_MESSAGE = 'Não foi possível falar com o servidor. Ten
 export const RATE_LIMITED_MESSAGE = 'Muitas tentativas. Aguarde um pouco e tente de novo.';
 
 /** A mensagem de uma falha sem tratamento próprio: excesso de requisições ou API fora. */
-export function unavailableMessage(result: { kind: string }): string {
+export function unavailableMessage(result: { kind?: string }): string {
 	return result.kind === 'rate_limited' ? RATE_LIMITED_MESSAGE : UNAVAILABLE_MESSAGE;
+}
+
+/** Erro de carregamento de uma página: null se todas as chamadas deram certo. */
+export function loadErrorMessage(...results: { ok: boolean; kind?: string }[]): string | null {
+	const failed = results.find((r) => !r.ok);
+	return failed ? unavailableMessage(failed) : null;
 }
 export const NOT_FOUND_MESSAGE = 'Esse personagem não existe mais.';
 
