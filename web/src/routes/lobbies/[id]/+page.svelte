@@ -30,6 +30,7 @@
 	import ShareButton from '$lib/lobbies/components/ShareButton.svelte';
 	import { isFree, occupiedTotal, totalSeats } from '$lib/lobbies/seats';
 	import TalentCard from '$lib/talents/components/TalentCard.svelte';
+	import DiscordSection from '$lib/discord/components/DiscordSection.svelte';
 	import { inviteText, shareMeta, THEME_COLOR } from '$lib/lobbies/share';
 	import { fromUtcIso } from '$lib/lobbies/time';
 	import Button from '$lib/ui/Button.svelte';
@@ -541,6 +542,18 @@
 						onreject={(p) => open(() => (rejecting = p))}
 						onremove={(p) => open(() => (removing = p))}
 						onswap={() => open(() => (ownerSwapOpen = true))}
+					/>
+				{/if}
+				{#if lobby.discord}
+					<!-- spec discord-bot, D-05: o bloco só vem para o dono e os membros. -->
+					<DiscordSection
+						discord={lobby.discord}
+						isOwner={data.isOwner}
+						lobbyOpen={lobby.status === 'open'}
+						result={form && 'action' in form && form.action === 'discord'
+							? { text: form.text, ok: form.ok }
+							: null}
+						now={data.now}
 					/>
 				{/if}
 				{#if data.isOwner && lobby.status === 'open' && data.talents}

@@ -171,7 +171,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff81e7b183df1ef6ce1f88
 
-### T-10 — Detalhe do lobby: seção "Sala no Discord"  [ ]
+### T-10 — Detalhe do lobby: seção "Sala no Discord"  [x]
 - Cobre: US-02, US-03, US-07, US-08, RN-18, RN-19, RN-24, RN-26, RN-27, CA-02.1, CA-02.7,
   CA-02.8 (mensagens), CA-03.1 a CA-03.5, CA-07.4, CA-07.5, CA-07.7, CA-08.2 (contagem),
   CA-08.5
