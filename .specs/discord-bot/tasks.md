@@ -45,7 +45,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff81679476ed56596d8689
 
-### T-03 — Trabalhador: fila, novas tentativas, lembrete e remoção  [ ]
+### T-03 — Trabalhador: fila, novas tentativas, lembrete e remoção  [x]
 - Cobre: US-05, US-06, RN-09, RN-14, RN-16, RN-21, RNF-04, D-02, CA-05.1, CA-05.2, CA-05.4,
   CA-05.5, CA-06.1, CA-06.2, CA-06.3
 - Depende de: T-01, T-02

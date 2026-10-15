@@ -18,6 +18,8 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/config"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordbot"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordroom"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/lobbies"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/server"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/talents"
@@ -56,6 +58,15 @@ func run() error {
 	authService := auth.NewService(pool, discordClient)
 	characterService := characters.NewService(pool)
 	lobbyService := lobbies.NewService(pool)
+
+	// Sala do grupo no Discord (spec discord-bot, RN-22, ADR-09): só com o bot configurado.
+	var roomBot discordroom.Bot
+	if cfg.Bot.Enabled() {
+		roomBot = discordbot.New(cfg.Discord.APIBaseURL, cfg.Bot.Token, cfg.Bot.GuildID, cfg.Discord.ClientID)
+	}
+	roomService := discordroom.NewService(pool, roomBot)
+	go roomService.Run(ctx, discordroom.Every)
+	slog.Info("sala do grupo no Discord", "bot", cfg.Bot)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
