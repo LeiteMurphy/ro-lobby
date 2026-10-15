@@ -81,6 +81,42 @@ cole o secret em issue, commit ou conversa; se isso acontecer, gere outro no Dev
 Portal (**OAuth2 → Reset Secret**). Os testes e a CI usam um Discord falso e não precisam
 de aplicativo.
 
+#### Sala do grupo no Discord (bot, opcional)
+
+O bot do RO Lobby abre, para cada lobby, uma sala privada (categoria com texto e voz) no
+servidor oficial, só para os membros do grupo ([ADR-09](docs/adr/0009-bot-discord-rest-outbox.md),
+spec `.specs/discord-bot/`). Sem as duas variáveis abaixo, a sala fica desligada e o resto do
+RO Lobby funciona normalmente. Só uma delas impede a API de subir.
+
+1. **Servidor oficial.** Crie um servidor no Discord. Com o **Modo de desenvolvedor** ligado
+   (Configurações de usuário → Avançado), clique com o botão direito no ícone do servidor e
+   use **Copiar ID do servidor**. O ID do servidor oficial é `1560117933705797643`.
+2. **Bot.** No mesmo aplicativo do login, abra a aba **Bot**, clique em **Reset Token** e copie
+   o token. O usuário do bot tem o mesmo ID do aplicativo (`DISCORD_CLIENT_ID`).
+3. **Convite do bot.** Na aba **OAuth2 → URL Generator**, marque o escopo `bot` e as
+   permissões **View Channels**, **Manage Channels**, **Manage Roles**, **Send Messages**,
+   **Read Message History**, **Connect**, **Speak** e **Create Instant Invite**. Abra a URL
+   gerada e adicione o bot ao servidor oficial.
+4. **Redirect da conexão.** Na aba **OAuth2**, cadastre também os Redirects da conexão ao
+   servidor, que pede `identify` e `guilds.join`:
+   - `http://localhost:3000/perfil/discord/retorno` (pilha app)
+   - `http://localhost:5173/perfil/discord/retorno` (modo de desenvolvimento)
+   - `https://rolobby.com.br/perfil/discord/retorno` (publicação pelo túnel)
+5. **Variáveis.** No seu `.env`:
+
+   ```dotenv
+   DISCORD_BOT_TOKEN=<token do bot>
+   DISCORD_GUILD_ID=1560117933705797643
+   ```
+
+   A pilha `app` também usa `APP_ORIGIN` (ou `http://localhost:3000`) para o link do lobby nas
+   mensagens do bot.
+
+O token do bot é segredo, como o Client Secret: só existe no `.env` e só a API recebe esse
+valor (RNF-01). Nunca cole o token em issue, commit ou conversa. Se ele vazar, gere outro na
+aba **Bot → Reset Token** e troque no `.env`. Os testes e a CI usam o Discord falso, com as
+rotas do bot, e não precisam do servidor.
+
 ### 3. Banco de dados
 
 ```powershell

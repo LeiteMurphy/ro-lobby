@@ -201,7 +201,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff8102ab4bdd8dcb3d7cb9
 
-### T-12 — Operação: README e pilha  [ ]
+### T-12 — Operação: README e pilha  [x]
 - Cobre: RNF-01, RNF-06
 - Depende de: T-01 a T-11
 - Paralelizável: não
