@@ -522,8 +522,8 @@ Then o canal de texto recebe o aviso
 - Conferir se o link do dono ainda funciona no Discord.
 
 ## 9. Perguntas em aberto
-- [ ] ID do servidor oficial e da categoria — o operador cria o servidor e passa os IDs
-  antes de testar na pilha real. Não bloqueia a implementação, que usa o Discord falso.
+- [x] ID do servidor oficial — `1560117933705797643`, informado pelo usuário em 2026-10-14.
+  A categoria deixou de ser configuração (D-04). Falta o token do bot, que vai só no `.env`.
 
 ## 10. Decisões tomadas na entrevista
 - O que abre a sala → o dono, num botão, a qualquer momento antes do início.
