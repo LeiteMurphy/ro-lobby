@@ -4,8 +4,13 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+	"regexp"
 	"strconv"
 )
+
+// snowflake é o formato de um ID do Discord.
+var snowflake = regexp.MustCompile(`^[0-9]+$`)
 
 // Config é a configuração do processo da API.
 type Config struct {
@@ -15,6 +20,33 @@ type Config struct {
 	DatabaseURL string
 	// Discord é o aplicativo do Discord usado no login (spec login-discord).
 	Discord Discord
+	// Bot é o bot da sala do grupo no Discord (spec discord-bot, RN-22).
+	Bot Bot
+}
+
+// Bot: DISCORD_BOT_TOKEN e DISCORD_GUILD_ID juntas ligam a sala do grupo; nenhuma das duas a
+// desliga (RN-22 da discord-bot). O token só existe no ambiente da API e nunca vai para o
+// log (RNF-01): String, GoString e LogValue escondem o valor.
+type Bot struct {
+	Token   string
+	GuildID string
+}
+
+// Enabled diz se a sala do grupo está ligada (RN-22 da discord-bot).
+func (b Bot) Enabled() bool { return b.Token != "" && b.GuildID != "" }
+
+func (b Bot) String() string {
+	if b.Token == "" {
+		return fmt.Sprintf("Bot{Token: \"\", GuildID: %q}", b.GuildID)
+	}
+	return fmt.Sprintf("Bot{Token: [oculto], GuildID: %q}", b.GuildID)
+}
+
+func (b Bot) GoString() string { return b.String() }
+
+// LogValue esconde o token quando a config vai para o slog.
+func (b Bot) LogValue() slog.Value {
+	return slog.GroupValue(slog.Bool("enabled", b.Enabled()), slog.String("guild_id", b.GuildID))
 }
 
 // Discord: DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET são obrigatórias; o secret só existe
@@ -41,6 +73,7 @@ func Load(getenv func(string) string) (Config, error) {
 			ClientSecret: getenv("DISCORD_CLIENT_SECRET"),
 			APIBaseURL:   getenv("DISCORD_API_BASE_URL"),
 		},
+		Bot: Bot{Token: getenv("DISCORD_BOT_TOKEN"), GuildID: getenv("DISCORD_GUILD_ID")},
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -48,6 +81,12 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if cfg.Discord.ClientID == "" || cfg.Discord.ClientSecret == "" {
 		return Config{}, errors.New("DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET precisam estar definidas")
+	}
+	if (cfg.Bot.Token == "") != (cfg.Bot.GuildID == "") {
+		return Config{}, errors.New("DISCORD_BOT_TOKEN e DISCORD_GUILD_ID precisam estar definidas juntas (ou nenhuma, para desligar a sala no Discord)")
+	}
+	if cfg.Bot.GuildID != "" && !snowflake.MatchString(cfg.Bot.GuildID) {
+		return Config{}, fmt.Errorf("DISCORD_GUILD_ID inválida: %q", cfg.Bot.GuildID)
 	}
 	if cfg.Discord.APIBaseURL == "" {
 		cfg.Discord.APIBaseURL = defaultDiscordAPIBaseURL

@@ -2,6 +2,9 @@ package config
 
 import (
 	"bufio"
+	"bytes"
+	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -139,5 +142,52 @@ func TestLoadDotEnv_RN01_DoesNotOverrideEnvironment(t *testing.T) {
 func TestLoadDotEnv_RN01_MissingFileIsNotAnError(t *testing.T) {
 	if err := LoadDotEnv(filepath.Join(t.TempDir(), "nao-existe")); err != nil {
 		t.Fatalf("erro inesperado: %v", err)
+	}
+}
+
+// RN-22 (discord-bot): sem token e sem servidor, a sala no Discord fica desligada; com os
+// dois, ligada; só um dos dois é erro de configuração.
+func TestLoad_RN22_BotOnlyWithTokenAndGuild(t *testing.T) {
+	base := func() map[string]string { return withDiscord(map[string]string{"DATABASE_URL": "postgres://x"}) }
+	cfg, err := Load(envFrom(base()))
+	if err != nil || cfg.Bot.Enabled() {
+		t.Fatalf("sem as duas: %+v, %v", cfg.Bot, err)
+	}
+	both := base()
+	both["DISCORD_BOT_TOKEN"], both["DISCORD_GUILD_ID"] = "token-do-bot", "1560117933705797643"
+	cfg, err = Load(envFrom(both))
+	if err != nil || !cfg.Bot.Enabled() || cfg.Bot.GuildID != "1560117933705797643" {
+		t.Fatalf("com as duas: %+v, %v", cfg.Bot, err)
+	}
+	for _, only := range []string{"DISCORD_BOT_TOKEN", "DISCORD_GUILD_ID"} {
+		vars := base()
+		vars[only] = "123"
+		if _, err := Load(envFrom(vars)); err == nil {
+			t.Errorf("só %s: esperado erro", only)
+		}
+	}
+	bad := base()
+	bad["DISCORD_BOT_TOKEN"], bad["DISCORD_GUILD_ID"] = "token-do-bot", "servidor"
+	if _, err := Load(envFrom(bad)); err == nil {
+		t.Error("DISCORD_GUILD_ID fora do formato: esperado erro")
+	}
+}
+
+// RNF-01 (discord-bot): o token do bot não aparece ao imprimir nem ao logar a config.
+func TestBot_RNF01_TokenHidden(t *testing.T) {
+	b := Bot{Token: "token-super-secreto", GuildID: "1560117933705797643"}
+	var buf bytes.Buffer
+	slog.New(slog.NewJSONHandler(&buf, nil)).Info("config", "bot", b)
+	for name, out := range map[string]string{
+		"String": b.String(),
+		"%v":     fmt.Sprintf("%v", b),
+		"%+v":    fmt.Sprintf("%+v", b),
+		"%#v":    fmt.Sprintf("%#v", b),
+		"Config": fmt.Sprintf("%+v", Config{Bot: b}),
+		"slog":   buf.String(),
+	} {
+		if bytes.Contains([]byte(out), []byte("token-super-secreto")) {
+			t.Errorf("%s mostra o token: %s", name, out)
+		}
 	}
 }

@@ -6,7 +6,7 @@
 
 ## Backend
 
-### T-01 — Migração e configuração do bot  [ ]
+### T-01 — Migração e configuração do bot  [x]
 - Cobre: RN-05 (uma sala por lobby), RN-09 (estados), RN-22, RNF-01, RNF-04 (modelo), D-02, D-04
 - Depende de: —
 - Paralelizável: não
