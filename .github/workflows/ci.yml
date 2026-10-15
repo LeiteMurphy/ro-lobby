@@ -127,6 +127,10 @@ jobs:
             echo "::error::Código gerado desatualizado. Rode 'go generate ./...' em backend/ e faça commit."; exit 1
           fi
 
+      # Endurecimento, RN-09 / CA-03.2: vulnerabilidade alcançável pelo código derruba a CI.
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
       - name: Testes unitários (sem banco)
         run: go test -race -coverprofile=coverage-unit.out ./...
 
@@ -200,6 +204,11 @@ jobs:
             git status --short -- .; git diff -- .
             echo "::error::Tipos gerados desatualizados. Rode 'npm run generate' em web/ e faça commit."; exit 1
           fi
+
+      # Endurecimento, RN-09 / CA-03.2: vulnerabilidade alta ou crítica nas dependências de
+      # produção derruba a CI.
+      - name: npm audit
+        run: npm audit --omit=dev --audit-level=high
 
       - name: ESLint e Prettier
         run: npm run lint
