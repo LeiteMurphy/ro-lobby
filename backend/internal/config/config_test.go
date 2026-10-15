@@ -191,3 +191,22 @@ func TestBot_RNF01_TokenHidden(t *testing.T) {
 		}
 	}
 }
+
+// RN-15 (endurecimento): o limite de requisições fica ligado por padrão; só
+// API_RATE_LIMIT=off desliga, e nunca com origem pública.
+func TestLoad_RN15_RateLimitSwitch(t *testing.T) {
+	cfg, err := Load(envFrom(withDiscord(map[string]string{"DATABASE_URL": "postgres://x"})))
+	if err != nil || !cfg.RateLimit {
+		t.Fatalf("RateLimit = %v (%v), esperado ligado por padrão", cfg.RateLimit, err)
+	}
+	cfg, err = Load(envFrom(withDiscord(map[string]string{"DATABASE_URL": "postgres://x", "API_RATE_LIMIT": "off"})))
+	if err != nil || cfg.RateLimit {
+		t.Fatalf("RateLimit = %v (%v), esperado desligado com off", cfg.RateLimit, err)
+	}
+	_, err = Load(envFrom(withDiscord(map[string]string{
+		"DATABASE_URL": "postgres://x", "API_RATE_LIMIT": "off", "APP_ORIGIN": "https://rolobby.com.br",
+	})))
+	if err == nil {
+		t.Fatal("aceitou API_RATE_LIMIT=off com origem pública")
+	}
+}

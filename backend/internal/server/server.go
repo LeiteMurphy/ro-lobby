@@ -42,7 +42,12 @@ func New(db health.Pinger, authenticator Authenticator, chars CharacterService, 
 		ResponseErrorHandlerFunc: internalError,
 	})
 	// Endurecimento, RN-13: o limite do corpo vale antes de qualquer rota ler a requisição.
-	return limitBody(withSessionToken(api.HandlerFromMux(strict, http.NewServeMux())))
+	h := limitBody(withSessionToken(api.HandlerFromMux(strict, http.NewServeMux())))
+	// Endurecimento, RN-15: o limite de requisições vem antes de tudo.
+	if o.limits != nil {
+		h = rateLimit(*o.limits, h)
+	}
+	return h
 }
 
 // internalError registra o erro e responde 500 sem detalhes: o texto de um erro interno

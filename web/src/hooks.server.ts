@@ -1,7 +1,8 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleFetch } from '@sveltejs/kit';
 import { fetchMe } from '$lib/auth/api';
 import { authConfig } from '$lib/auth/config';
 import { cookieOptions, SESSION_COOKIE, SESSION_MAX_AGE } from '$lib/auth/oauth';
+import { clientIp, withClientIp } from '$lib/security/client-ip';
 import { withSecurityHeaders } from '$lib/security/headers';
 
 // Identifica o usuário da sessão em cada requisição (D-03). Sessão recusada pela API vira
@@ -22,4 +23,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	// Endurecimento, RN-11 e RN-12: cabeçalhos de segurança em toda resposta.
 	return withSecurityHeaders(await resolve(event), event.url);
+};
+
+// Endurecimento, RN-16: as chamadas do servidor do web à API levam o IP de quem acessa, para
+// o limite de requisições contar por visitante e não pelo container do web.
+export const handleFetch: HandleFetch = ({ event, request, fetch }) => {
+	const ip = clientIp(event.request, () => event.getClientAddress());
+	return fetch(withClientIp(request, authConfig().apiBaseUrl, ip));
 };
