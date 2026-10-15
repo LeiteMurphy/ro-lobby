@@ -30,6 +30,8 @@ export interface LobbyFormValues {
 	freeSlots: string;
 	/** spec lobby-sem-instancia, RN-02: título do lobby sem instância. */
 	title: string;
+	/** spec discord-bot, RN-23: link opcional do Discord do dono. */
+	discordLink: string;
 }
 
 export function readLobbyForm(data: FormData): LobbyFormValues {
@@ -46,7 +48,8 @@ export function readLobbyForm(data: FormData): LobbyFormValues {
 		note: String(data.get('note') ?? ''),
 		formation: text('formation') === 'free' ? 'free' : 'roles',
 		freeSlots: text('freeSlots'),
-		title: String(data.get('title') ?? '')
+		title: String(data.get('title') ?? ''),
+		discordLink: text('discordLink')
 	};
 }
 
@@ -82,7 +85,9 @@ function base(v: LobbyFormValues) {
 			: { tank: int(v.tank), support: int(v.support), dps: int(v.dps) },
 		...(free ? { freeSlots: int(v.freeSlots) } : {}),
 		minLevel: int(v.minLevel),
-		...(v.note.trim() ? { note: v.note } : {})
+		...(v.note.trim() ? { note: v.note } : {}),
+		// spec discord-bot, RN-23: vazio fica sem link (e, na edição, apaga o link).
+		...(v.discordLink.trim() ? { discordLink: v.discordLink.trim() } : {})
 	};
 }
 

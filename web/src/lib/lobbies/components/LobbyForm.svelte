@@ -410,6 +410,26 @@
 						><Icon name="circle-x" size={14} />{errors.note}</span
 					>{/if}
 			</div>
+			<!-- spec discord-bot, RN-23 / RN-19: link opcional, só os membros aceitos veem. -->
+			<div class="field">
+				<label class="lbl" for="{uid}-discordLink">Link do seu Discord (opcional)</label>
+				<input
+					id="{uid}-discordLink"
+					class="input"
+					class:err={errors.discordLink}
+					name="discordLink"
+					type="url"
+					maxlength="200"
+					placeholder="https://discord.gg/..."
+					value={start.discordLink}
+					autocomplete="off"
+					aria-invalid={errors.discordLink ? 'true' : undefined}
+					aria-describedby={describe('discordLink')}
+				/>
+				{#if errors.discordLink}<span class="hint-err" id={errId('discordLink')}
+						><Icon name="circle-x" size={14} />{errors.discordLink}</span
+					>{:else}<span class="hint">Só os membros aceitos veem.</span>{/if}
+			</div>
 		</div>
 
 		<fieldset class="field" aria-describedby={describe('characterId')}>

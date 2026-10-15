@@ -27,7 +27,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 	const call = sessionCall(cookies, fetch, path);
 	const { apiBaseUrl } = authConfig();
 	const [lobby, characters, classes, instances] = await Promise.all([
-		getLobby(fetch, apiBaseUrl, params.id),
+		// Com a sessão: o dono recebe o bloco discord, com o link dele (spec discord-bot, RN-23).
+		getLobby(fetch, apiBaseUrl, params.id, call.token),
 		listCharacters(call),
 		listClasses(fetch, apiBaseUrl),
 		listInstances(fetch, apiBaseUrl)
@@ -58,6 +59,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		minLevel: String(l.minLevel),
 		characterId: l.owner.characterId ?? '',
 		note: l.note ?? '',
+		// spec discord-bot, RN-23: o dono é membro, então o link vem no bloco discord.
+		discordLink: l.discord?.ownerLink ?? '',
 		formation: l.formation,
 		freeSlots: String(l.freeSlots ?? 12),
 		title: l.instance.id === null && l.instance.name !== ANY_INSTANCE_NAME ? l.instance.name : ''

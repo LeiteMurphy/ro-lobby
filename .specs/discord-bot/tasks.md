@@ -189,7 +189,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff816da953f02c75cfaff5
 
-### T-11 — Link do Discord no formulário do lobby  [P] [ ]
+### T-11 — Link do Discord no formulário do lobby  [P] [x]
 - Cobre: US-07, RN-23, CA-07.1, CA-07.2, CA-07.3 (tela)
 - Depende de: T-07
 - Paralelizável: [P] com T-09 e T-10
@@ -283,3 +283,8 @@ Sem lacunas: todos os 49 critérios da spec têm task.
   para não mudar o esquema `User`, que o web inteiro usa. O `POST` fica na mesma rota.
 - 2026-10-14 — A API ganhou `APP_ORIGIN` (a mesma origem do web), para o link do lobby na
   mensagem de abertura (RN-08).
+- 2026-10-15 — O e2e CA-03.2 da Home falhava quando a aba testada caía num sábado: a regex
+  `\w{3}` não aceita o "á" de "sáb". Defeito antigo, fora desta spec; corrigido num commit
+  separado (`test:`), porque derrubava a CI.
+- 2026-10-15 — A edição do lobby passou a buscar o lobby com a sessão, para o dono receber
+  o link atual no bloco `discord` (CA-07.3).

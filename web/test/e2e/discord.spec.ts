@@ -136,3 +136,58 @@ test.describe('sala do grupo no Discord: detalhe do lobby', () => {
 		);
 	});
 });
+
+test.describe('link do Discord do dono', () => {
+	test('CA-07.1 / CA-07.2 / CA-07.3 / CA-07.4 / CA-07.5: informar, ver como membro, recusar e apagar', async ({
+		browser,
+		request
+	}) => {
+		const s = rand();
+		const ownerToken = await apiLogin(request, `lnk${s}`);
+		const host = await createCharacter(request, ownerToken, {
+			nick: `Lnk${s}`,
+			classId: 'arcebispo',
+			level: 250,
+			role: 'support'
+		});
+		const lobby = await createLobby(request, ownerToken, {
+			instanceId: 'templo-do-demonio-rei',
+			day: 13,
+			time: '22:00',
+			characterId: host.id,
+			minLevel: 160
+		});
+		const url = `/lobbies/${lobby.id}`;
+		const owner = await newPage(browser);
+		await loginAs(owner, `lnk${s}`, `${url}/editar`);
+
+		// CA-07.2: link fora do formato é recusado junto do campo.
+		await owner.getByLabel('Link do seu Discord (opcional)').fill('https://exemplo.com/discord');
+		await owner.getByRole('button', { name: 'Salvar alterações' }).click();
+		await expect(owner.getByText('Use um link de convite do Discord')).toBeVisible();
+
+		// CA-07.1 / CA-07.4: o link vale e aparece como "Discord do anfitrião".
+		await owner.getByLabel('Link do seu Discord (opcional)').fill('https://discord.gg/abc123');
+		await owner.getByRole('button', { name: 'Salvar alterações' }).click();
+		await owner.waitForURL((u) => u.pathname === url);
+		await expect(owner.getByTestId('owner-link')).toHaveAttribute(
+			'href',
+			'https://discord.gg/abc123'
+		);
+
+		// CA-07.5: o visitante não vê o link.
+		const visitor = await newPage(browser);
+		const res = await visitor.goto(url);
+		expect(await res!.text()).not.toContain('discord.gg/abc123');
+
+		// CA-07.3: apagar na edição tira o link.
+		await owner.goto(`${url}/editar`);
+		await expect(owner.getByLabel('Link do seu Discord (opcional)')).toHaveValue(
+			'https://discord.gg/abc123'
+		);
+		await owner.getByLabel('Link do seu Discord (opcional)').fill('');
+		await owner.getByRole('button', { name: 'Salvar alterações' }).click();
+		await owner.waitForURL((u) => u.pathname === url);
+		await expect(owner.getByTestId('owner-link')).toHaveCount(0);
+	});
+});
