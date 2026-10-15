@@ -1,7 +1,7 @@
 # Spec — Sala do grupo no Discord
 
 - Feature: `discord-bot` · Nível: G · Status: Aprovada (2026-10-14)
-- Notion: (entra na fase de Tasks)
+- Notion: https://app.notion.com/p/3fad4a3a5eff81468b99db1fa0b99fc5
 - Última revisão: 2026-10-14 — link do Discord do dono (US-07), "Avisar no Discord" com
   intervalo (US-08) e, pelo design, uma categoria por sala (RN-05, RN-22, D-04)
 

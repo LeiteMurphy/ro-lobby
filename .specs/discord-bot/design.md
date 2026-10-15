@@ -1,6 +1,6 @@
 # Design — Sala do grupo no Discord
 
-- Spec: `./spec.md` (revisão de 2026-10-14) · Status: Rascunho
+- Spec: `./spec.md` (revisão de 2026-10-14) · Status: Aprovado (2026-10-14)
 - ADR do projeto: `docs/adr/0009-bot-discord-rest-outbox.md` (resume D-01 a D-03)
 
 ## 1. Visão geral
@@ -156,7 +156,7 @@ discord:
 | | `payload` | jsonb | `post`: texto pronto e IDs a mencionar | RN-08, RN-10, RN-11, RN-15, RN-17 |
 | | `run_at`, `attempts`, `last_error`, `done_at` | — | índice parcial em `run_at` onde `done_at IS NULL` | RN-21 |
 
-Migração: `00010_discord.sql` (as quatro mudanças; `Down` desfaz).
+Migração: `00011_discord.sql` (a `00010` é do servidor do jogo) (as quatro mudanças; `Down` desfaz).
 
 O job `sync_access` não guarda se é para liberar ou revogar. Na hora de rodar, ele confere
 se o Usuário é membro e está conectado, e então libera ou revoga nos três canais. Por isso
@@ -165,7 +165,7 @@ ele pode rodar mais de uma vez e fora de ordem sem estragar o resultado (D-02).
 ## 5. Decisões técnicas (ADR)
 
 ### D-01 — Bot só por REST, sem gateway e sem biblioteca
-- Status: Proposta
+- Status: Aceita
 - Contexto: a feature só envia comandos ao Discord e não precisa ouvir eventos. O fora de
   escopo exclui comandos de barra e a detecção de saída do servidor. [RN-05 a RN-17, §8]
 - Opções:
@@ -179,7 +179,7 @@ ele pode rodar mais de uma vez e fora de ordem sem estragar o resultado (D-02).
     comandos de barra vão exigir um endpoint de interações ou o gateway.
 
 ### D-02 — Efeitos assíncronos por outbox no PostgreSQL, com horários deduzidos do estado
-- Status: Proposta
+- Status: Aceita
 - Contexto: aceitar, sair, editar e cancelar não podem falhar por causa do Discord, e os
   efeitos precisam sobreviver a reinícios sem duplicar. [RN-14 a RN-17, RN-21, RNF-04]
 - Opções:
@@ -196,7 +196,7 @@ ele pode rodar mais de uma vez e fora de ordem sem estragar o resultado (D-02).
   - − Até 5 segundos de atraso nos efeitos.
 
 ### D-03 — Conexão ao servidor sem guardar o token do Discord
-- Status: Proposta
+- Status: Aceita
 - Contexto: o `guilds.join` exige o token do usuário, e a `login-discord` proíbe guardar
   tokens. [RN-01 a RN-04, RN-13]
 - Opções:
@@ -211,7 +211,7 @@ ele pode rodar mais de uma vez e fora de ordem sem estragar o resultado (D-02).
     spec).
 
 ### D-04 — Uma categoria por sala
-- Status: Proposta
+- Status: Aceita
 - Contexto: o Discord limita uma categoria a 50 canais. Uma categoria fixa pararia em 25
   salas abertas, e as salas podem ser abertas dias antes. [RN-05, RN-20]
 - Opções:
@@ -227,7 +227,7 @@ ele pode rodar mais de uma vez e fora de ordem sem estragar o resultado (D-02).
     o servidor.
 
 ### D-05 — O bloco `discord` só existe para membros
-- Status: Proposta
+- Status: Aceita
 - Contexto: o link da sala e o link do dono não podem chegar a quem não é membro, nem
   pela API. [RN-19, RN-25, CA-03.4, CA-07.5]
 - Decisão: o `Detail` só monta o bloco quando quem olha é o dono ou tem candidatura
@@ -237,7 +237,7 @@ ele pode rodar mais de uma vez e fora de ordem sem estragar o resultado (D-02).
   - \+ O vazamento fica impossível por construção e é testável na resposta da API.
 
 ### D-06 — Menções só explícitas
-- Status: Proposta
+- Status: Aceita
 - Contexto: nick, título livre e motivo de cancelamento são texto do usuário e poderiam
   conter `@everyone`. [RN-08, RN-17, RN-26]
 - Decisão: toda mensagem vai com `allowed_mentions.parse = []` e a lista de IDs. O

@@ -1,6 +1,6 @@
 # ADR-09 — Bot do Discord por REST, com outbox no PostgreSQL
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-14
 - Spec: `.specs/discord-bot/spec.md` (design D-01 a D-04)
 
