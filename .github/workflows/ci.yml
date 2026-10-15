@@ -64,6 +64,8 @@ jobs:
               - 'scripts/check-compose-tunnel.sh'
               - 'scripts/check-env.sh'
               - 'scripts/check-env.test.sh'
+              - 'scripts/backup.sh'
+              - 'scripts/backup.test.sh'
 
   backend:
     name: Backend
@@ -328,6 +330,10 @@ jobs:
       # Spec endurecimento: CA-01.1 a CA-01.4, CA-08.1 e CA-08.2 do verificador do .env.
       - name: Verificador do .env
         run: bash scripts/check-env.test.sh
+
+      # Spec endurecimento: CA-07.1, backup com retenção (pg_dump de mentira).
+      - name: Backup com retenção
+        run: bash scripts/backup.test.sh
 
       # Spec publicacao-tunel: CA-01.1, CA-01.2, CA-01.3 e a configuração do CA-02.1.
       # Spec endurecimento: o env-check antes do banco (CA-01.1, CA-01.4).
