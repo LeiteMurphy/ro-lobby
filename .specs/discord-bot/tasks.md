@@ -27,7 +27,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff81f2afedc879dfab7577
 
-### T-02 — Cliente do bot e Discord falso  [P] [ ]
+### T-02 — Cliente do bot e Discord falso  [P] [x]
 - Cobre: RN-07, RN-20 (erros do Discord), RNF-02, RNF-03, D-01, D-04, D-06, CA-02.7
   (compensação), CA-02.8 (limite), CA-05.5 (404 conta como sucesso)
 - Depende de: —

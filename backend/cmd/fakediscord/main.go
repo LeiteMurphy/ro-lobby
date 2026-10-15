@@ -21,11 +21,13 @@ func main() {
 	userID := flag.String("user-id", "100000000000000001", "ID do usuário que autoriza")
 	username := flag.String("username", "grimbold", "nome de usuário do Discord")
 	globalName := flag.String("global-name", "Grimbold", "nome de exibição (vazio = sem nome de exibição)")
+	botToken := flag.String("bot-token", "", "token do bot aceito nas rotas do bot (vazio = recusa o bot)")
 	flag.Parse()
 
 	fake := discordfake.New(*clientID, *clientSecret, discordfake.User{
 		ID: *userID, Username: *username, GlobalName: *globalName,
 	})
+	fake.BotToken = *botToken
 	srv := &http.Server{Addr: *addr, Handler: fake.Handler(), ReadHeaderTimeout: 5 * time.Second}
 	slog.Info("Discord falso ouvindo", "addr", *addr)
 	if err := srv.ListenAndServe(); err != nil {
