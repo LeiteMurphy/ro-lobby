@@ -199,3 +199,13 @@
 - 2026-10-15 — T-10: o backup usa `docker exec` direto no container, e não
   `docker compose exec`, para funcionar mesmo antes de o `.env` ter `APP_POSTGRES_PASSWORD`
   (RN-19).
+- 2026-10-15 — T-01: o `check-env.sh` também recusa o `DISCORD_CLIENT_ID` do exemplo e
+  cobra o `CLOUDFLARE_TUNNEL_TOKEN` com origem pública (só no host, porque o token não vai
+  ao `env-check`). As duas checagens decorrem da RN-04 ("variável obrigatória faltando,
+  valor de exemplo em uso com origem pública").
+- 2026-10-15 — Validação, ciclo 1: os arquivos estáticos (`/_app/*`, `/robots.txt`,
+  imagens) saíam sem os cabeçalhos da RN-11, porque o adapter-node entrega esses arquivos
+  antes do hook do SvelteKit. Correção na T-05: `web/server.js` envolve o handler do
+  adapter-node, e os valores ficam num arquivo só (`web/security-headers.js`), usado pelo
+  hook e pelo servidor. O Dockerfile sobe com `node server.js`, e o `smoke-app.sh` confere
+  os cabeçalhos num estático da imagem real.

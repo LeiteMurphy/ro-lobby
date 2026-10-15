@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HSTS, SECURITY_HEADERS, securityHeaders, withSecurityHeaders } from './headers';
+import { headersFor } from '../../../security-headers.js';
 
 describe('cabeçalhos de segurança (spec endurecimento)', () => {
 	it('CA-04.1 / RN-11: os quatro cabeçalhos com os valores da regra', () => {
@@ -40,5 +41,37 @@ describe('cabeçalhos de segurança (spec endurecimento)', () => {
 		expect(response.status).toBe(303);
 		expect(response.headers.get('Location')).toBe('https://rolobby.com.br/');
 		expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+	});
+});
+
+describe('arquivos estáticos (spec endurecimento, RN-11, server.js)', () => {
+	it('CA-04.1: o handler envolvido responde um estático com os cabeçalhos e o HSTS', async () => {
+		const { createServer } = await import('node:http');
+		const { withHeaders } = await import('../../../security-headers.js');
+		// Faz o papel do sirv do adapter-node: entrega o arquivo sem passar pelo SvelteKit.
+		const staticFile = (_req: unknown, res: import('node:http').ServerResponse) => {
+			res.setHeader('Content-Type', 'text/plain');
+			res.end('User-agent: *');
+		};
+		const server = createServer(withHeaders(staticFile, headersFor(true)));
+		await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+		const { port } = server.address() as { port: number };
+		try {
+			const res = await fetch(`http://127.0.0.1:${port}/robots.txt`);
+			expect(await res.text()).toBe('User-agent: *');
+			expect(res.headers.get('x-frame-options')).toBe('DENY');
+			expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+			expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+			expect(res.headers.get('permissions-policy')).toBe(
+				'camera=(), microphone=(), geolocation=()'
+			);
+			expect(res.headers.get('strict-transport-security')).toBe('max-age=31536000');
+		} finally {
+			await new Promise((resolve) => server.close(resolve));
+		}
+	});
+
+	it('CA-04.2: sem https, o estático sai sem HSTS', () => {
+		expect(headersFor(false)['Strict-Transport-Security']).toBeUndefined();
 	});
 });

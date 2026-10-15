@@ -60,6 +60,22 @@ for pair in api:8080 app-postgres:5432; do
 	[[ "$published" == "null" || "$published" == "[]" ]] && ok "$svc sem porta publicada" || fail "$svc publica $published"
 done
 
+echo "== Endurecimento CA-04.1 — cabeçalhos de segurança, inclusive nos estáticos"
+asset=$(grep -o '/_app/immutable/[^"]*\.js' <<<"$home" | head -n 1)
+for path in / /robots.txt "$asset"; do
+	headers=$(curl -fsS -o /dev/null -D - "$BASE$path" | tr -d '\r') || {
+		fail "GET $path não respondeu 200"
+		continue
+	}
+	missing=""
+	for h in 'x-frame-options: DENY' 'x-content-type-options: nosniff' \
+		'referrer-policy: strict-origin-when-cross-origin' \
+		'permissions-policy: camera=(), microphone=(), geolocation=()'; do
+		grep -qiF "$h" <<<"$headers" || missing="$missing [$h]"
+	done
+	[[ -z "$missing" ]] && ok "cabeçalhos em $path" || fail "faltam em $path:$missing"
+done
+
 echo "== CA-01.4 — modo dev continua só com o Postgres"
 dev_services=$(docker compose config --services | tr '\n' ' ' | xargs)
 [[ "$dev_services" == "postgres" ]] && ok "docker compose up sem perfil sobe: $dev_services" ||
