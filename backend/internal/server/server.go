@@ -17,20 +17,26 @@ type handlers struct {
 	lobbiesHandler
 	applicationsHandler
 	talentsHandler
+	discordHandler
 }
 
 var _ api.StrictServerInterface = handlers{}
 
 // New devolve o handler HTTP com todas as rotas do openapi.yaml.
-func New(db health.Pinger, authenticator Authenticator, chars CharacterService, lobbySvc LobbyService, apps ApplicationService, talentSvc TalentService) http.Handler {
+func New(db health.Pinger, authenticator Authenticator, chars CharacterService, lobbySvc LobbyService, apps ApplicationService, talentSvc TalentService, opts ...Option) http.Handler {
+	o := options{rooms: noRooms{}}
+	for _, opt := range opts {
+		opt(&o)
+	}
 	session := charactersHandler{auth: authenticator, chars: chars}
 	strict := api.NewStrictHandlerWithOptions(handlers{
 		Handler:             health.New(db),
 		authHandler:         authHandler{auth: authenticator},
 		charactersHandler:   session,
-		lobbiesHandler:      lobbiesHandler{session: session, lobbies: lobbySvc},
+		lobbiesHandler:      lobbiesHandler{session: session, lobbies: lobbySvc, rooms: o.rooms},
 		applicationsHandler: applicationsHandler{session: session, apps: apps, lobbies: lobbySvc},
 		talentsHandler:      talentsHandler{session: session, talents: talentSvc},
+		discordHandler:      discordHandler{session: session, rooms: o.rooms},
 	}, nil, api.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)

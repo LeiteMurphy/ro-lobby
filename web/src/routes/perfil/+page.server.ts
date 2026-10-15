@@ -22,6 +22,8 @@ import {
 	NOT_FOUND_MESSAGE,
 	UNAVAILABLE_MESSAGE
 } from '$lib/characters/messages';
+import { getConnection } from '$lib/discord/api';
+import { connectMessage } from '$lib/discord/messages';
 import { listInstances } from '$lib/lobbies/api';
 import { setAvailability } from '$lib/talents/api';
 import type { AvailabilityValues } from '$lib/talents/components/AvailabilityDialog.svelte';
@@ -39,15 +41,16 @@ function toLogin(cookies: Cookies): never {
 	redirect(303, loginHref(PROFILE));
 }
 
-export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
+export const load: PageServerLoad = async ({ url, locals, cookies, fetch }) => {
 	const token = cookies.get(SESSION_COOKIE);
 	if (!locals.user || !token) toLogin(cookies);
 
 	const { apiBaseUrl } = authConfig();
-	const [characters, classes, instances] = await Promise.all([
+	const [characters, classes, instances, connection] = await Promise.all([
 		listCharacters({ fetchFn: fetch, apiBaseUrl, token }),
 		listClasses(fetch, apiBaseUrl),
-		listInstances(fetch, apiBaseUrl)
+		listInstances(fetch, apiBaseUrl),
+		getConnection({ fetchFn: fetch, apiBaseUrl, token })
 	]);
 	if (!characters.ok && characters.kind === 'no_session') toLogin(cookies);
 
@@ -57,6 +60,9 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
 		// Banco de talentos (RN-04): as instâncias de interesse saem do catálogo.
 		instances: instances.ok ? instances.data : [],
 		loadError: characters.ok && classes.ok ? null : UNAVAILABLE_MESSAGE,
+		// spec discord-bot, US-01: a conexão ao servidor do RO Lobby; sem resposta, some.
+		discord: connection.ok ? connection.data : { enabled: false, connectedAt: null },
+		discordMessage: connectMessage(url.searchParams.get('discord')),
 		loginHref: loginHref(PROFILE)
 	};
 };

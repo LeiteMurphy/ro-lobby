@@ -26,6 +26,8 @@ var (
 	ErrInvalidCode = errors.New("discord: código recusado")
 	// ErrUnavailable: o Discord não respondeu no prazo ou respondeu com erro.
 	ErrUnavailable = errors.New("discord: indisponível")
+	// ErrWrongAccount: a conta autorizada não é a do Usuário logado (RN-03 da discord-bot).
+	ErrWrongAccount = errors.New("discord: conta do Discord diferente da do login")
 )
 
 // Profile é o que o escopo identify devolve e o RO Lobby guarda (RN-06). Os tokens do
@@ -78,6 +80,28 @@ func (c *Client) ProfileFromCode(ctx context.Context, code, redirectURI string) 
 		return Profile{}, err
 	}
 	return c.me(ctx, token)
+}
+
+// JoinFromCode troca o código da conexão ao servidor oficial (escopos identify e
+// guilds.join), confere que a conta é expectedID e entrega o token só para join, que inclui
+// o jogador no servidor (RN-01 a RN-03 da discord-bot). O token não sai daqui de outro jeito
+// e não é guardado (RN-02).
+func (c *Client) JoinFromCode(ctx context.Context, code, redirectURI, expectedID string,
+	join func(ctx context.Context, userID, accessToken string) error) (Profile, error) {
+	exCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+	token, err := c.exchange(exCtx, code, redirectURI)
+	if err != nil {
+		return Profile{}, err
+	}
+	p, err := c.me(exCtx, token)
+	if err != nil {
+		return Profile{}, err
+	}
+	if p.ID != expectedID {
+		return Profile{}, ErrWrongAccount
+	}
+	return p, join(ctx, p.ID, token)
 }
 
 func (c *Client) exchange(ctx context.Context, code, redirectURI string) (string, error) {

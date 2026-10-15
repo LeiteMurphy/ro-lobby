@@ -24,6 +24,8 @@ const MESSAGES: Partial<Record<Field, Partial<Record<Code, string>> & { fallback
 		fallback: 'Escolha um dos seus personagens'
 	},
 	note: { fallback: 'Use até 250 caracteres' },
+	// spec discord-bot, RN-23.
+	discordLink: { fallback: 'Use um link de convite do Discord' },
 	// spec lobby-sem-instancia, RN-02.
 	title: { fallback: 'Use até 40 caracteres' },
 	// spec grupo-livre, RN-02, RN-06 e RN-07.

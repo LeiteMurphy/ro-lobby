@@ -13,7 +13,8 @@ preview Open Graph) e o banco de talentos (disponibilidade por personagem, afini
 lobby e catálogo em `/talentos`) o grupo livre (lobby sem
 formação por função, de 2 a 12 vagas), o lobby sem instância (com título livre) e o
 servidor do jogo (Freya ou Nidhogg no personagem e no lobby, com filtro na Home e no banco
-de talentos). A pilha completa roda com
+de talentos) e a sala do grupo no Discord (bot no servidor oficial, link do Discord do dono e
+"Avisar no Discord"; liga com `DISCORD_BOT_TOKEN` e `DISCORD_GUILD_ID`). A pilha completa roda com
 `docker compose --profile app up` (ADR-06). Nada em andamento; os próximos passos ficam no
 Notion. O setup local e os comandos estão no `README.md`. As decisões de arquitetura ficam
 em `docs/adr/`.
@@ -46,6 +47,8 @@ Futuro: Guilda, Membro de guilda.
 - Estrutura do repositório: monorepo com `backend/`, `web/`, `docs/adr/` e `.specs/` ([ADR-03](docs/adr/0003-estrutura-monorepo.md)).
 - Acesso ao banco: `pgx` + `sqlc`, migrações com `goose` ([ADR-04](docs/adr/0004-acesso-banco-pgx-sqlc-goose.md)).
 - Contrato da API: `openapi.yaml` como fonte, com `oapi-codegen` (Go) e `openapi-typescript` (web) ([ADR-05](docs/adr/0005-contrato-api-openapi.md)).
+- Sala do grupo no Discord: bot por REST, sem gateway, com outbox no PostgreSQL e conexão
+  ao servidor oficial por `guilds.join` sem guardar token ([ADR-09](docs/adr/0009-bot-discord-rest-outbox.md)).
 - Hospedagem: local, com o perfil `app` do Docker Compose ([ADR-06](docs/adr/0006-hospedagem-local.md)). Para testes fechados, o PC do usuário publica em `rolobby.com.br` pelo Cloudflare Tunnel ([ADR-08](docs/adr/0008-publicacao-tunel-cloudflare.md)).
 
 ### Pendente de ADR (fase de Design)

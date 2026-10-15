@@ -64,6 +64,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/discord-connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conexão do Usuário ao servidor do RO Lobby no Discord
+         * @description Se a sala no Discord está ligada e quando o Usuário se conectou (spec discord-bot, RN-01, RN-22).
+         */
+        get: operations["getDiscordConnection"];
+        put?: never;
+        /**
+         * Conecta o Usuário ao servidor do RO Lobby no Discord
+         * @description Troca o código do OAuth com identify e guilds.join, confere que a conta é a do login (RN-03), inclui o Usuário no servidor oficial e descarta o token (RN-02). Conectar de novo é permitido e atualiza a data (RN-04).
+         */
+        post: operations["connectDiscord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/session": {
         parameters: {
             query?: never;
@@ -395,6 +419,52 @@ export interface paths {
         get: operations["listLobbyTalents"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lobbies/{id}/discord-room": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abre a sala do grupo no Discord
+         * @description Só o dono, com o lobby aberto e sem sala antes (spec discord-bot, RN-05 a RN-09). Cria a categoria com texto e voz no servidor oficial, só para os membros conectados, e posta a mensagem de abertura. O Discord fora do ar ou no limite de canais responde 503, sem sala gravada (RN-20).
+         */
+        post: operations["openDiscordRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lobbies/{id}/discord-alert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Avisa o grupo na sala do Discord
+         * @description Só o dono, com a sala aberta (spec discord-bot, RN-26). O bot posta um texto fixo mencionando os membros conectados. Intervalo mínimo de 10 minutos por lobby (RN-27): antes disso responde 429 sem chamar o Discord. Uma falha no Discord não conta para o intervalo nem é refeita (RN-28).
+         */
+        post: operations["alertDiscordRoom"];
         delete?: never;
         options?: never;
         head?: never;
@@ -868,7 +938,7 @@ export interface components {
         };
         FieldError: {
             /** @enum {string} */
-            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title" | "server";
+            field: "nick" | "classId" | "level" | "role" | "portrait" | "link" | "instanceId" | "startsAt" | "slots" | "minLevel" | "characterId" | "note" | "reason" | "message" | "days" | "start" | "end" | "instanceIds" | "day" | "time" | "formation" | "freeSlots" | "title" | "server" | "discordLink";
             /** @enum {string} */
             code: "required" | "too_long" | "too_short" | "invalid" | "taken" | "conflict" | "below_occupied" | "above_owner" | "level_too_low" | "same_as_start" | "locked";
         };
@@ -920,6 +990,8 @@ export interface components {
             anyInstance?: boolean;
             /** @description Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02). */
             title?: string;
+            /** @description Link opcional do Discord do dono (spec discord-bot, RN-23): https://discord.gg/…, https://discord.com/invite/… ou https://discord.com/channels/…/…, até 200 caracteres. Só os membros veem (RN-19). */
+            discordLink?: string;
         };
         LobbyUpdate: {
             /** @description ID de uma instância de GET /instances. Sem ele, a instância continua a mesma (RN-17). */
@@ -936,6 +1008,8 @@ export interface components {
             anyInstance?: boolean;
             /** @description Título do lobby sem instância, até 40 caracteres; vazio aparece como "Qualquer instância" (RN-02). */
             title?: string;
+            /** @description Link do Discord do dono (RN-23 da discord-bot); vazio ou ausente apaga. */
+            discordLink?: string;
         };
         /**
          * @description Por função (vagas de Tank, Suporte e Dano) ou grupo livre (spec grupo-livre, RN-01).
@@ -1006,12 +1080,70 @@ export interface components {
             /** @description Pedidos de troca pendentes. Só no detalhe e só para o dono (D-12). */
             swapRequests?: components["schemas"]["LobbySwapRequest"][];
             myApplication?: components["schemas"]["ViewerApplication"];
+            discord?: components["schemas"]["LobbyDiscord"];
             minLevel: number;
             note: string | null;
             owner: components["schemas"]["LobbyOwner"];
             cancelReason: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        /** @description Sala do grupo no Discord. Só no detalhe e só para o dono e os membros aceitos (spec discord-bot, RN-18, RN-19, D-05). */
+        LobbyDiscord: {
+            /** @description A sala no Discord está ligada (RN-22). */
+            enabled: boolean;
+            /** @description Nula sem sala ou com a sala desligada. */
+            room: components["schemas"]["DiscordRoom"] | null;
+            members: components["schemas"]["DiscordMember"][];
+            viewerConnected: boolean;
+            /** @description Link do Discord do dono (RN-23); vem mesmo com a sala desligada (RN-24). */
+            ownerLink: string | null;
+        };
+        DiscordRoom: {
+            /** @enum {string} */
+            status: "open" | "closing" | "deleted";
+            /** @description Link do canal de texto; só com a sala aberta (RN-18). */
+            url: string | null;
+            /**
+             * Format: date-time
+             * @description Quando o dono pode avisar de novo (RN-27); nulo se já pode, e sempre nulo para quem não é o dono.
+             */
+            alertAvailableAt: string | null;
+        };
+        DiscordMember: {
+            /** Format: uuid */
+            userId: string;
+            nick: string;
+            connected: boolean;
+        };
+        DiscordRuleError: {
+            /** @enum {string} */
+            error: "discord_rule";
+            /** @enum {string} */
+            code: "not_owner" | "not_open" | "room_exists" | "no_room" | "wrong_account";
+        };
+        DiscordCooldown: {
+            /** @enum {string} */
+            error: "cooldown";
+            /** @description Segundos até poder avisar de novo (RN-27). */
+            retryAfterSeconds: number;
+        };
+        DiscordConnection: {
+            /** @description A sala no Discord está ligada (RN-22). */
+            enabled: boolean;
+            /**
+             * Format: date-time
+             * @description Quando o Usuário se conectou; nulo se nunca (RN-02).
+             */
+            connectedAt: string | null;
+        };
+        DiscordConnectionInput: {
+            code: string;
+            redirectUri: string;
+        };
+        DiscordError: {
+            /** @enum {string} */
+            error: "not_found" | "discord_disabled" | "discord_unavailable" | "guild_full" | "invalid_code";
         };
         /**
          * @description Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
@@ -1443,6 +1575,88 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getDiscordConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado da conexão. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordConnection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+        };
+    };
+    connectDiscord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscordConnectionInput"];
+            };
+        };
+        responses: {
+            /** @description Conectado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordConnection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            /** @description A sala no Discord está desligada (discord_disabled). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Conta do Discord diferente da do login (wrong_account). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRuleError"];
+                };
+            };
+            /** @description Código recusado (invalid_code). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Discord indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
                 };
             };
         };
@@ -1991,6 +2205,115 @@ export interface operations {
             401: components["responses"]["NoSession"];
             404: components["responses"]["LobbyNotFound"];
             409: components["responses"]["LobbyNotOpen"];
+        };
+    };
+    openDiscordRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sala aberta. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRoom"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            /** @description Lobby inexistente, ou a sala no Discord está desligada (discord_disabled). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Regra violada. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRuleError"];
+                };
+            };
+            /** @description Discord indisponível ou servidor no limite de canais. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+        };
+    };
+    alertDiscordRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aviso postado. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            /** @description Lobby inexistente, ou a sala no Discord está desligada. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Regra violada (not_owner, no_room). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRuleError"];
+                };
+            };
+            /** @description Ainda no intervalo entre avisos. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordCooldown"];
+                };
+            };
+            /** @description Discord indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
         };
     };
     cancelLobby: {

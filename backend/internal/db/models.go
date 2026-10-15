@@ -61,6 +61,32 @@ type CharacterAvailability struct {
 	UpdatedAt   time.Time
 }
 
+type DiscordJob struct {
+	ID        int64
+	LobbyID   pgtype.UUID
+	Kind      string
+	UserID    pgtype.UUID
+	Payload   []byte
+	RunAt     time.Time
+	Attempts  int32
+	LastError pgtype.Text
+	DoneAt    pgtype.Timestamptz
+	CreatedAt time.Time
+}
+
+type DiscordRoom struct {
+	LobbyID        pgtype.UUID
+	CategoryID     string
+	TextChannelID  string
+	VoiceChannelID string
+	Status         string
+	OpenedAt       time.Time
+	ClosingAt      pgtype.Timestamptz
+	DeletedAt      pgtype.Timestamptz
+	ReminderSentAt pgtype.Timestamptz
+	LastAlertAt    pgtype.Timestamptz
+}
+
 type Lobby struct {
 	ID               pgtype.UUID
 	OwnerID          pgtype.UUID
@@ -81,6 +107,7 @@ type Lobby struct {
 	Formation        string
 	FreeSlots        pgtype.Int2
 	Server           string
+	DiscordLink      pgtype.Text
 }
 
 type Session struct {
@@ -114,10 +141,11 @@ type SwapRequestEvent struct {
 }
 
 type User struct {
-	ID          pgtype.UUID
-	DiscordID   string
-	Username    string
-	GlobalName  pgtype.Text
-	CreatedAt   time.Time
-	LastLoginAt time.Time
+	ID                 pgtype.UUID
+	DiscordID          string
+	Username           string
+	GlobalName         pgtype.Text
+	CreatedAt          time.Time
+	LastLoginAt        time.Time
+	DiscordConnectedAt pgtype.Timestamptz
 }

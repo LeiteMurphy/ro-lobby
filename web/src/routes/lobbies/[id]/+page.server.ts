@@ -19,6 +19,13 @@ import { SESSION_COOKIE } from '$lib/auth/oauth';
 import { sessionCall, toLogin } from '$lib/auth/session';
 import { listCharacters, listClasses, type Character } from '$lib/characters/api';
 import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { alertRoom, openRoom } from '$lib/discord/api';
+import {
+	ALERT_MESSAGES,
+	cooldownMessage,
+	OPEN_ROOM_MESSAGES,
+	ruleMessage as discordRuleMessage
+} from '$lib/discord/messages';
 import { cancelLobby, getLobby } from '$lib/lobbies/api';
 import { lobbyConflictMessage, lobbyFieldMessages } from '$lib/lobbies/messages';
 import type { Result } from '$lib/api/request';
@@ -114,6 +121,48 @@ function applicationFailure<A extends string>(
 }
 
 export const actions: Actions = {
+	// spec discord-bot, RN-05 a RN-09 e RN-20: o dono abre a sala.
+	openRoom: async ({ params, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const result = await openRoom(sessionCall(cookies, fetch, path), params.id);
+		if (result.ok) return { action: 'discord' as const, text: 'Sala aberta no Discord.', ok: true };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		const text = discordRuleMessage(
+			OPEN_ROOM_MESSAGES,
+			result.kind,
+			result.kind === 'rule' ? result.code : undefined
+		);
+		return fail(result.kind === 'rule' ? 409 : 503, {
+			action: 'discord' as const,
+			text,
+			ok: false
+		});
+	},
+	// spec discord-bot, RN-26 a RN-28: o dono avisa o grupo, com intervalo de 10 minutos.
+	alert: async ({ params, cookies, fetch }) => {
+		const path = `/lobbies/${params.id}`;
+		const result = await alertRoom(sessionCall(cookies, fetch, path), params.id);
+		if (result.ok)
+			return { action: 'discord' as const, text: 'Grupo avisado no Discord.', ok: true };
+		if (result.kind === 'no_session') return toLogin(cookies, path);
+		if (result.kind === 'cooldown') {
+			return fail(429, {
+				action: 'discord' as const,
+				text: cooldownMessage(result.retryAfterSeconds),
+				ok: false
+			});
+		}
+		const text = discordRuleMessage(
+			ALERT_MESSAGES,
+			result.kind,
+			result.kind === 'rule' ? result.code : undefined
+		);
+		return fail(result.kind === 'rule' ? 409 : 503, {
+			action: 'discord' as const,
+			text,
+			ok: false
+		});
+	},
 	cancel: async ({ params, request, cookies, fetch }) => {
 		const path = `/lobbies/${params.id}`;
 		const call = sessionCall(cookies, fetch, path);

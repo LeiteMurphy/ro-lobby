@@ -32,7 +32,8 @@ const VALUES: LobbyFormValues = {
 	note: '',
 	formation: 'roles',
 	freeSlots: '12',
-	title: ''
+	title: '',
+	discordLink: ''
 };
 const MVP: ApiLobby = {
 	...TEMPLE,

@@ -54,6 +54,7 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch, url }) => {
 		minLevel: String(firstInstance?.level ?? 1),
 		characterId: main?.id ?? '',
 		note: '',
+		discordLink: '',
 		// spec grupo-livre, RN-01 e RN-02: por função; o grupo livre começa com 12 vagas.
 		formation: 'roles',
 		freeSlots: '12',

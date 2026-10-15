@@ -30,7 +30,7 @@ ON CONFLICT (discord_id) DO UPDATE
 SET username      = EXCLUDED.username,
     global_name   = EXCLUDED.global_name,
     last_login_at = EXCLUDED.last_login_at
-RETURNING id, discord_id, username, global_name, created_at, last_login_at
+RETURNING id, discord_id, username, global_name, created_at, last_login_at, discord_connected_at
 `
 
 type UpsertUserByDiscordIDParams struct {
@@ -56,6 +56,7 @@ func (q *Queries) UpsertUserByDiscordID(ctx context.Context, arg UpsertUserByDis
 		&i.GlobalName,
 		&i.CreatedAt,
 		&i.LastLoginAt,
+		&i.DiscordConnectedAt,
 	)
 	return i, err
 }

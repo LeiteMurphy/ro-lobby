@@ -78,10 +78,10 @@ func (q *Queries) CountOpenLobbiesByOwner(ctx context.Context, arg CountOpenLobb
 const createLobby = `-- name: CreateLobby :one
 INSERT INTO lobbies (owner_id, instance_id, instance_name, instance_level, starts_at,
     slots_tank, slots_support, slots_dps, min_level, owner_character_id, owner_role, note, created_at,
-    formation, free_slots, server)
+    formation, free_slots, server, discord_link)
 VALUES ($1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10, $11, $12, $13,
-    COALESCE(NULLIF($14::text, ''), 'roles'), $15, $16)
+    COALESCE(NULLIF($14::text, ''), 'roles'), $15, $16, $17)
 RETURNING id
 `
 
@@ -102,6 +102,7 @@ type CreateLobbyParams struct {
 	Formation        string
 	FreeSlots        pgtype.Int2
 	Server           string
+	DiscordLink      pgtype.Text
 }
 
 func (q *Queries) CreateLobby(ctx context.Context, arg CreateLobbyParams) (pgtype.UUID, error) {
@@ -122,6 +123,7 @@ func (q *Queries) CreateLobby(ctx context.Context, arg CreateLobbyParams) (pgtyp
 		arg.Formation,
 		arg.FreeSlots,
 		arg.Server,
+		arg.DiscordLink,
 	)
 	var id pgtype.UUID
 	err := row.Scan(&id)
@@ -129,7 +131,7 @@ func (q *Queries) CreateLobby(ctx context.Context, arg CreateLobbyParams) (pgtyp
 }
 
 const getLobby = `-- name: GetLobby :one
-SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at, lobbies.formation, lobbies.free_slots, lobbies.server,
+SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at, lobbies.formation, lobbies.free_slots, lobbies.server, lobbies.discord_link,
        c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait, c.link AS owner_link,
        u.username AS owner_username, u.global_name AS owner_global_name,
        -- D-03 (candidatura): membros aceitos por função e pendentes.
@@ -182,6 +184,7 @@ func (q *Queries) GetLobby(ctx context.Context, id pgtype.UUID) (GetLobbyRow, er
 		&i.Lobby.Formation,
 		&i.Lobby.FreeSlots,
 		&i.Lobby.Server,
+		&i.Lobby.DiscordLink,
 		&i.OwnerNick,
 		&i.OwnerClassID,
 		&i.OwnerLevel,
@@ -198,7 +201,7 @@ func (q *Queries) GetLobby(ctx context.Context, id pgtype.UUID) (GetLobbyRow, er
 }
 
 const getOwnLobbyForUpdate = `-- name: GetOwnLobbyForUpdate :one
-SELECT id, owner_id, instance_id, instance_name, instance_level, starts_at, slots_tank, slots_support, slots_dps, min_level, owner_character_id, owner_role, note, cancelled_at, cancel_reason, created_at, formation, free_slots, server FROM lobbies WHERE id = $1 AND owner_id = $2 FOR UPDATE
+SELECT id, owner_id, instance_id, instance_name, instance_level, starts_at, slots_tank, slots_support, slots_dps, min_level, owner_character_id, owner_role, note, cancelled_at, cancel_reason, created_at, formation, free_slots, server, discord_link FROM lobbies WHERE id = $1 AND owner_id = $2 FOR UPDATE
 `
 
 type GetOwnLobbyForUpdateParams struct {
@@ -230,6 +233,7 @@ func (q *Queries) GetOwnLobbyForUpdate(ctx context.Context, arg GetOwnLobbyForUp
 		&i.Formation,
 		&i.FreeSlots,
 		&i.Server,
+		&i.DiscordLink,
 	)
 	return i, err
 }
@@ -271,7 +275,7 @@ func (q *Queries) HasScheduleConflict(ctx context.Context, arg HasScheduleConfli
 }
 
 const listOpenLobbies = `-- name: ListOpenLobbies :many
-SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at, lobbies.formation, lobbies.free_slots, lobbies.server,
+SELECT lobbies.id, lobbies.owner_id, lobbies.instance_id, lobbies.instance_name, lobbies.instance_level, lobbies.starts_at, lobbies.slots_tank, lobbies.slots_support, lobbies.slots_dps, lobbies.min_level, lobbies.owner_character_id, lobbies.owner_role, lobbies.note, lobbies.cancelled_at, lobbies.cancel_reason, lobbies.created_at, lobbies.formation, lobbies.free_slots, lobbies.server, lobbies.discord_link,
        c.nick AS owner_nick, c.class_id AS owner_class_id, c.level AS owner_level, c.portrait AS owner_portrait, c.link AS owner_link,
        u.username AS owner_username, u.global_name AS owner_global_name,
        -- D-03 (candidatura): membros aceitos por função e pendentes.
@@ -340,6 +344,7 @@ func (q *Queries) ListOpenLobbies(ctx context.Context, arg ListOpenLobbiesParams
 			&i.Lobby.Formation,
 			&i.Lobby.FreeSlots,
 			&i.Lobby.Server,
+			&i.Lobby.DiscordLink,
 			&i.OwnerNick,
 			&i.OwnerClassID,
 			&i.OwnerLevel,
@@ -384,8 +389,9 @@ UPDATE lobbies
 SET instance_id = $1, instance_name = $2, instance_level = $3,
     starts_at = $4, slots_tank = $5, slots_support = $6,
     slots_dps = $7, min_level = $8, note = $9,
-    formation = $10, free_slots = $11
-WHERE id = $12
+    formation = $10, free_slots = $11,
+    discord_link = $12 -- RN-23 da discord-bot
+WHERE id = $13
 `
 
 type UpdateLobbyParams struct {
@@ -400,6 +406,7 @@ type UpdateLobbyParams struct {
 	Note          pgtype.Text
 	Formation     string
 	FreeSlots     pgtype.Int2
+	DiscordLink   pgtype.Text
 	ID            pgtype.UUID
 }
 
@@ -416,6 +423,7 @@ func (q *Queries) UpdateLobby(ctx context.Context, arg UpdateLobbyParams) error 
 		arg.Note,
 		arg.Formation,
 		arg.FreeSlots,
+		arg.DiscordLink,
 		arg.ID,
 	)
 	return err

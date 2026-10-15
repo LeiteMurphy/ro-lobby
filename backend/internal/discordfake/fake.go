@@ -47,7 +47,13 @@ type Fake struct {
 	// Delay atrasa as respostas da API, para simular o Discord lento (CA-04.5).
 	Delay time.Duration
 
+	// BotToken é o token aceito nas rotas do bot (spec discord-bot); vazio recusa o bot.
+	BotToken string
+
 	mu            sync.Mutex
+	bot           *BotState
+	failures      BotFailures
+	botCalls      int
 	codes         map[string]grant
 	tokens        map[string]User
 	lastAuthorize AuthorizeRequest
@@ -78,13 +84,15 @@ func (f *Fake) LastAuthorize() AuthorizeRequest {
 	return f.lastAuthorize
 }
 
-// Handler atende /oauth2/authorize (página) e /api/oauth2/token e /api/users/@me (API).
+// Handler atende /oauth2/authorize (página), /api/oauth2/token e /api/users/@me (API) e as
+// rotas do bot (bot.go).
 func (f *Fake) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /oauth2/authorize", f.authorizePage)
 	mux.HandleFunc("POST /oauth2/authorize", f.authorizeDecision)
 	mux.HandleFunc("POST /api/oauth2/token", f.token)
 	mux.HandleFunc("GET /api/users/@me", f.me)
+	f.registerBot(mux)
 	return mux
 }
 

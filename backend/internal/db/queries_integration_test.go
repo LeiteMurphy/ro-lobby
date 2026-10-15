@@ -102,7 +102,8 @@ func TestSchema_CA01_4_NoTokensNorAvatar(t *testing.T) {
 		}
 		return names
 	}
-	if got, want := columns("users"), []string{"created_at", "discord_id", "global_name", "id", "last_login_at", "username"}; !slices.Equal(got, want) {
+	// RN-02 (discord-bot): da conexão ao servidor oficial, só a data; o token nunca é guardado.
+	if got, want := columns("users"), []string{"created_at", "discord_connected_at", "discord_id", "global_name", "id", "last_login_at", "username"}; !slices.Equal(got, want) {
 		t.Errorf("colunas de users = %v, esperado %v", got, want)
 	}
 	if got, want := columns("sessions"), []string{"created_at", "last_used_at", "token_hash", "user_id"}; !slices.Equal(got, want) {

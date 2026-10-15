@@ -49,7 +49,8 @@ const VALUES: LobbyFormValues = {
 	note: '',
 	formation: 'roles',
 	freeSlots: '12',
-	title: ''
+	title: '',
+	discordLink: ''
 };
 
 describe('vagas do grupo livre', () => {

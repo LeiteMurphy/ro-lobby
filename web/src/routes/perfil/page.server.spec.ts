@@ -76,8 +76,9 @@ type ActionEvent = Parameters<(typeof actions)['create']>[0];
 const loadEvent = (
 	user: typeof USER | null,
 	cookies: ReturnType<typeof fakeCookies>,
-	f = fakeFetch({}).fn
-) => ({ locals: { user }, cookies, fetch: f }) as unknown as LoadEvent;
+	f = fakeFetch({}).fn,
+	url = new URL('http://web/perfil')
+) => ({ locals: { user }, cookies, fetch: f, url }) as unknown as LoadEvent;
 const actionEvent = (request: Request, cookies: ReturnType<typeof fakeCookies>, f: typeof fetch) =>
 	({ request, cookies, fetch: f }) as unknown as ActionEvent;
 
@@ -104,6 +105,23 @@ describe('load de /perfil', () => {
 		expect(data.loadError).toBeNull();
 		expect(calls.find((c) => c.key === 'GET /characters')?.auth).toBe('Bearer tok');
 		expect(calls.find((c) => c.key === 'GET /classes')?.auth).toBeNull();
+	});
+
+	it('CA-01.1 (discord-bot): traz a conexão ao servidor e a mensagem do retorno', async () => {
+		const { fn, calls } = fakeFetch({
+			'GET /characters': json(200, []),
+			'GET /classes': json(200, []),
+			'GET /me/discord-connection': json(200, {
+				enabled: true,
+				connectedAt: '2026-10-14T12:00:00Z'
+			})
+		});
+		const data = (await load(
+			loadEvent(USER, fakeCookies('tok'), fn, new URL('http://web/perfil?discord=conectado'))
+		)) as Record<string, unknown>;
+		expect(data.discord).toEqual({ enabled: true, connectedAt: '2026-10-14T12:00:00Z' });
+		expect(data.discordMessage).toEqual({ text: 'Você entrou no servidor do RO Lobby.', ok: true });
+		expect(calls.find((c) => c.key === 'GET /me/discord-connection')?.auth).toBe('Bearer tok');
 	});
 
 	it('RN-21: API fora do ar mostra o aviso, sem quebrar a página', async () => {

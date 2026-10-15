@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/catalog"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordroom"
 )
 
 const (
@@ -88,6 +90,8 @@ const (
 	FieldFormation   = "formation"
 	FieldTitle       = "title"
 	FieldFreeSlots   = "freeSlots"
+	// FieldDiscordLink é o link do Discord do dono (RN-23 da discord-bot).
+	FieldDiscordLink = "discordLink"
 
 	CodeRequired      = "required"
 	CodeInvalid       = "invalid"
@@ -159,6 +163,8 @@ type Input struct {
 	// (RN-01, RN-02 da lobby-sem-instancia).
 	AnyInstance bool
 	Title       string
+	// DiscordLink é o link opcional do Discord do dono (RN-23 da discord-bot).
+	DiscordLink string
 }
 
 // UpdateInput é o que o dono muda ao editar; o personagem fica (RN-17). InstanceID vazio
@@ -176,6 +182,8 @@ type UpdateInput struct {
 	// Sem ele e sem InstanceID, a instância (ou o título) atual continua.
 	AnyInstance bool
 	Title       string
+	// DiscordLink vazio apaga o link (RN-23 da discord-bot).
+	DiscordLink string
 }
 
 // Owner é o dono com o personagem dele. CharacterID e os dados do personagem ficam vazios
@@ -318,6 +326,8 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 	}
 	note, noteErrs := checkNote(in.Note)
 	errs = append(errs, noteErrs...)
+	link, linkErrs := CheckDiscordLink(in.DiscordLink)
+	errs = append(errs, linkErrs...)
 	cid, cidErr := parseUUID(in.CharacterID)
 	if in.CharacterID == "" {
 		errs = append(errs, FieldError{FieldCharacterID, CodeRequired})
@@ -370,6 +380,7 @@ func (s *Service) Create(ctx context.Context, userID string, in Input) (Lobby, e
 			Formation:        formation,
 			FreeSlots:        freeSlotsParam(formation, in.FreeSlots),
 			Server:           character.Server, // RN-06 da spec servidor
+			DiscordLink:      optionalText(link),
 		})
 		if err != nil {
 			return err
@@ -414,6 +425,8 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 	}
 	note, noteErrs := checkNote(in.Note)
 	errs = append(errs, noteErrs...)
+	link, linkErrs := CheckDiscordLink(in.DiscordLink)
+	errs = append(errs, linkErrs...)
 	if len(errs) > 0 {
 		return Lobby{}, &ValidationError{Fields: errs}
 	}
@@ -489,8 +502,15 @@ func (s *Service) Update(ctx context.Context, userID, id string, in UpdateInput)
 			Note:          optionalText(note),
 			Formation:     formation,
 			FreeSlots:     freeSlotsParam(formation, in.FreeSlots),
+			DiscordLink:   optionalText(link),
 		}); err != nil {
 			return err
+		}
+		if !current.Lobby.StartsAt.Equal(in.StartsAt) {
+			// RN-15 da discord-bot: a sala recebe o horário novo.
+			if err := discordroom.OnStartChanged(ctx, q, lid, in.StartsAt.UTC(), now); err != nil {
+				return err
+			}
 		}
 		updated, err = s.get(ctx, q, lid)
 		return err
@@ -559,6 +579,10 @@ func (s *Service) Cancel(ctx context.Context, userID, id, reason string) (Lobby,
 			}); err != nil {
 				return err
 			}
+		}
+		// RN-17 da discord-bot: a sala recebe o motivo e fica encerrando.
+		if err := discordroom.OnCancelled(ctx, q, lid, reason, now); err != nil {
+			return err
 		}
 		cancelled, err = s.get(ctx, q, lid)
 		return err
@@ -678,6 +702,28 @@ func checkSlots(s Slots) []FieldError {
 		return []FieldError{{FieldSlots, CodeInvalid}}
 	}
 	return nil
+}
+
+// MaxDiscordLinkLength é o limite do link do Discord do dono (RN-23 da discord-bot).
+const MaxDiscordLinkLength = 200
+
+// discordLinkPattern são os formatos aceitos (RN-23 da discord-bot): convite
+// (discord.gg ou discord.com/invite) ou link de canal (discord.com/channels).
+var discordLinkPattern = regexp.MustCompile(`^https://(discord\.gg/[A-Za-z0-9-]+|discord\.com/invite/[A-Za-z0-9-]+|discord\.com/channels/[0-9]+/[0-9]+)/?$`)
+
+// CheckDiscordLink normaliza e confere o link do Discord do dono; vazio fica sem link
+// (RN-23 da discord-bot).
+func CheckDiscordLink(link string) (string, []FieldError) {
+	link = strings.TrimSpace(link)
+	switch {
+	case link == "":
+		return "", nil
+	case utf8.RuneCountInString(link) > MaxDiscordLinkLength:
+		return link, []FieldError{{FieldDiscordLink, CodeTooLong}}
+	case !discordLinkPattern.MatchString(link):
+		return link, []FieldError{{FieldDiscordLink, CodeInvalid}}
+	}
+	return link, nil
 }
 
 func checkNote(note string) (string, []FieldError) {

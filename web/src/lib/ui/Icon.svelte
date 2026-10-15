@@ -1,5 +1,7 @@
 <script lang="ts" module>
 	import Check from '@lucide/svelte/icons/check';
+	import Megaphone from '@lucide/svelte/icons/megaphone';
+	import MessageCircle from '@lucide/svelte/icons/message-circle';
 	import Crosshair from '@lucide/svelte/icons/crosshair';
 	import Drama from '@lucide/svelte/icons/drama';
 	import FlaskConical from '@lucide/svelte/icons/flask-conical';
@@ -84,7 +86,10 @@
 		'external-link': ExternalLink,
 		pencil: Pencil,
 		'trash-2': Trash2,
-		'share-2': Share2
+		'share-2': Share2,
+		// spec discord-bot: abrir a sala e avisar o grupo.
+		'message-circle': MessageCircle,
+		megaphone: Megaphone
 	} as const;
 
 	export type IconName = keyof typeof ICONS;

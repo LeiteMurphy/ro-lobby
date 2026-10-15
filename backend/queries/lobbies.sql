@@ -1,10 +1,10 @@
 -- name: CreateLobby :one
 INSERT INTO lobbies (owner_id, instance_id, instance_name, instance_level, starts_at,
     slots_tank, slots_support, slots_dps, min_level, owner_character_id, owner_role, note, created_at,
-    formation, free_slots, server)
+    formation, free_slots, server, discord_link)
 VALUES (@owner_id, @instance_id, @instance_name, @instance_level, @starts_at,
     @slots_tank, @slots_support, @slots_dps, @min_level, @owner_character_id, @owner_role, @note, @now,
-    COALESCE(NULLIF(@formation::text, ''), 'roles'), sqlc.narg(free_slots), @server)
+    COALESCE(NULLIF(@formation::text, ''), 'roles'), sqlc.narg(free_slots), @server, sqlc.narg(discord_link))
 RETURNING id;
 
 -- name: GetLobby :one
@@ -71,7 +71,8 @@ UPDATE lobbies
 SET instance_id = @instance_id, instance_name = @instance_name, instance_level = @instance_level,
     starts_at = @starts_at, slots_tank = @slots_tank, slots_support = @slots_support,
     slots_dps = @slots_dps, min_level = @min_level, note = @note,
-    formation = @formation, free_slots = sqlc.narg(free_slots)
+    formation = @formation, free_slots = sqlc.narg(free_slots),
+    discord_link = sqlc.narg(discord_link) -- RN-23 da discord-bot
 WHERE id = @id;
 
 -- name: CancelLobby :exec

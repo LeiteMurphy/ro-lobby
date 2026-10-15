@@ -25,6 +25,9 @@ type LobbyService interface {
 type lobbiesHandler struct {
 	session charactersHandler // reaproveita o currentUser (RN-04)
 	lobbies LobbyService
+	// rooms é a sala do grupo no Discord (spec discord-bot); o bloco discord só vai para
+	// os membros (D-05).
+	rooms RoomService
 }
 
 var (
@@ -75,7 +78,21 @@ func (h lobbiesHandler) GetLobby(ctx context.Context, req api.GetLobbyRequestObj
 		return nil, err
 	}
 	body, err := toAPIDetail(l)
-	return api.GetLobby200JSONResponse(body), err
+	if err != nil {
+		return nil, err
+	}
+	if viewerIsMember(l, viewerID) {
+		v, err := h.rooms.View(ctx, req.Id, viewerID)
+		if err != nil {
+			return nil, err
+		}
+		d, err := toAPIDiscord(v)
+		if err != nil {
+			return nil, err
+		}
+		body.Discord = &d
+	}
+	return api.GetLobby200JSONResponse(body), nil
 }
 
 // CreateLobby cria o lobby do Usuário da sessão (RN-04 a RN-11).
@@ -99,6 +116,7 @@ func (h lobbiesHandler) CreateLobby(ctx context.Context, req api.CreateLobbyRequ
 			CharacterID: b.CharacterId,
 			Note:        deref(b.Note),
 			FreeSlots:   valueOf(b.FreeSlots),
+			DiscordLink: deref(b.DiscordLink),
 		}
 		if b.Formation != nil {
 			in.Formation = string(*b.Formation)
@@ -132,6 +150,7 @@ func (h lobbiesHandler) UpdateLobby(ctx context.Context, req api.UpdateLobbyRequ
 		in = lobbies.UpdateInput{
 			InstanceID: deref(b.InstanceId), StartsAt: b.StartsAt, Slots: fromAPISlots(b.Slots), MinLevel: b.MinLevel,
 			Note: deref(b.Note), FreeSlots: valueOf(b.FreeSlots), AnyInstance: valueOf(b.AnyInstance), Title: deref(b.Title),
+			DiscordLink: deref(b.DiscordLink),
 		}
 		if b.Formation != nil {
 			in.Formation = string(*b.Formation)

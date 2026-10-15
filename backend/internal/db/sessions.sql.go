@@ -39,7 +39,7 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 }
 
 const getActiveSession = `-- name: GetActiveSession :one
-SELECT users.id, users.discord_id, users.username, users.global_name, users.created_at, users.last_login_at, sessions.last_used_at
+SELECT users.id, users.discord_id, users.username, users.global_name, users.created_at, users.last_login_at, users.discord_connected_at, sessions.last_used_at
 FROM sessions
 JOIN users ON users.id = sessions.user_id
 WHERE sessions.token_hash = $1
@@ -68,6 +68,7 @@ func (q *Queries) GetActiveSession(ctx context.Context, arg GetActiveSessionPara
 		&i.User.GlobalName,
 		&i.User.CreatedAt,
 		&i.User.LastLoginAt,
+		&i.User.DiscordConnectedAt,
 		&i.LastUsedAt,
 	)
 	return i, err
