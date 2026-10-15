@@ -146,6 +146,23 @@ func (q *Queries) FinishDiscordJob(ctx context.Context, arg FinishDiscordJobPara
 	return err
 }
 
+const getDiscordConnection = `-- name: GetDiscordConnection :one
+SELECT discord_id, discord_connected_at FROM users WHERE id = $1
+`
+
+type GetDiscordConnectionRow struct {
+	DiscordID          string
+	DiscordConnectedAt pgtype.Timestamptz
+}
+
+// RN-01: o ID do Discord do Usuário e quando ele se conectou ao servidor (nulo = nunca).
+func (q *Queries) GetDiscordConnection(ctx context.Context, userID pgtype.UUID) (GetDiscordConnectionRow, error) {
+	row := q.db.QueryRow(ctx, getDiscordConnection, userID)
+	var i GetDiscordConnectionRow
+	err := row.Scan(&i.DiscordID, &i.DiscordConnectedAt)
+	return i, err
+}
+
 const getDiscordRoom = `-- name: GetDiscordRoom :one
 SELECT lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at, closing_at, deleted_at, reminder_sent_at, last_alert_at FROM discord_rooms WHERE lobby_id = $1
 `
@@ -397,4 +414,22 @@ func (q *Queries) RoomMembers(ctx context.Context, lobbyID pgtype.UUID) ([]RoomM
 		return nil, err
 	}
 	return items, nil
+}
+
+const setDiscordConnected = `-- name: SetDiscordConnected :one
+UPDATE users SET discord_connected_at = $1::timestamptz WHERE id = $2
+RETURNING discord_connected_at
+`
+
+type SetDiscordConnectedParams struct {
+	Now    time.Time
+	UserID pgtype.UUID
+}
+
+// RN-02 / RN-04: só a data da conexão; reconectar atualiza.
+func (q *Queries) SetDiscordConnected(ctx context.Context, arg SetDiscordConnectedParams) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, setDiscordConnected, arg.Now, arg.UserID)
+	var discord_connected_at pgtype.Timestamptz
+	err := row.Scan(&discord_connected_at)
+	return discord_connected_at, err
 }

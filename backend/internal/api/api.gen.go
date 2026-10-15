@@ -164,6 +164,7 @@ const (
 	DiscordErrorErrorDiscordDisabled    DiscordErrorError = "discord_disabled"
 	DiscordErrorErrorDiscordUnavailable DiscordErrorError = "discord_unavailable"
 	DiscordErrorErrorGuildFull          DiscordErrorError = "guild_full"
+	DiscordErrorErrorInvalidCode        DiscordErrorError = "invalid_code"
 	DiscordErrorErrorNotFound           DiscordErrorError = "not_found"
 )
 
@@ -175,6 +176,8 @@ func (e DiscordErrorError) Valid() bool {
 	case DiscordErrorErrorDiscordUnavailable:
 		return true
 	case DiscordErrorErrorGuildFull:
+		return true
+	case DiscordErrorErrorInvalidCode:
 		return true
 	case DiscordErrorErrorNotFound:
 		return true
@@ -206,10 +209,11 @@ func (e DiscordRoomStatus) Valid() bool {
 
 // Defines values for DiscordRuleErrorCode.
 const (
-	DiscordRuleErrorCodeNoRoom     DiscordRuleErrorCode = "no_room"
-	DiscordRuleErrorCodeNotOpen    DiscordRuleErrorCode = "not_open"
-	DiscordRuleErrorCodeNotOwner   DiscordRuleErrorCode = "not_owner"
-	DiscordRuleErrorCodeRoomExists DiscordRuleErrorCode = "room_exists"
+	DiscordRuleErrorCodeNoRoom       DiscordRuleErrorCode = "no_room"
+	DiscordRuleErrorCodeNotOpen      DiscordRuleErrorCode = "not_open"
+	DiscordRuleErrorCodeNotOwner     DiscordRuleErrorCode = "not_owner"
+	DiscordRuleErrorCodeRoomExists   DiscordRuleErrorCode = "room_exists"
+	DiscordRuleErrorCodeWrongAccount DiscordRuleErrorCode = "wrong_account"
 )
 
 // Valid indicates whether the value is a known member of the DiscordRuleErrorCode enum.
@@ -222,6 +226,8 @@ func (e DiscordRuleErrorCode) Valid() bool {
 	case DiscordRuleErrorCodeNotOwner:
 		return true
 	case DiscordRuleErrorCodeRoomExists:
+		return true
+	case DiscordRuleErrorCodeWrongAccount:
 		return true
 	default:
 		return false
@@ -1308,6 +1314,21 @@ type Class struct {
 // ClassTier defines model for ClassTier.
 type ClassTier string
 
+// DiscordConnection defines model for DiscordConnection.
+type DiscordConnection struct {
+	// ConnectedAt Quando o Usuário se conectou; nulo se nunca (RN-02).
+	ConnectedAt *time.Time `json:"connectedAt"`
+
+	// Enabled A sala no Discord está ligada (RN-22).
+	Enabled bool `json:"enabled"`
+}
+
+// DiscordConnectionInput defines model for DiscordConnectionInput.
+type DiscordConnectionInput struct {
+	Code        string `json:"code"`
+	RedirectUri string `json:"redirectUri"`
+}
+
 // DiscordError defines model for DiscordError.
 type DiscordError struct {
 	Error DiscordErrorError `json:"error"`
@@ -1922,6 +1943,9 @@ type SwapOwnerCharacterJSONRequestBody = OwnerCharacterInput
 // UnblockInLobbyJSONRequestBody defines body for UnblockInLobby for application/json ContentType.
 type UnblockInLobbyJSONRequestBody = UnblockInput
 
+// ConnectDiscordJSONRequestBody defines body for ConnectDiscord for application/json ContentType.
+type ConnectDiscordJSONRequestBody = DiscordConnectionInput
+
 // RejectSwapRequestJSONRequestBody defines body for RejectSwapRequest for application/json ContentType.
 type RejectSwapRequestJSONRequestBody = RejectInput
 
@@ -2014,6 +2038,12 @@ type ServerInterface interface {
 	// ListMyApplications Minhas candidaturas
 	// (GET /me/applications)
 	ListMyApplications(w http.ResponseWriter, r *http.Request)
+	// GetDiscordConnection Conexão do Usuário ao servidor do RO Lobby no Discord
+	// (GET /me/discord-connection)
+	GetDiscordConnection(w http.ResponseWriter, r *http.Request)
+	// ConnectDiscord Conecta o Usuário ao servidor do RO Lobby no Discord
+	// (POST /me/discord-connection)
+	ConnectDiscord(w http.ResponseWriter, r *http.Request)
 	// ListServers Catálogo de servidores
 	// (GET /servers)
 	ListServers(w http.ResponseWriter, r *http.Request)
@@ -2712,6 +2742,34 @@ func (siw *ServerInterfaceWrapper) ListMyApplications(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// GetDiscordConnection operation middleware
+func (siw *ServerInterfaceWrapper) GetDiscordConnection(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDiscordConnection(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConnectDiscord operation middleware
+func (siw *ServerInterfaceWrapper) ConnectDiscord(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConnectDiscord(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListServers operation middleware
 func (siw *ServerInterfaceWrapper) ListServers(w http.ResponseWriter, r *http.Request) {
 
@@ -3176,6 +3234,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/healthz", wrapper.GetHealthz)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/auth/discord", wrapper.CreateSessionFromDiscord)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetMe)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me/discord-connection", wrapper.GetDiscordConnection)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/discord-connection", wrapper.ConnectDiscord)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/session", wrapper.DeleteSession)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/classes", wrapper.ListClasses)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/servers", wrapper.ListServers)
@@ -4909,6 +4969,133 @@ func (response ListMyApplications401JSONResponse) VisitListMyApplicationsRespons
 	return err
 }
 
+type GetDiscordConnectionRequestObject struct {
+}
+
+type GetDiscordConnectionResponseObject interface {
+	VisitGetDiscordConnectionResponse(w http.ResponseWriter) error
+}
+
+type GetDiscordConnection200JSONResponse DiscordConnection
+
+func (response GetDiscordConnection200JSONResponse) VisitGetDiscordConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDiscordConnection401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response GetDiscordConnection401JSONResponse) VisitGetDiscordConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectDiscordRequestObject struct {
+	Body *ConnectDiscordJSONRequestBody
+}
+
+type ConnectDiscordResponseObject interface {
+	VisitConnectDiscordResponse(w http.ResponseWriter) error
+}
+
+type ConnectDiscord200JSONResponse DiscordConnection
+
+func (response ConnectDiscord200JSONResponse) VisitConnectDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectDiscord401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response ConnectDiscord401JSONResponse) VisitConnectDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectDiscord404JSONResponse DiscordError
+
+func (response ConnectDiscord404JSONResponse) VisitConnectDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectDiscord409JSONResponse DiscordRuleError
+
+func (response ConnectDiscord409JSONResponse) VisitConnectDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectDiscord422JSONResponse DiscordError
+
+func (response ConnectDiscord422JSONResponse) VisitConnectDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectDiscord503JSONResponse DiscordError
+
+func (response ConnectDiscord503JSONResponse) VisitConnectDiscordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListServersRequestObject struct {
 }
 
@@ -5333,6 +5520,12 @@ type StrictServerInterface interface {
 	// ListMyApplications Minhas candidaturas
 	// (GET /me/applications)
 	ListMyApplications(ctx context.Context, request ListMyApplicationsRequestObject) (ListMyApplicationsResponseObject, error)
+	// GetDiscordConnection Conexão do Usuário ao servidor do RO Lobby no Discord
+	// (GET /me/discord-connection)
+	GetDiscordConnection(ctx context.Context, request GetDiscordConnectionRequestObject) (GetDiscordConnectionResponseObject, error)
+	// ConnectDiscord Conecta o Usuário ao servidor do RO Lobby no Discord
+	// (POST /me/discord-connection)
+	ConnectDiscord(ctx context.Context, request ConnectDiscordRequestObject) (ConnectDiscordResponseObject, error)
 	// ListServers Catálogo de servidores
 	// (GET /servers)
 	ListServers(ctx context.Context, request ListServersRequestObject) (ListServersResponseObject, error)
@@ -6215,6 +6408,61 @@ func (sh *strictHandler) ListMyApplications(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListMyApplicationsResponseObject); ok {
 		if err := validResponse.VisitListMyApplicationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDiscordConnection operation middleware
+func (sh *strictHandler) GetDiscordConnection(w http.ResponseWriter, r *http.Request) {
+	var request GetDiscordConnectionRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDiscordConnection(ctx, request.(GetDiscordConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDiscordConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDiscordConnectionResponseObject); ok {
+		if err := validResponse.VisitGetDiscordConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConnectDiscord operation middleware
+func (sh *strictHandler) ConnectDiscord(w http.ResponseWriter, r *http.Request) {
+	var request ConnectDiscordRequestObject
+
+	var body ConnectDiscordJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConnectDiscord(ctx, request.(ConnectDiscordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConnectDiscord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConnectDiscordResponseObject); ok {
+		if err := validResponse.VisitConnectDiscordResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

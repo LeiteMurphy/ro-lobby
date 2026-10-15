@@ -16,6 +16,7 @@ import (
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/characters"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/database"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/db"
+	"github.com/LeiteMurphy/ro-lobby/backend/internal/discord"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordbot"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordfake"
 	"github.com/LeiteMurphy/ro-lobby/backend/internal/discordroom"
@@ -67,6 +68,7 @@ func newRoomFlow(t *testing.T, enabled bool) roomFlow {
 	}
 	rooms := discordroom.NewService(pool, bot)
 	rooms.Origin = "https://rolobby.com.br"
+	rooms.OAuth = discord.New(srv.URL+"/api", "id", "segredo")
 	h := New(pool, auth.NewService(pool, nil), characters.NewService(pool), lobbies.NewService(pool),
 		applications.NewService(pool), talents.NewService(pool), WithRooms(rooms))
 	return roomFlow{flow: flow{h: h, q: db.New(pool), pool: pool}, fake: fake, rooms: rooms}
@@ -378,5 +380,92 @@ func TestDiscordRoom_RN22_Disabled(t *testing.T) {
 	_, got = call(t, f.h, http.MethodGet, path, ana, "")
 	if d := got["discord"].(map[string]any); d["enabled"] != false || d["room"] != nil {
 		t.Errorf("bloco = %v", d)
+	}
+}
+
+const connectRedirect = "https://rolobby.com.br/perfil/discord/retorno"
+
+func (f roomFlow) connectWith(t *testing.T, token, discordID string) (*httptest.ResponseRecorder, map[string]any) {
+	t.Helper()
+	code := f.fake.IssueCode(discordfake.User{ID: discordID, Username: "u" + discordID}, connectRedirect)
+	return call(t, f.h, http.MethodPost, "/me/discord-connection", token,
+		fmt.Sprintf(`{"code":%q,"redirectUri":%q}`, code, connectRedirect))
+}
+
+// CA-01.1 / RN-01 / RN-02: a conexão inclui o jogador no servidor e grava só a data.
+func TestDiscordConnect_CA01_1_JoinsGuild(t *testing.T) {
+	f := newRoomFlow(t, true)
+	ana := f.session(t, "301", "Ana")
+	_, before := call(t, f.h, http.MethodGet, "/me/discord-connection", ana, "")
+	if before["enabled"] != true || before["connectedAt"] != nil {
+		t.Fatalf("antes: %v", before)
+	}
+	rec, got := f.connectWith(t, ana, "301")
+	if rec.Code != http.StatusOK || got["connectedAt"] == nil {
+		t.Fatalf("conectar: %d %v", rec.Code, got)
+	}
+	if !f.fake.Members()["301"] {
+		t.Error("não entrou no servidor")
+	}
+	_, after := call(t, f.h, http.MethodGet, "/me/discord-connection", ana, "")
+	if after["connectedAt"] == nil {
+		t.Errorf("depois: %v", after)
+	}
+}
+
+// CA-01.4 / RN-03: com outra conta do Discord, a conexão é recusada e nada muda.
+func TestDiscordConnect_CA01_4_WrongAccount(t *testing.T) {
+	f := newRoomFlow(t, true)
+	ana := f.session(t, "301", "Ana")
+	rec, got := f.connectWith(t, ana, "999")
+	if rec.Code != http.StatusConflict || got["code"] != "wrong_account" {
+		t.Errorf("conta errada: %d %v", rec.Code, got)
+	}
+	if len(f.fake.Members()) != 0 {
+		t.Error("incluiu alguém no servidor")
+	}
+	_, after := call(t, f.h, http.MethodGet, "/me/discord-connection", ana, "")
+	if after["connectedAt"] != nil {
+		t.Errorf("gravou a conexão: %v", after)
+	}
+}
+
+// CA-01.6 / RN-04: conectar de novo inclui de novo e atualiza a data.
+func TestDiscordConnect_CA01_6_Reconnect(t *testing.T) {
+	f := newRoomFlow(t, true)
+	ana := f.session(t, "301", "Ana")
+	f.rooms.Now = func() time.Time { return time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC) }
+	if rec, got := f.connectWith(t, ana, "301"); rec.Code != http.StatusOK {
+		t.Fatalf("primeira: %d %v", rec.Code, got)
+	}
+	f.rooms.Now = func() time.Time { return time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC) }
+	rec, got := f.connectWith(t, ana, "301")
+	if rec.Code != http.StatusOK || got["connectedAt"] != "2026-10-14T12:00:00Z" {
+		t.Errorf("reconectar: %d %v", rec.Code, got)
+	}
+}
+
+// RN-01: código recusado responde invalid_code.
+func TestDiscordConnect_RN01_InvalidCode(t *testing.T) {
+	f := newRoomFlow(t, true)
+	ana := f.session(t, "301", "Ana")
+	rec, got := call(t, f.h, http.MethodPost, "/me/discord-connection", ana,
+		fmt.Sprintf(`{"code":"nao-existe","redirectUri":%q}`, connectRedirect))
+	if rec.Code != http.StatusUnprocessableEntity || got["error"] != "invalid_code" {
+		t.Errorf("%d %v", rec.Code, got)
+	}
+}
+
+// CA-01.7 / RN-22: com a sala desligada, a conexão responde discord_disabled.
+func TestDiscordConnect_CA01_7_Disabled(t *testing.T) {
+	f := newRoomFlow(t, false)
+	ana := f.session(t, "301", "Ana")
+	_, state := call(t, f.h, http.MethodGet, "/me/discord-connection", ana, "")
+	if state["enabled"] != false {
+		t.Errorf("estado: %v", state)
+	}
+	rec, got := f.connectWith(t, ana, "301")
+	if rec.Code != http.StatusNotFound || got["error"] != "discord_disabled" {
+		t.Errorf("%d %v", rec.Code, got)
 	}
 }

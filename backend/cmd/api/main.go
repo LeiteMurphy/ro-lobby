@@ -66,6 +66,7 @@ func run() error {
 	}
 	roomService := discordroom.NewService(pool, roomBot)
 	roomService.Origin = cfg.AppOrigin
+	roomService.OAuth = discordClient
 	go roomService.Run(ctx, discordroom.Every)
 	slog.Info("sala do grupo no Discord", "bot", cfg.Bot)
 

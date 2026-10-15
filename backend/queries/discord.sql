@@ -93,3 +93,12 @@ SELECT * FROM discord_rooms WHERE lobby_id = @lobby_id;
 -- RN-05 / RN-09: a sala nasce aberta.
 INSERT INTO discord_rooms (lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at)
 VALUES (@lobby_id, @category_id, @text_channel_id, @voice_channel_id, 'open', @now);
+
+-- name: GetDiscordConnection :one
+-- RN-01: o ID do Discord do Usuário e quando ele se conectou ao servidor (nulo = nunca).
+SELECT discord_id, discord_connected_at FROM users WHERE id = @user_id;
+
+-- name: SetDiscordConnected :one
+-- RN-02 / RN-04: só a data da conexão; reconectar atualiza.
+UPDATE users SET discord_connected_at = sqlc.arg(now)::timestamptz WHERE id = @user_id
+RETURNING discord_connected_at;

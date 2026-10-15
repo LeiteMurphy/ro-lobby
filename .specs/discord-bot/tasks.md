@@ -83,7 +83,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff812d902cdcc622553c98
 
-### T-05 — Conexão ao servidor (API)  [ ]
+### T-05 — Conexão ao servidor (API)  [x]
 - Cobre: US-01, RN-01, RN-02, RN-03, RN-04, RN-22, CA-01.1 (API), CA-01.4, CA-01.6,
   CA-01.7 (API)
 - Depende de: T-01, T-02
@@ -279,3 +279,7 @@ Sem lacunas: todos os 49 critérios da spec têm task.
   servidor do jogo.
 - 2026-10-14 — O teste real com o Discord (fora do Discord falso) depende do servidor
   oficial e dos IDs, pendência da spec. Ele entra no roteiro de UAT depois da T-12.
+- 2026-10-14 — O estado da conexão saiu de `GET /me` (design) para `GET /me/discord-connection`,
+  para não mudar o esquema `User`, que o web inteiro usa. O `POST` fica na mesma rota.
+- 2026-10-14 — A API ganhou `APP_ORIGIN` (a mesma origem do web), para o link do lobby na
+  mensagem de abertura (RN-08).

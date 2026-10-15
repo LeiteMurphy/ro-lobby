@@ -17,6 +17,8 @@ type RoomService interface {
 	Enabled() bool
 	Open(ctx context.Context, ownerID, lobbyID string) (discordroom.Room, error)
 	View(ctx context.Context, lobbyID, viewerID string) (discordroom.View, error)
+	Connection(ctx context.Context, userID string) (discordroom.Connection, error)
+	Connect(ctx context.Context, userID, code, redirectURI string) (discordroom.Connection, error)
 }
 
 // Option ajusta o servidor.
@@ -39,6 +41,12 @@ func (noRooms) Open(context.Context, string, string) (discordroom.Room, error) {
 }
 func (noRooms) View(context.Context, string, string) (discordroom.View, error) {
 	return discordroom.View{Members: []discordroom.Member{}}, nil
+}
+func (noRooms) Connection(context.Context, string) (discordroom.Connection, error) {
+	return discordroom.Connection{}, nil
+}
+func (noRooms) Connect(context.Context, string, string, string) (discordroom.Connection, error) {
+	return discordroom.Connection{}, discordroom.ErrDisabled
 }
 
 type discordHandler struct {
@@ -73,6 +81,61 @@ func (h discordHandler) OpenDiscordRoom(ctx context.Context, req api.OpenDiscord
 	}
 	url := room.URL()
 	return api.OpenDiscordRoom201JSONResponse{Status: api.DiscordRoomStatus(room.Status), Url: &url}, nil
+}
+
+// GetDiscordConnection devolve se a sala está ligada e quando o Usuário se conectou (RN-01,
+// RN-22).
+func (h discordHandler) GetDiscordConnection(ctx context.Context, _ api.GetDiscordConnectionRequestObject) (api.GetDiscordConnectionResponseObject, error) {
+	userID, ok, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.GetDiscordConnection401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	c, err := h.rooms.Connection(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return api.GetDiscordConnection200JSONResponse(toAPIConnection(c)), nil
+}
+
+// ConnectDiscord inclui o Usuário no servidor oficial (RN-01 a RN-04).
+func (h discordHandler) ConnectDiscord(ctx context.Context, req api.ConnectDiscordRequestObject) (api.ConnectDiscordResponseObject, error) {
+	userID, ok, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.ConnectDiscord401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	if req.Body == nil || req.Body.Code == "" || req.Body.RedirectUri == "" {
+		return api.ConnectDiscord422JSONResponse{Error: api.DiscordErrorErrorInvalidCode}, nil
+	}
+	c, err := h.rooms.Connect(ctx, userID, req.Body.Code, req.Body.RedirectUri)
+	var re *discordroom.RuleError
+	switch {
+	case errors.As(err, &re):
+		return api.ConnectDiscord409JSONResponse{Error: api.DiscordRuleErrorErrorDiscordRule, Code: api.DiscordRuleErrorCode(re.Code)}, nil
+	case errors.Is(err, discordroom.ErrDisabled):
+		return api.ConnectDiscord404JSONResponse{Error: api.DiscordErrorErrorDiscordDisabled}, nil
+	case errors.Is(err, discordroom.ErrInvalidCode):
+		return api.ConnectDiscord422JSONResponse{Error: api.DiscordErrorErrorInvalidCode}, nil
+	case errors.Is(err, discordroom.ErrUnavailable):
+		return api.ConnectDiscord503JSONResponse{Error: api.DiscordErrorErrorDiscordUnavailable}, nil
+	case err != nil:
+		return nil, err
+	}
+	return api.ConnectDiscord200JSONResponse(toAPIConnection(c)), nil
+}
+
+func toAPIConnection(c discordroom.Connection) api.DiscordConnection {
+	out := api.DiscordConnection{Enabled: c.Enabled}
+	if !c.ConnectedAt.IsZero() {
+		at := c.ConnectedAt
+		out.ConnectedAt = &at
+	}
+	return out
 }
 
 // viewerIsMember diz se quem olha é o dono ou um membro aceito (D-05).

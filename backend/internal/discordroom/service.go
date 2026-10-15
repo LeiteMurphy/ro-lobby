@@ -48,6 +48,8 @@ type Service struct {
 	queries *db.Queries
 	bot     Bot
 	log     *slog.Logger
+	// OAuth troca o código da conexão ao servidor (RN-01); sem ele, conectar fica desligado.
+	OAuth OAuth
 	// Origin é a origem pública do web, para o link do lobby nas mensagens (RN-08).
 	Origin string
 	// Now é o relógio do serviço; os testes trocam por um relógio fixo.

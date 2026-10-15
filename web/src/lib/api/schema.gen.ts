@@ -64,6 +64,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/discord-connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conexão do Usuário ao servidor do RO Lobby no Discord
+         * @description Se a sala no Discord está ligada e quando o Usuário se conectou (spec discord-bot, RN-01, RN-22).
+         */
+        get: operations["getDiscordConnection"];
+        put?: never;
+        /**
+         * Conecta o Usuário ao servidor do RO Lobby no Discord
+         * @description Troca o código do OAuth com identify e guilds.join, confere que a conta é a do login (RN-03), inclui o Usuário no servidor oficial e descarta o token (RN-02). Conectar de novo é permitido e atualiza a data (RN-04).
+         */
+        post: operations["connectDiscord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/session": {
         parameters: {
             query?: never;
@@ -1062,11 +1086,24 @@ export interface components {
             /** @enum {string} */
             error: "discord_rule";
             /** @enum {string} */
-            code: "not_owner" | "not_open" | "room_exists" | "no_room";
+            code: "not_owner" | "not_open" | "room_exists" | "no_room" | "wrong_account";
+        };
+        DiscordConnection: {
+            /** @description A sala no Discord está ligada (RN-22). */
+            enabled: boolean;
+            /**
+             * Format: date-time
+             * @description Quando o Usuário se conectou; nulo se nunca (RN-02).
+             */
+            connectedAt: string | null;
+        };
+        DiscordConnectionInput: {
+            code: string;
+            redirectUri: string;
         };
         DiscordError: {
             /** @enum {string} */
-            error: "not_found" | "discord_disabled" | "discord_unavailable" | "guild_full";
+            error: "not_found" | "discord_disabled" | "discord_unavailable" | "guild_full" | "invalid_code";
         };
         /**
          * @description Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
@@ -1498,6 +1535,88 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getDiscordConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado da conexão. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordConnection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+        };
+    };
+    connectDiscord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscordConnectionInput"];
+            };
+        };
+        responses: {
+            /** @description Conectado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordConnection"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            /** @description A sala no Discord está desligada (discord_disabled). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Conta do Discord diferente da do login (wrong_account). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRuleError"];
+                };
+            };
+            /** @description Código recusado (invalid_code). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Discord indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
                 };
             };
         };
