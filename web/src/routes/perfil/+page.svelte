@@ -13,6 +13,7 @@
 		type AvailabilityForm
 	} from '$lib/talents/components/AvailabilityDialog.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -48,6 +49,15 @@
 			? form
 			: null
 	);
+	// spec discord-bot, RN-02: a data da conexão, em Brasília.
+	const connectedOn = $derived(
+		data.discord.connectedAt
+			? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(
+					new Date(data.discord.connectedAt)
+				)
+			: null
+	);
+
 	// RN-15 / RN-16 da spec servidor: personagens migrados que o dono ainda não conferiu.
 	const toConfirm = $derived(data.characters.filter((c) => c.serverToConfirm));
 
@@ -93,6 +103,34 @@
 		{/if}
 		{#if pageMessage}
 			<p class="alert" role="alert">{pageMessage}</p>
+		{/if}
+
+		{#if data.discordMessage}
+			<p
+				class="notice"
+				class:alert={!data.discordMessage.ok}
+				role={data.discordMessage.ok ? 'status' : 'alert'}
+				data-testid="discord-message"
+			>
+				{data.discordMessage.text}
+			</p>
+		{/if}
+
+		{#if data.discord.enabled}
+			<!-- spec discord-bot, US-01 / RN-01 / RN-04: entrar (ou voltar) no servidor oficial. -->
+			<section class="discord" aria-labelledby="discord-title" data-testid="discord-connection">
+				<div class="confirm-text">
+					<h2 id="discord-title">Servidor do RO Lobby no Discord</h2>
+					{#if connectedOn}
+						<p>Conectado ao servidor do RO Lobby em {connectedOn}.</p>
+					{:else}
+						<p>Entre no servidor para as salas dos seus grupos aparecerem para você no Discord.</p>
+					{/if}
+				</div>
+				<Button variant={connectedOn ? 'ghost' : 'primary'} href={resolve('/perfil/discord')}
+					>{connectedOn ? 'Reconectar' : 'Entrar no servidor do RO Lobby'}</Button
+				>
+			</section>
 		{/if}
 
 		{#if toConfirm.length > 0}
@@ -237,6 +275,37 @@
 		background: rgba(240, 100, 140, 0.12);
 		color: var(--status-error);
 		font: 500 14px/1.3 var(--font-ui);
+	}
+	.notice {
+		margin: 0;
+		padding: 10px 14px;
+		border-radius: var(--radius-sm);
+		background: rgba(80, 200, 140, 0.12);
+		color: var(--support-300);
+		font: 500 14px/1.3 var(--font-ui);
+	}
+	.notice.alert {
+		background: rgba(240, 100, 140, 0.12);
+		color: var(--status-error);
+	}
+	.discord {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		flex-wrap: wrap;
+		padding: 16px 18px;
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-lg);
+		background: var(--panel-bg);
+	}
+	.discord h2 {
+		margin: 0;
+		font: var(--type-title);
+	}
+	.discord p {
+		margin: 0;
+		color: var(--fg-2);
 	}
 	.confirm {
 		display: flex;

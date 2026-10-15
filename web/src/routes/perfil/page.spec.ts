@@ -42,13 +42,20 @@ function character(overrides: Partial<Character>): Character {
 	};
 }
 
-function renderPage(characters: Character[], loadError: string | null = null): string {
+function renderPage(
+	characters: Character[],
+	loadError: string | null = null,
+	extra: Record<string, unknown> = {}
+): string {
 	const data = {
 		user: USER,
 		characters,
 		classes: CLASS_LIST,
 		loadError,
-		loginHref: '/auth/discord/login?next=%2Fperfil'
+		loginHref: '/auth/discord/login?next=%2Fperfil',
+		discord: { enabled: false, connectedAt: null },
+		discordMessage: null,
+		...extra
 	};
 	const props = { data, form: null, params: {} } as unknown as Parameters<typeof Page>[1];
 	return render(Page, { props }).body;
@@ -269,5 +276,37 @@ describe('servidor no /perfil (spec servidor)', () => {
 		const html = renderPage([character({ serverToConfirm: false })]);
 		expect(html).not.toContain('data-testid="server-confirm"');
 		expect(html).not.toContain('Confira o servidor');
+	});
+});
+
+describe('conexão ao servidor do RO Lobby no /perfil (spec discord-bot)', () => {
+	const section = (html: string) =>
+		(html.split('data-testid="discord-connection"')[1] ?? '').split('</section>')[0];
+
+	it('CA-01.1: sem conexão, oferece "Entrar no servidor do RO Lobby"', () => {
+		const html = renderPage([], null, { discord: { enabled: true, connectedAt: null } });
+		expect(section(html)).toContain('Entrar no servidor do RO Lobby');
+		expect(section(html)).toMatch(/href="\/perfil\/discord"/);
+	});
+
+	it('CA-01.1 / CA-01.6 / RN-04: conectado mostra a data e "Reconectar"', () => {
+		const html = renderPage([], null, {
+			discord: { enabled: true, connectedAt: '2026-10-14T12:00:00Z' }
+		});
+		expect(section(html)).toContain('Conectado ao servidor do RO Lobby em 14/10/2026');
+		expect(section(html)).toContain('Reconectar');
+	});
+
+	it('CA-01.7 / RN-22: com a sala desligada, a seção não aparece', () => {
+		expect(renderPage([])).not.toContain('data-testid="discord-connection"');
+	});
+
+	it('CA-01.4 / CA-01.5: o resultado da conexão aparece no topo', () => {
+		const html = renderPage([], null, {
+			discordMessage: { text: 'Use a mesma conta do Discord do seu login.', ok: false }
+		});
+		expect(html).toMatch(
+			/role="alert"[^>]*data-testid="discord-message"[^>]*>\s*Use a mesma conta/
+		);
 	});
 });

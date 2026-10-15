@@ -12,6 +12,10 @@ export const DEFAULT_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize';
 /** RN-13: o que a pessoa vê quando o login falha. */
 export const LOGIN_ERROR_MESSAGE = 'Não foi possível entrar com o Discord. Tente de novo.';
 export const LOGIN_ERROR_PATH = '/?login=erro';
+/** Conexão ao servidor do RO Lobby (spec discord-bot, RN-01): o state é outro cookie. */
+export const CONNECT_STATE_COOKIE = 'rol_connect_state';
+export const CONNECT_PATH = '/perfil/discord/retorno';
+export const CONNECT_SCOPE = 'identify guilds.join';
 
 /** RN-02: state aleatório de 256 bits (a regra pede pelo menos 128), em base64url. */
 export function newState(): string {
@@ -19,17 +23,21 @@ export function newState(): string {
 	return Buffer.from(bytes).toString('base64url');
 }
 
-/** CA-01.3: URL de autorização com scope=identify, response_type=code e o state (RN-01). */
+/**
+ * CA-01.3: URL de autorização com scope=identify, response_type=code e o state (RN-01). A
+ * conexão ao servidor do RO Lobby pede também guilds.join (RN-01 da discord-bot).
+ */
 export function authorizeUrl(params: {
 	authorizeUrl: string;
 	clientId: string;
 	redirectUri: string;
 	state: string;
+	scope?: string;
 }): string {
 	const url = new URL(params.authorizeUrl);
 	url.searchParams.set('client_id', params.clientId);
 	url.searchParams.set('response_type', 'code');
-	url.searchParams.set('scope', 'identify');
+	url.searchParams.set('scope', params.scope ?? 'identify');
 	url.searchParams.set('redirect_uri', params.redirectUri);
 	url.searchParams.set('state', params.state);
 	return url.toString();

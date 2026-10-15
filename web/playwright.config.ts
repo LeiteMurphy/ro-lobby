@@ -12,6 +12,8 @@ const apiBaseUrl = `http://localhost:${apiPort}`;
 const webPort = 4173;
 const fakeDiscord = 'http://127.0.0.1:8090';
 const discordApp = { clientId: '000000000000000000', clientSecret: 'segredo-do-discord-falso-e2e' };
+// Sala do grupo no Discord (spec discord-bot): o bot fala com o Discord falso.
+const discordBot = { token: 'token-do-bot-e2e', guildId: '900000000000000001' };
 
 // Spec lobbies (T-10): o ponta a ponta usa um banco só dele, ro_lobby_e2e, apagado e migrado
 // a cada execução (go run ./cmd/migrate fresh, que só aceita bancos *_e2e). Assim os testes
@@ -44,7 +46,7 @@ export default defineConfig({
 	projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 	webServer: [
 		{
-			command: `go run ./cmd/fakediscord -addr 127.0.0.1:8090 -client-id ${discordApp.clientId} -client-secret ${discordApp.clientSecret}`,
+			command: `go run ./cmd/fakediscord -addr 127.0.0.1:8090 -client-id ${discordApp.clientId} -client-secret ${discordApp.clientSecret} -bot-token ${discordBot.token}`,
 			cwd: '../backend',
 			// Sem parâmetros, a página de autorização responde 400, o que já conta como no ar.
 			url: `${fakeDiscord}/oauth2/authorize`,
@@ -58,7 +60,10 @@ export default defineConfig({
 				DATABASE_URL: E2E_DATABASE_URL,
 				DISCORD_CLIENT_ID: discordApp.clientId,
 				DISCORD_CLIENT_SECRET: discordApp.clientSecret,
-				DISCORD_API_BASE_URL: `${fakeDiscord}/api`
+				DISCORD_API_BASE_URL: `${fakeDiscord}/api`,
+				DISCORD_BOT_TOKEN: discordBot.token,
+				DISCORD_GUILD_ID: discordBot.guildId,
+				APP_ORIGIN: `http://localhost:${webPort}`
 			},
 			// Só fica pronto quando o /healthz responde 200, ou seja, com o banco no ar.
 			url: `${apiBaseUrl}/healthz`,

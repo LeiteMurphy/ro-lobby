@@ -155,7 +155,7 @@
 
 ## Web
 
-### T-09 — Perfil: entrar no servidor do RO Lobby  [ ]
+### T-09 — Perfil: entrar no servidor do RO Lobby  [x]
 - Cobre: US-01, RN-01, RN-02, RN-04, RN-22, CA-01.1 a CA-01.7 (tela)
 - Depende de: T-05
 - Paralelizável: [P] com T-10 e T-11
