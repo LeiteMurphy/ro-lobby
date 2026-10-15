@@ -20,7 +20,8 @@ import {
 	IN_OPEN_LOBBY_MESSAGE,
 	LIMIT_MESSAGE,
 	NOT_FOUND_MESSAGE,
-	UNAVAILABLE_MESSAGE
+	UNAVAILABLE_MESSAGE,
+	unavailableMessage
 } from '$lib/characters/messages';
 import { getConnection } from '$lib/discord/api';
 import { connectMessage } from '$lib/discord/messages';
@@ -130,7 +131,7 @@ function outcome(
 		case 'not_found':
 			return fail(404, { ...form, errors: {}, message: NOT_FOUND_MESSAGE });
 		default:
-			return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
+			return fail(503, { ...form, errors: {}, message: unavailableMessage(result) });
 	}
 }
 
@@ -189,7 +190,7 @@ export const actions: Actions = {
 			case 'not_found':
 				return fail(404, { ...form, errors: {}, message: NOT_FOUND_MESSAGE });
 			default:
-				return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
+				return fail(503, { ...form, errors: {}, message: unavailableMessage(result) });
 		}
 	},
 	// RN-16 da spec servidor: "Está certo" no aviso dos personagens migrados.

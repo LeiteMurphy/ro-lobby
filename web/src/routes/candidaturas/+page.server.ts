@@ -4,7 +4,7 @@ import { ruleMessage } from '$lib/applications/messages';
 import { SESSION_COOKIE } from '$lib/auth/oauth';
 import { sessionCall, toLogin } from '$lib/auth/session';
 import { listClasses } from '$lib/characters/api';
-import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { UNAVAILABLE_MESSAGE, unavailableMessage } from '$lib/characters/messages';
 import type { Actions, PageServerLoad } from './$types';
 
 // "Minhas candidaturas" (spec candidatura-lobby, RN-33, RN-38, CA-03.1, CA-10.4): a lista
@@ -38,7 +38,7 @@ function failure(result: Failure) {
 	if (result.kind === 'not_found') {
 		return fail(404, { message: 'Essa candidatura não existe mais.' });
 	}
-	return fail(503, { message: UNAVAILABLE_MESSAGE });
+	return fail(503, { message: unavailableMessage(result) });
 }
 
 export const actions: Actions = {

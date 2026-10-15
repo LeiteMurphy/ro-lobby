@@ -3,7 +3,7 @@ import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
 import { sessionCall, toLogin } from '$lib/auth/session';
 import { listCharacters, listClasses } from '$lib/characters/api';
-import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { UNAVAILABLE_MESSAGE, unavailableMessage } from '$lib/characters/messages';
 import { buildDays } from '$lib/home/days';
 import { zonedNow } from '$lib/home/time';
 import { createLobby, listInstances } from '$lib/lobbies/api';
@@ -93,7 +93,7 @@ export const actions: Actions = {
 					message: lobbyConflictMessage(result.code) ?? UNAVAILABLE_MESSAGE
 				});
 			default:
-				return fail(503, { values, errors: {}, message: UNAVAILABLE_MESSAGE });
+				return fail(503, { values, errors: {}, message: unavailableMessage(result) });
 		}
 	}
 };

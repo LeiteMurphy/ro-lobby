@@ -15,7 +15,14 @@ export type DiscordResult<T> =
 	| { ok: true; data: T }
 	| {
 			ok: false;
-			kind: 'no_session' | 'not_found' | 'disabled' | 'invalid_code' | 'guild_full' | 'unavailable';
+			kind:
+				| 'no_session'
+				| 'not_found'
+				| 'disabled'
+				| 'invalid_code'
+				| 'guild_full'
+				| 'rate_limited'
+				| 'unavailable';
 	  }
 	| { ok: false; kind: 'rule'; code: DiscordRuleCode }
 	| { ok: false; kind: 'cooldown'; retryAfterSeconds: number };
@@ -60,6 +67,8 @@ async function discordRequest<T>(
 			case 422:
 				return { ok: false, kind: 'invalid_code' };
 			case 429:
+				// RN-15 da endurecimento: o limite geral de requisições também responde 429.
+				if (parsed.error === 'rate_limited') return { ok: false, kind: 'rate_limited' };
 				return { ok: false, kind: 'cooldown', retryAfterSeconds: parsed.retryAfterSeconds ?? 0 };
 			case 503:
 				return { ok: false, kind: parsed.error === 'guild_full' ? 'guild_full' : 'unavailable' };

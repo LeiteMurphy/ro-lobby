@@ -18,7 +18,7 @@ import { loginHref } from '$lib/auth/display';
 import { SESSION_COOKIE } from '$lib/auth/oauth';
 import { sessionCall, toLogin } from '$lib/auth/session';
 import { listCharacters, listClasses, type Character } from '$lib/characters/api';
-import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { UNAVAILABLE_MESSAGE, unavailableMessage } from '$lib/characters/messages';
 import { alertRoom, openRoom } from '$lib/discord/api';
 import {
 	ALERT_MESSAGES,
@@ -116,7 +116,7 @@ function applicationFailure<A extends string>(
 		action,
 		...extra,
 		errors: {} as Record<string, string>,
-		message: UNAVAILABLE_MESSAGE
+		message: unavailableMessage(result)
 	});
 }
 
@@ -194,7 +194,7 @@ export const actions: Actions = {
 			action: 'cancel' as const,
 			reason,
 			errors: {},
-			message: UNAVAILABLE_MESSAGE
+			message: unavailableMessage(result)
 		});
 	},
 
@@ -335,7 +335,9 @@ export const actions: Actions = {
 		return fail(result.kind === 'conflict' ? 409 : 503, {
 			action: 'unblock' as const,
 			message:
-				result.kind === 'conflict' ? 'Esse lobby já começou ou foi cancelado.' : UNAVAILABLE_MESSAGE
+				result.kind === 'conflict'
+					? 'Esse lobby já começou ou foi cancelado.'
+					: unavailableMessage(result)
 		});
 	},
 

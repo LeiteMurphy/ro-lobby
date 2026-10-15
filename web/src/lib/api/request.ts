@@ -18,11 +18,12 @@ const TIMEOUT_MS = 6000;
  *   lobby aberto) e, nas candidaturas, o código da regra em `rule`;
  * - `bad_request`: 400, com o código do erro;
  * - `invalid`: erros de campo;
+ * - `rate_limited`: 429, excesso de requisições (RN-15 da spec endurecimento);
  * - `unavailable`: a API não respondeu ou respondeu algo inesperado.
  */
 export type Result<T> =
 	| { ok: true; data: T }
-	| { ok: false; kind: 'no_session' | 'not_found' | 'unavailable' }
+	| { ok: false; kind: 'no_session' | 'not_found' | 'rate_limited' | 'unavailable' }
 	| {
 			ok: false;
 			kind: 'conflict' | 'bad_request';
@@ -69,6 +70,8 @@ export async function request<T>(
 				return { ok: false, kind: 'no_session' };
 			case 404:
 				return { ok: false, kind: 'not_found' };
+			case 429:
+				return { ok: false, kind: 'rate_limited' };
 			case 400:
 			case 409: {
 				const parsed = (await res.json().catch(() => ({}))) as {
