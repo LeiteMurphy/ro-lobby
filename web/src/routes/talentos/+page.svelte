@@ -35,7 +35,14 @@
 		</div>
 
 		<!-- RN-11: filtros opcionais, combinados com "E", pela query string (funciona sem JS). -->
-		<form class="filters" method="GET" aria-label="Filtros do banco de talentos">
+		<!-- RN-01 da spec talentos-filtros: mudar um filtro já aplica; "Filtrar" fica para quem
+		     está sem JavaScript. -->
+		<form
+			class="filters"
+			method="GET"
+			aria-label="Filtros do banco de talentos"
+			onchange={(e) => e.currentTarget.requestSubmit()}
+		>
 			<div class="field">
 				<label class="lbl" for="{uid}-instancia">Instância</label>
 				<select id="{uid}-instancia" class="input" name="instancia">

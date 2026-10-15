@@ -1,15 +1,18 @@
 // Textos do banco de talentos (spec banco-de-talentos, RN-02 a RN-04, RN-12).
 
-/** Dias da semana, domingo = 0, como a API manda. */
-export const WEEKDAYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'] as const;
+/**
+ * Dias da semana, domingo = 0, como a API manda; com maiúscula nas listagens (RN-02 da
+ * spec talentos-filtros).
+ */
+export const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as const;
 export const WEEKDAY_NAMES = [
-	'domingo',
-	'segunda',
-	'terça',
-	'quarta',
-	'quinta',
-	'sexta',
-	'sábado'
+	'Domingo',
+	'Segunda',
+	'Terça',
+	'Quarta',
+	'Quinta',
+	'Sexta',
+	'Sábado'
 ] as const;
 
 /** Ordem de exibição: a semana começa na segunda. */
@@ -22,12 +25,12 @@ export const CLOCK_OPTIONS: readonly string[] = Array.from({ length: 48 }, (_, i
 });
 
 /**
- * RN-02: "todos os dias", "seg a sex" para dias seguidos (três ou mais, na ordem de
- * segunda a domingo) ou a lista, como "seg, qua, sex".
+ * RN-02: "Todos os dias", "Seg a Sex" para dias seguidos (três ou mais, na ordem de
+ * segunda a domingo) ou a lista, como "Seg, Qua, Sex".
  */
 export function daysLabel(days: readonly number[]): string {
 	const set = new Set(days);
-	if (set.size === 7) return 'todos os dias';
+	if (set.size === 7) return 'Todos os dias';
 	const ordered = WEEK_ORDER.filter((d) => set.has(d));
 	const first = WEEK_ORDER.indexOf(ordered[0] as (typeof WEEK_ORDER)[number]);
 	const consecutive = ordered.every((d, i) => WEEK_ORDER[first + i] === d);

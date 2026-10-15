@@ -664,9 +664,9 @@ describe('/lobbies/[id] com o banco de talentos (spec banco-de-talentos)', () =>
 		const html = renderWith({ owner: true, talents: [FOGO, BRASA] });
 		expect(html).toContain('data-testid="talents-panel"');
 		expect(html).toMatch(/Fogo[\s\S]*Arquimago · Nv 200[\s\S]*@caio[\s\S]*Brasa[\s\S]*@bia/);
-		expect(html).toContain('qua · 19:00–23:00 (Brasília)');
+		expect(html).toContain('Qua · 19:00–23:00 (Brasília)');
 		expect(html).toContain('Templo do Demônio Rei');
-		expect(html).toContain('todos os dias · 18:00–00:00 (até o dia seguinte) (Brasília)');
+		expect(html).toContain('Todos os dias · 18:00–00:00 (até o dia seguinte) (Brasília)');
 	});
 
 	it('borda de RN-06: lista vazia mostra o aviso', () => {

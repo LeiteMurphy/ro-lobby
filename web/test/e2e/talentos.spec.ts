@@ -63,7 +63,7 @@ test.describe('banco de talentos', () => {
 		await expect(d.getByText('Escolha uma instância ou marque Qualquer instância')).toBeVisible();
 
 		// CA-01.1: segunda a sexta, 19:00 às 23:00, Templo e Sonho Sombrio.
-		for (const day of ['segunda', 'terça', 'quarta', 'quinta', 'sexta']) {
+		for (const day of ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']) {
 			await d.getByLabel(day, { exact: true }).check({ force: true });
 		}
 		await d.getByLabel('Das (Brasília)').selectOption('19:00');
@@ -82,8 +82,8 @@ test.describe('banco de talentos', () => {
 		await expect(toggle).toHaveText(/Fora do banco de talentos/);
 		await toggle.click();
 		const again = dialog(page);
-		await expect(again.getByLabel('segunda', { exact: true })).toBeChecked();
-		await expect(again.getByLabel('sábado', { exact: true })).not.toBeChecked();
+		await expect(again.getByLabel('Segunda', { exact: true })).toBeChecked();
+		await expect(again.getByLabel('Sábado', { exact: true })).not.toBeChecked();
 		await expect(again.getByLabel('Das (Brasília)')).toHaveValue('19:00');
 		await expect(again.getByLabel(/Sonho Sombrio/)).toBeChecked();
 		await page.keyboard.press('Escape');
@@ -213,8 +213,8 @@ test.describe('banco de talentos', () => {
 		await expect(cardOf(off.nick)).toHaveCount(0);
 
 		// CA-04.1: por função Tank, só o tank; por Sonho Sombrio, só quem marcou Qualquer.
+		// CA-01.1 (talentos-filtros): o filtro aplica ao escolher, sem clicar em "Filtrar".
 		await visitor.getByLabel('Função').selectOption('tank');
-		await visitor.getByRole('button', { name: 'Filtrar' }).click();
 		await expect(visitor).toHaveURL(/funcao=tank/);
 		await expect(cardOf(tank.nick)).toBeVisible();
 		await expect(cardOf(night.nick)).toHaveCount(0);
@@ -303,5 +303,38 @@ test.describe('banco de talentos', () => {
 		// CA-06.9: a pessoa volta a poder se candidatar.
 		const again = await applyTo(request, biaToken, lobby.id, cinza.id);
 		expect(again.id).toBeTruthy();
+	});
+});
+
+test.describe('filtros na hora e dias com maiúscula (spec talentos-filtros)', () => {
+	test('CA-01.1 / CA-02.1: escolher um filtro já aplica, e os dias vêm com maiúscula', async ({
+		page,
+		request
+	}) => {
+		const s = rand();
+		const tok = await apiLogin(request, `mai${s}`);
+		const dps = await createCharacter(request, tok, {
+			nick: `Mai${s}`,
+			classId: 'arquimago',
+			level: 250,
+			role: 'dps'
+		});
+		await setAvailability(request, tok, dps.id, {
+			days: [1, 2, 3, 4, 5],
+			start: '04:00',
+			end: '05:00',
+			anyInstance: true
+		});
+		await page.goto('/talentos');
+		const card = page.getByTestId('talent-card').filter({ hasText: `Mai${s}` });
+		await expect(card).toContainText('Seg a Sex · 04:00–05:00 (Brasília)');
+		await expect(page.getByLabel('Dia').locator('option').nth(1)).toHaveText('Segunda');
+
+		// Escolher a hora 04:00 de domingo, sem "Filtrar": o personagem some da lista.
+		await page.getByLabel('Dia').selectOption('0');
+		await expect(page).toHaveURL(/dia=0/);
+		await page.getByLabel('Hora (Brasília)').selectOption('04:00');
+		await expect(page).toHaveURL(/hora=04%3A00|hora=04:00/);
+		await expect(card).toHaveCount(0);
 	});
 });

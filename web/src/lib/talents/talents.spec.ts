@@ -29,12 +29,12 @@ const INSTANCES = [
 ];
 
 describe('textos do banco de talentos', () => {
-	it('RN-02: dias seguidos viram faixa; todos, "todos os dias"; soltos, lista', () => {
-		expect(daysLabel([1, 2, 3, 4, 5])).toBe('seg a sex');
-		expect(daysLabel([0, 1, 2, 3, 4, 5, 6])).toBe('todos os dias');
-		expect(daysLabel([5, 6, 0])).toBe('sex a dom');
-		expect(daysLabel([1, 3, 5])).toBe('seg, qua, sex');
-		expect(daysLabel([3])).toBe('qua');
+	it('RN-02 / CA-02.1 (talentos-filtros): dias com maiúscula; seguidos viram faixa; todos, "Todos os dias"; soltos, lista', () => {
+		expect(daysLabel([1, 2, 3, 4, 5])).toBe('Seg a Sex');
+		expect(daysLabel([0, 1, 2, 3, 4, 5, 6])).toBe('Todos os dias');
+		expect(daysLabel([5, 6, 0])).toBe('Sex a Dom');
+		expect(daysLabel([1, 3, 5])).toBe('Seg, Qua, Sex');
+		expect(daysLabel([3])).toBe('Qua');
 	});
 
 	it('RN-03: horas de 30 em 30 minutos e a faixa que vira a meia-noite', () => {
@@ -73,6 +73,15 @@ describe('disponibilidade no perfil', () => {
 		render(AvailabilityDialog, {
 			props: { character, instances: INSTANCES, form, onclose: () => {} } as never
 		}).body;
+
+	it('CA-02.1 (talentos-filtros) / RN-02: os dias do diálogo aparecem com maiúscula, de Seg a Dom', () => {
+		const html = renderDialog({ ...LIRIEN, availability: null });
+		const chips = [...html.matchAll(/<span aria-hidden="true"[^>]*>([^<]+)<\/span>/g)].map(
+			(m) => m[1]
+		);
+		expect(chips).toEqual(['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']);
+		expect(html).toContain('aria-label="Segunda"');
+	});
 
 	it('CA-01.4: reabre com os dias, a faixa e as instâncias guardados, mesmo desligado', () => {
 		const html = renderDialog({
