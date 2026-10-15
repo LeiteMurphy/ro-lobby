@@ -70,11 +70,9 @@ func run() error {
 	go roomService.Run(ctx, discordroom.Every)
 	slog.Info("sala do grupo no Discord", "bot", cfg.Bot)
 
-	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           server.New(pool, authService, characterService, lobbyService, applications.NewService(pool), talents.NewService(pool), server.WithRooms(roomService)),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	// Endurecimento, RN-14: os prazos do servidor ficam em server.NewHTTPServer.
+	srv := server.NewHTTPServer(fmt.Sprintf(":%d", cfg.Port),
+		server.New(pool, authService, characterService, lobbyService, applications.NewService(pool), talents.NewService(pool), server.WithRooms(roomService)))
 
 	errCh := make(chan error, 1)
 	go func() {
