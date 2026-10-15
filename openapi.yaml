@@ -617,6 +617,46 @@ paths:
           $ref: "#/components/responses/LobbyNotFound"
         "409":
           $ref: "#/components/responses/LobbyNotOpen"
+  /lobbies/{id}/discord-room:
+    parameters:
+      - $ref: "#/components/parameters/LobbyId"
+    post:
+      operationId: openDiscordRoom
+      summary: Abre a sala do grupo no Discord
+      description: >
+        Só o dono, com o lobby aberto e sem sala antes (spec discord-bot, RN-05 a RN-09). Cria
+        a categoria com texto e voz no servidor oficial, só para os membros conectados, e
+        posta a mensagem de abertura. O Discord fora do ar ou no limite de canais responde
+        503, sem sala gravada (RN-20).
+      security:
+        - sessionToken: []
+      responses:
+        "201":
+          description: Sala aberta.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscordRoom"
+        "401":
+          $ref: "#/components/responses/NoSession"
+        "404":
+          description: Lobby inexistente, ou a sala no Discord está desligada (discord_disabled).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscordError"
+        "409":
+          description: Regra violada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscordRuleError"
+        "503":
+          description: Discord indisponível ou servidor no limite de canais.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscordError"
   /lobbies/{id}/cancel:
     parameters:
       - $ref: "#/components/parameters/LobbyId"
@@ -1624,6 +1664,8 @@ components:
             $ref: "#/components/schemas/LobbySwapRequest"
         myApplication:
           $ref: "#/components/schemas/ViewerApplication"
+        discord:
+          $ref: "#/components/schemas/LobbyDiscord"
         minLevel:
           type: integer
         note:
@@ -1637,6 +1679,71 @@ components:
         createdAt:
           type: string
           format: date-time
+    LobbyDiscord:
+      type: object
+      additionalProperties: false
+      required: [enabled, room, members, viewerConnected]
+      description: >
+        Sala do grupo no Discord. Só no detalhe e só para o dono e os membros aceitos (spec
+        discord-bot, RN-18, RN-19, D-05).
+      properties:
+        enabled:
+          type: boolean
+          description: A sala no Discord está ligada (RN-22).
+        room:
+          allOf:
+            - $ref: "#/components/schemas/DiscordRoom"
+          nullable: true
+          description: Nula sem sala ou com a sala desligada.
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiscordMember"
+        viewerConnected:
+          type: boolean
+    DiscordRoom:
+      type: object
+      additionalProperties: false
+      required: [status, url]
+      properties:
+        status:
+          type: string
+          enum: [open, closing, deleted]
+        url:
+          type: string
+          nullable: true
+          description: Link do canal de texto; só com a sala aberta (RN-18).
+    DiscordMember:
+      type: object
+      additionalProperties: false
+      required: [userId, nick, connected]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        nick:
+          type: string
+        connected:
+          type: boolean
+    DiscordRuleError:
+      type: object
+      additionalProperties: false
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          enum: [discord_rule]
+        code:
+          type: string
+          enum: [not_owner, not_open, room_exists, no_room]
+    DiscordError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: [not_found, discord_disabled, discord_unavailable, guild_full]
     ApplicationStatus:
       type: string
       enum: [pending, accepted, rejected, withdrawn, expired, left, removed, cancelled]

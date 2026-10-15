@@ -146,6 +146,85 @@ func (q *Queries) FinishDiscordJob(ctx context.Context, arg FinishDiscordJobPara
 	return err
 }
 
+const getDiscordRoom = `-- name: GetDiscordRoom :one
+SELECT lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at, closing_at, deleted_at, reminder_sent_at, last_alert_at FROM discord_rooms WHERE lobby_id = $1
+`
+
+func (q *Queries) GetDiscordRoom(ctx context.Context, lobbyID pgtype.UUID) (DiscordRoom, error) {
+	row := q.db.QueryRow(ctx, getDiscordRoom, lobbyID)
+	var i DiscordRoom
+	err := row.Scan(
+		&i.LobbyID,
+		&i.CategoryID,
+		&i.TextChannelID,
+		&i.VoiceChannelID,
+		&i.Status,
+		&i.OpenedAt,
+		&i.ClosingAt,
+		&i.DeletedAt,
+		&i.ReminderSentAt,
+		&i.LastAlertAt,
+	)
+	return i, err
+}
+
+const insertDiscordRoom = `-- name: InsertDiscordRoom :exec
+INSERT INTO discord_rooms (lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at)
+VALUES ($1, $2, $3, $4, 'open', $5)
+`
+
+type InsertDiscordRoomParams struct {
+	LobbyID        pgtype.UUID
+	CategoryID     string
+	TextChannelID  string
+	VoiceChannelID string
+	Now            time.Time
+}
+
+// RN-05 / RN-09: a sala nasce aberta.
+func (q *Queries) InsertDiscordRoom(ctx context.Context, arg InsertDiscordRoomParams) error {
+	_, err := q.db.Exec(ctx, insertDiscordRoom,
+		arg.LobbyID,
+		arg.CategoryID,
+		arg.TextChannelID,
+		arg.VoiceChannelID,
+		arg.Now,
+	)
+	return err
+}
+
+const lockLobbyForRoom = `-- name: LockLobbyForRoom :one
+SELECT id, owner_id, instance_id, instance_name, starts_at, cancelled_at, server
+FROM lobbies WHERE id = $1
+FOR UPDATE
+`
+
+type LockLobbyForRoomRow struct {
+	ID           pgtype.UUID
+	OwnerID      pgtype.UUID
+	InstanceID   pgtype.Text
+	InstanceName pgtype.Text
+	StartsAt     time.Time
+	CancelledAt  pgtype.Timestamptz
+	Server       string
+}
+
+// RN-05 / RN-06: trava o lobby para dois cliques em "Abrir sala" não criarem duas salas.
+func (q *Queries) LockLobbyForRoom(ctx context.Context, id pgtype.UUID) (LockLobbyForRoomRow, error) {
+	row := q.db.QueryRow(ctx, lockLobbyForRoom, id)
+	var i LockLobbyForRoomRow
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.InstanceID,
+		&i.InstanceName,
+		&i.StartsAt,
+		&i.CancelledAt,
+		&i.Server,
+	)
+	return i, err
+}
+
 const markReminderSent = `-- name: MarkReminderSent :exec
 UPDATE discord_rooms SET reminder_sent_at = $1::timestamptz WHERE lobby_id = $2
 `

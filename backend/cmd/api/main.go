@@ -65,12 +65,13 @@ func run() error {
 		roomBot = discordbot.New(cfg.Discord.APIBaseURL, cfg.Bot.Token, cfg.Bot.GuildID, cfg.Discord.ClientID)
 	}
 	roomService := discordroom.NewService(pool, roomBot)
+	roomService.Origin = cfg.AppOrigin
 	go roomService.Run(ctx, discordroom.Every)
 	slog.Info("sala do grupo no Discord", "bot", cfg.Bot)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           server.New(pool, authService, characterService, lobbyService, applications.NewService(pool), talents.NewService(pool)),
+		Handler:           server.New(pool, authService, characterService, lobbyService, applications.NewService(pool), talents.NewService(pool), server.WithRooms(roomService)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

@@ -48,6 +48,8 @@ type Service struct {
 	queries *db.Queries
 	bot     Bot
 	log     *slog.Logger
+	// Origin é a origem pública do web, para o link do lobby nas mensagens (RN-08).
+	Origin string
 	// Now é o relógio do serviço; os testes trocam por um relógio fixo.
 	Now func() time.Time
 }
@@ -86,6 +88,12 @@ func enqueueSync(ctx context.Context, q *db.Queries, lobbyID, userID pgtype.UUID
 
 func (s *Service) inTx(ctx context.Context, fn func(q *db.Queries) error) error {
 	return pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error { return fn(s.queries.WithTx(tx)) })
+}
+
+func parseUUID(id string) (pgtype.UUID, error) {
+	var u pgtype.UUID
+	err := u.Scan(id)
+	return u, err
 }
 
 var errNoRows = pgx.ErrNoRows

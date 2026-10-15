@@ -401,6 +401,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lobbies/{id}/discord-room": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abre a sala do grupo no Discord
+         * @description Só o dono, com o lobby aberto e sem sala antes (spec discord-bot, RN-05 a RN-09). Cria a categoria com texto e voz no servidor oficial, só para os membros conectados, e posta a mensagem de abertura. O Discord fora do ar ou no limite de canais responde 503, sem sala gravada (RN-20).
+         */
+        post: operations["openDiscordRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lobbies/{id}/cancel": {
         parameters: {
             query?: never;
@@ -1006,12 +1029,44 @@ export interface components {
             /** @description Pedidos de troca pendentes. Só no detalhe e só para o dono (D-12). */
             swapRequests?: components["schemas"]["LobbySwapRequest"][];
             myApplication?: components["schemas"]["ViewerApplication"];
+            discord?: components["schemas"]["LobbyDiscord"];
             minLevel: number;
             note: string | null;
             owner: components["schemas"]["LobbyOwner"];
             cancelReason: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        /** @description Sala do grupo no Discord. Só no detalhe e só para o dono e os membros aceitos (spec discord-bot, RN-18, RN-19, D-05). */
+        LobbyDiscord: {
+            /** @description A sala no Discord está ligada (RN-22). */
+            enabled: boolean;
+            /** @description Nula sem sala ou com a sala desligada. */
+            room: components["schemas"]["DiscordRoom"] | null;
+            members: components["schemas"]["DiscordMember"][];
+            viewerConnected: boolean;
+        };
+        DiscordRoom: {
+            /** @enum {string} */
+            status: "open" | "closing" | "deleted";
+            /** @description Link do canal de texto; só com a sala aberta (RN-18). */
+            url: string | null;
+        };
+        DiscordMember: {
+            /** Format: uuid */
+            userId: string;
+            nick: string;
+            connected: boolean;
+        };
+        DiscordRuleError: {
+            /** @enum {string} */
+            error: "discord_rule";
+            /** @enum {string} */
+            code: "not_owner" | "not_open" | "room_exists" | "no_room";
+        };
+        DiscordError: {
+            /** @enum {string} */
+            error: "not_found" | "discord_disabled" | "discord_unavailable" | "guild_full";
         };
         /**
          * @description Estado da candidatura (RN-17); pendente de lobby iniciado vem como expired (D-02).
@@ -1991,6 +2046,57 @@ export interface operations {
             401: components["responses"]["NoSession"];
             404: components["responses"]["LobbyNotFound"];
             409: components["responses"]["LobbyNotOpen"];
+        };
+    };
+    openDiscordRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sala aberta. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRoom"];
+                };
+            };
+            401: components["responses"]["NoSession"];
+            /** @description Lobby inexistente, ou a sala no Discord está desligada (discord_disabled). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Regra violada. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRuleError"];
+                };
+            };
+            /** @description Discord indisponível ou servidor no limite de canais. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
         };
     };
     cancelLobby: {

@@ -68,6 +68,8 @@ services:
       # Sala do grupo no Discord (spec discord-bot, RN-22): as duas juntas ligam; vazias, desligam.
       DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
       DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      # Link do lobby nas mensagens do bot (spec discord-bot, RN-08), a mesma origem do web.
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:${APP_WEB_PORT:-3000}}
     # RN-02: a API só sobe depois que as migrações terminam com sucesso.
     depends_on:
       migrate:

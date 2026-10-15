@@ -64,7 +64,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff818bbf78e9ca8e171fc2
 
-### T-04 — Abrir a sala e o bloco `discord` do detalhe (API)  [ ]
+### T-04 — Abrir a sala e o bloco `discord` do detalhe (API)  [x]
 - Cobre: US-02, US-03, RN-05, RN-06, RN-07, RN-08, RN-18, RN-19, RN-20, D-05, CA-02.1 a
   CA-02.8, CA-03.1 a CA-03.5 (API)
 - Depende de: T-03

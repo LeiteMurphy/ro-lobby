@@ -22,6 +22,9 @@ type Config struct {
 	Discord Discord
 	// Bot é o bot da sala do grupo no Discord (spec discord-bot, RN-22).
 	Bot Bot
+	// AppOrigin é a origem pública do web (APP_ORIGIN, padrão http://localhost:3000), para o
+	// link do lobby nas mensagens do bot (RN-08 da discord-bot).
+	AppOrigin string
 }
 
 // Bot: DISCORD_BOT_TOKEN e DISCORD_GUILD_ID juntas ligam a sala do grupo; nenhuma das duas a
@@ -73,7 +76,11 @@ func Load(getenv func(string) string) (Config, error) {
 			ClientSecret: getenv("DISCORD_CLIENT_SECRET"),
 			APIBaseURL:   getenv("DISCORD_API_BASE_URL"),
 		},
-		Bot: Bot{Token: getenv("DISCORD_BOT_TOKEN"), GuildID: getenv("DISCORD_GUILD_ID")},
+		Bot:       Bot{Token: getenv("DISCORD_BOT_TOKEN"), GuildID: getenv("DISCORD_GUILD_ID")},
+		AppOrigin: getenv("APP_ORIGIN"),
+	}
+	if cfg.AppOrigin == "" {
+		cfg.AppOrigin = "http://localhost:3000"
 	}
 
 	if cfg.DatabaseURL == "" {

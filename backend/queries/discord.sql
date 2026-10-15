@@ -79,3 +79,17 @@ WHERE (r.status = 'open' AND l.starts_at <= @started_before)
 -- RN-09: apagada é final.
 UPDATE discord_rooms SET status = 'deleted', deleted_at = sqlc.arg(now)::timestamptz
 WHERE lobby_id = @lobby_id AND status <> 'deleted';
+
+-- name: LockLobbyForRoom :one
+-- RN-05 / RN-06: trava o lobby para dois cliques em "Abrir sala" não criarem duas salas.
+SELECT id, owner_id, instance_id, instance_name, starts_at, cancelled_at, server
+FROM lobbies WHERE id = @id
+FOR UPDATE;
+
+-- name: GetDiscordRoom :one
+SELECT * FROM discord_rooms WHERE lobby_id = @lobby_id;
+
+-- name: InsertDiscordRoom :exec
+-- RN-05 / RN-09: a sala nasce aberta.
+INSERT INTO discord_rooms (lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at)
+VALUES (@lobby_id, @category_id, @text_channel_id, @voice_channel_id, 'open', @now);
