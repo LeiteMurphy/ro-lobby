@@ -2,7 +2,8 @@
 
 - Feature: `discord-bot` · Nível: G · Status: Aprovada (2026-10-14)
 - Notion: https://app.notion.com/p/3fad4a3a5eff81468b99db1fa0b99fc5
-- Última revisão: 2026-10-14 — link do Discord do dono (US-07), "Avisar no Discord" com
+- Última revisão: 2026-10-14 — servidor do jogo na mensagem de abertura (RN-08, CA-02.2);
+  antes, link do Discord do dono (US-07), "Avisar no Discord" com
   intervalo (US-08) e, pelo design, uma categoria por sala (RN-05, RN-22, D-04)
 
 ## 1. Contexto
@@ -60,7 +61,8 @@ no servidor sozinho, por opt-in, sem precisar de convite.
 - **RN-07** — A sala é privada. `@everyone` não vê os canais. Vê e entra quem é membro do
   lobby e está conectado (RN-01), além do bot.
 - **RN-08** — Ao abrir, o bot posta no canal de texto uma mensagem com:
-  - título e horário do lobby (horário de Brasília, RN-09 da `home-local`);
+  - título, servidor do jogo (RN-08 da `servidor`) e horário do lobby (horário de Brasília,
+    RN-09 da `home-local`);
   - a composição por função (Tank, Suporte, Dano), com nick e classe de cada membro;
   - a menção a cada membro conectado;
   - o nick de quem ainda não está na sala, com o aviso de que precisa se conectar pelo
@@ -204,7 +206,7 @@ CA-02.2 — Mensagem de abertura  [US-02, RN-08]
 Given um lobby aberto com o dono (Tank) e dois membros aceitos (Suporte e Dano)
   And o membro Dano não está conectado
 When o dono abre a sala
-Then o canal de texto recebe uma mensagem com título, horário de Brasília e composição por função com nick e classe
+Then o canal de texto recebe uma mensagem com título, servidor, horário de Brasília e composição por função com nick e classe
   And a mensagem menciona o dono e o membro Suporte pelo ID do Discord
   And a mensagem não menciona o membro Dano, mas cita o nick dele como fora da sala
   And a mensagem tem o link do lobby
