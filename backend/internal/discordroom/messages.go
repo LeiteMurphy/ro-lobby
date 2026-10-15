@@ -171,3 +171,14 @@ func cancelledMessage(reason string, ids []string) postPayload {
 	}
 	return postPayload{Content: content, Mentions: ids}
 }
+
+// alertMessage é o "Avisar no Discord" (RN-26): texto fixo, menção aos conectados sem o
+// dono e o link do lobby.
+func alertMessage(owner string, ids []string, url string) postPayload {
+	content := fmt.Sprintf("📣 **%s** está chamando o grupo!", escape(owner))
+	if len(ids) > 0 {
+		content += " " + mentions(ids)
+	}
+	content += "\nLobby: " + url
+	return postPayload{Content: content, Mentions: ids}
+}

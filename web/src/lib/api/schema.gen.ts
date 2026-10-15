@@ -448,6 +448,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lobbies/{id}/discord-alert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Avisa o grupo na sala do Discord
+         * @description Só o dono, com a sala aberta (spec discord-bot, RN-26). O bot posta um texto fixo mencionando os membros conectados. Intervalo mínimo de 10 minutos por lobby (RN-27): antes disso responde 429 sem chamar o Discord. Uma falha no Discord não conta para o intervalo nem é refeita (RN-28).
+         */
+        post: operations["alertDiscordRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lobbies/{id}/cancel": {
         parameters: {
             query?: never;
@@ -1081,6 +1104,11 @@ export interface components {
             status: "open" | "closing" | "deleted";
             /** @description Link do canal de texto; só com a sala aberta (RN-18). */
             url: string | null;
+            /**
+             * Format: date-time
+             * @description Quando o dono pode avisar de novo (RN-27); nulo se já pode, e sempre nulo para quem não é o dono.
+             */
+            alertAvailableAt: string | null;
         };
         DiscordMember: {
             /** Format: uuid */
@@ -1093,6 +1121,12 @@ export interface components {
             error: "discord_rule";
             /** @enum {string} */
             code: "not_owner" | "not_open" | "room_exists" | "no_room" | "wrong_account";
+        };
+        DiscordCooldown: {
+            /** @enum {string} */
+            error: "cooldown";
+            /** @description Segundos até poder avisar de novo (RN-27). */
+            retryAfterSeconds: number;
         };
         DiscordConnection: {
             /** @description A sala no Discord está ligada (RN-22). */
@@ -2214,6 +2248,64 @@ export interface operations {
                 };
             };
             /** @description Discord indisponível ou servidor no limite de canais. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+        };
+    };
+    alertDiscordRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do lobby. Desconhecido, malformado ou, nas escritas, de outro Usuário responde 404 do mesmo jeito (RN-20, D-08). */
+                id: components["parameters"]["LobbyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aviso postado. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NoSession"];
+            /** @description Lobby inexistente, ou a sala no Discord está desligada. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordError"];
+                };
+            };
+            /** @description Regra violada (not_owner, no_room). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordRuleError"];
+                };
+            };
+            /** @description Ainda no intervalo entre avisos. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordCooldown"];
+                };
+            };
+            /** @description Discord indisponível. */
             503: {
                 headers: {
                     [name: string]: unknown;

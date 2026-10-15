@@ -136,3 +136,18 @@ WHERE r.status = 'open'
   AND (l.owner_id = @user_id
        OR EXISTS (SELECT 1 FROM applications a
                   WHERE a.lobby_id = l.id AND a.user_id = @user_id AND a.status = 'accepted'));
+
+-- name: LockRoomForAlert :one
+-- RN-27: trava a sala para dois avisos ao mesmo tempo postarem um só.
+SELECT r.status, r.text_channel_id, r.last_alert_at, l.owner_id
+FROM discord_rooms r
+JOIN lobbies l ON l.id = r.lobby_id
+WHERE r.lobby_id = @lobby_id
+FOR UPDATE OF r;
+
+-- name: GetLobbyOwner :one
+SELECT owner_id FROM lobbies WHERE id = @id;
+
+-- name: SetLastAlert :exec
+-- RN-27 / RN-28: só o aviso que deu certo conta para o intervalo.
+UPDATE discord_rooms SET last_alert_at = sqlc.arg(now)::timestamptz WHERE lobby_id = @lobby_id;

@@ -159,6 +159,21 @@ func (e ClassTier) Valid() bool {
 	}
 }
 
+// Defines values for DiscordCooldownError.
+const (
+	DiscordCooldownErrorCooldown DiscordCooldownError = "cooldown"
+)
+
+// Valid indicates whether the value is a known member of the DiscordCooldownError enum.
+func (e DiscordCooldownError) Valid() bool {
+	switch e {
+	case DiscordCooldownErrorCooldown:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DiscordErrorError.
 const (
 	DiscordErrorErrorDiscordDisabled    DiscordErrorError = "discord_disabled"
@@ -1332,6 +1347,17 @@ type DiscordConnectionInput struct {
 	RedirectUri string `json:"redirectUri"`
 }
 
+// DiscordCooldown defines model for DiscordCooldown.
+type DiscordCooldown struct {
+	Error DiscordCooldownError `json:"error"`
+
+	// RetryAfterSeconds Segundos até poder avisar de novo (RN-27).
+	RetryAfterSeconds int `json:"retryAfterSeconds"`
+}
+
+// DiscordCooldownError defines model for DiscordCooldown.Error.
+type DiscordCooldownError string
+
 // DiscordError defines model for DiscordError.
 type DiscordError struct {
 	Error DiscordErrorError `json:"error"`
@@ -1357,7 +1383,9 @@ type DiscordMember struct {
 
 // DiscordRoom defines model for DiscordRoom.
 type DiscordRoom struct {
-	Status DiscordRoomStatus `json:"status"`
+	// AlertAvailableAt Quando o dono pode avisar de novo (RN-27); nulo se já pode, e sempre nulo para quem não é o dono.
+	AlertAvailableAt *time.Time        `json:"alertAvailableAt"`
+	Status           DiscordRoomStatus `json:"status"`
 
 	// Url Link do canal de texto; só com a sala aberta (RN-18).
 	Url *string `json:"url"`
@@ -2032,6 +2060,9 @@ type ServerInterface interface {
 	// CancelLobby Cancela o lobby
 	// (POST /lobbies/{id}/cancel)
 	CancelLobby(w http.ResponseWriter, r *http.Request, id LobbyId)
+	// AlertDiscordRoom Avisa o grupo na sala do Discord
+	// (POST /lobbies/{id}/discord-alert)
+	AlertDiscordRoom(w http.ResponseWriter, r *http.Request, id LobbyId)
 	// OpenDiscordRoom Abre a sala do grupo no Discord
 	// (POST /lobbies/{id}/discord-room)
 	OpenDiscordRoom(w http.ResponseWriter, r *http.Request, id LobbyId)
@@ -2613,6 +2644,32 @@ func (siw *ServerInterfaceWrapper) CancelLobby(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CancelLobby(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AlertDiscordRoom operation middleware
+func (siw *ServerInterfaceWrapper) AlertDiscordRoom(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id LobbyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AlertDiscordRoom(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3268,6 +3325,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/unblock", wrapper.UnblockInLobby)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lobbies/{id}/talents", wrapper.ListLobbyTalents)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/discord-room", wrapper.OpenDiscordRoom)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/discord-alert", wrapper.AlertDiscordRoom)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/cancel", wrapper.CancelLobby)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/lobbies/{id}/owner-character", wrapper.SwapOwnerCharacter)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lobbies/{id}/applications", wrapper.ApplyToLobby)
@@ -4631,6 +4689,92 @@ func (response CancelLobby422JSONResponse) VisitCancelLobbyResponse(w http.Respo
 	return err
 }
 
+type AlertDiscordRoomRequestObject struct {
+	Id LobbyId `json:"id"`
+}
+
+type AlertDiscordRoomResponseObject interface {
+	VisitAlertDiscordRoomResponse(w http.ResponseWriter) error
+}
+
+type AlertDiscordRoom204Response struct {
+}
+
+func (response AlertDiscordRoom204Response) VisitAlertDiscordRoomResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AlertDiscordRoom401JSONResponse struct{ NoSessionJSONResponse }
+
+func (response AlertDiscordRoom401JSONResponse) VisitAlertDiscordRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AlertDiscordRoom404JSONResponse DiscordError
+
+func (response AlertDiscordRoom404JSONResponse) VisitAlertDiscordRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AlertDiscordRoom409JSONResponse DiscordRuleError
+
+func (response AlertDiscordRoom409JSONResponse) VisitAlertDiscordRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AlertDiscordRoom429JSONResponse DiscordCooldown
+
+func (response AlertDiscordRoom429JSONResponse) VisitAlertDiscordRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AlertDiscordRoom503JSONResponse DiscordError
+
+func (response AlertDiscordRoom503JSONResponse) VisitAlertDiscordRoomResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type OpenDiscordRoomRequestObject struct {
 	Id LobbyId `json:"id"`
 }
@@ -5514,6 +5658,9 @@ type StrictServerInterface interface {
 	// CancelLobby Cancela o lobby
 	// (POST /lobbies/{id}/cancel)
 	CancelLobby(ctx context.Context, request CancelLobbyRequestObject) (CancelLobbyResponseObject, error)
+	// AlertDiscordRoom Avisa o grupo na sala do Discord
+	// (POST /lobbies/{id}/discord-alert)
+	AlertDiscordRoom(ctx context.Context, request AlertDiscordRoomRequestObject) (AlertDiscordRoomResponseObject, error)
 	// OpenDiscordRoom Abre a sala do grupo no Discord
 	// (POST /lobbies/{id}/discord-room)
 	OpenDiscordRoom(ctx context.Context, request OpenDiscordRoomRequestObject) (OpenDiscordRoomResponseObject, error)
@@ -6254,6 +6401,32 @@ func (sh *strictHandler) CancelLobby(w http.ResponseWriter, r *http.Request, id 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CancelLobbyResponseObject); ok {
 		if err := validResponse.VisitCancelLobbyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AlertDiscordRoom operation middleware
+func (sh *strictHandler) AlertDiscordRoom(w http.ResponseWriter, r *http.Request, id LobbyId) {
+	var request AlertDiscordRoomRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AlertDiscordRoom(ctx, request.(AlertDiscordRoomRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AlertDiscordRoom")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AlertDiscordRoomResponseObject); ok {
+		if err := validResponse.VisitAlertDiscordRoomResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

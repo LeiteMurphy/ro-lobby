@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"math"
 
 	"github.com/google/uuid"
 
@@ -19,6 +20,7 @@ type RoomService interface {
 	View(ctx context.Context, lobbyID, viewerID string) (discordroom.View, error)
 	Connection(ctx context.Context, userID string) (discordroom.Connection, error)
 	Connect(ctx context.Context, userID, code, redirectURI string) (discordroom.Connection, error)
+	Alert(ctx context.Context, ownerID, lobbyID string) error
 }
 
 // Option ajusta o servidor.
@@ -48,6 +50,7 @@ func (noRooms) Connection(context.Context, string) (discordroom.Connection, erro
 func (noRooms) Connect(context.Context, string, string, string) (discordroom.Connection, error) {
 	return discordroom.Connection{}, discordroom.ErrDisabled
 }
+func (noRooms) Alert(context.Context, string, string) error { return discordroom.ErrDisabled }
 
 type discordHandler struct {
 	session charactersHandler
@@ -81,6 +84,35 @@ func (h discordHandler) OpenDiscordRoom(ctx context.Context, req api.OpenDiscord
 	}
 	url := room.URL()
 	return api.OpenDiscordRoom201JSONResponse{Status: api.DiscordRoomStatus(room.Status), Url: &url}, nil
+}
+
+// AlertDiscordRoom avisa o grupo na sala (RN-26 a RN-28).
+func (h discordHandler) AlertDiscordRoom(ctx context.Context, req api.AlertDiscordRoomRequestObject) (api.AlertDiscordRoomResponseObject, error) {
+	userID, ok, err := h.session.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return api.AlertDiscordRoom401JSONResponse{NoSessionJSONResponse: api.NoSessionJSONResponse(noSession)}, nil
+	}
+	err = h.rooms.Alert(ctx, userID, req.Id)
+	var re *discordroom.RuleError
+	var ce *discordroom.CooldownError
+	switch {
+	case errors.As(err, &ce):
+		return api.AlertDiscordRoom429JSONResponse{Error: api.DiscordCooldownErrorCooldown, RetryAfterSeconds: int(math.Ceil(ce.RetryAfter.Seconds()))}, nil
+	case errors.As(err, &re):
+		return api.AlertDiscordRoom409JSONResponse{Error: api.DiscordRuleErrorErrorDiscordRule, Code: api.DiscordRuleErrorCode(re.Code)}, nil
+	case errors.Is(err, discordroom.ErrDisabled):
+		return api.AlertDiscordRoom404JSONResponse{Error: api.DiscordErrorErrorDiscordDisabled}, nil
+	case errors.Is(err, discordroom.ErrNotFound):
+		return api.AlertDiscordRoom404JSONResponse{Error: api.DiscordErrorErrorNotFound}, nil
+	case errors.Is(err, discordroom.ErrUnavailable):
+		return api.AlertDiscordRoom503JSONResponse{Error: api.DiscordErrorErrorDiscordUnavailable}, nil
+	case err != nil:
+		return nil, err
+	}
+	return api.AlertDiscordRoom204Response{}, nil
 }
 
 // GetDiscordConnection devolve se a sala está ligada e quando o Usuário se conectou (RN-01,
@@ -173,6 +205,10 @@ func toAPIDiscord(v discordroom.View) (api.LobbyDiscord, error) {
 		if v.Room.URL != "" {
 			url := v.Room.URL
 			room.Url = &url
+		}
+		if !v.Room.AlertAvailableAt.IsZero() {
+			at := v.Room.AlertAvailableAt
+			room.AlertAvailableAt = &at
 		}
 		out.Room = &room
 	}

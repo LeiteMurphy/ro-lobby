@@ -136,7 +136,7 @@
 - Commit:
 - Notion: https://app.notion.com/p/3fad4a3a5eff813c8196d9e6e9ee3b21
 
-### T-08 — Avisar no Discord (API)  [ ]
+### T-08 — Avisar no Discord (API)  [x]
 - Cobre: US-08, RN-26, RN-27, RN-28, CA-08.1 a CA-08.7 (API)
 - Depende de: T-04
 - Paralelizável: não

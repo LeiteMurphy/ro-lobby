@@ -188,6 +188,9 @@ type RoomView struct {
 	Status string
 	// URL só com a sala aberta (RN-18).
 	URL string
+	// AlertAvailableAt é quando o dono pode avisar de novo; zerado se já pode, e sempre
+	// zerado para quem não é o dono (RN-27).
+	AlertAvailableAt time.Time
 }
 
 // View monta o bloco discord para quem já se sabe que é membro (o dono ou um aceito).
@@ -201,10 +204,12 @@ func (s *Service) View(ctx context.Context, lobbyID, viewerID string) (View, err
 	if err != nil {
 		return out, fmt.Errorf("discordroom: membros: %w", err)
 	}
+	viewerIsOwner := false
 	for _, m := range members {
 		out.Members = append(out.Members, Member{UserID: m.UserID.String(), Nick: m.Nick.String, Connected: m.Connected})
 		if m.UserID.String() == viewerID {
 			out.ViewerConnected = m.Connected
+			viewerIsOwner = m.IsOwner
 		}
 	}
 	link, err := s.queries.GetLobbyDiscordLink(ctx, lid)
@@ -225,6 +230,9 @@ func (s *Service) View(ctx context.Context, lobbyID, viewerID string) (View, err
 	out.Room = &RoomView{Status: room.Status}
 	if room.Status == StatusOpen {
 		out.Room.URL = Room{TextID: room.TextChannelID, GuildID: s.bot.GuildID()}.URL()
+		if next := room.LastAlertAt.Time.Add(AlertCooldown); viewerIsOwner && room.LastAlertAt.Valid && s.Now().Before(next) {
+			out.Room.AlertAvailableAt = next.UTC()
+		}
 	}
 	return out, nil
 }

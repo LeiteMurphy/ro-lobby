@@ -213,6 +213,17 @@ func (q *Queries) GetLobbyDiscordLink(ctx context.Context, id pgtype.UUID) (pgty
 	return discord_link, err
 }
 
+const getLobbyOwner = `-- name: GetLobbyOwner :one
+SELECT owner_id FROM lobbies WHERE id = $1
+`
+
+func (q *Queries) GetLobbyOwner(ctx context.Context, id pgtype.UUID) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, getLobbyOwner, id)
+	var owner_id pgtype.UUID
+	err := row.Scan(&owner_id)
+	return owner_id, err
+}
+
 const getOpenDiscordRoom = `-- name: GetOpenDiscordRoom :one
 SELECT lobby_id, category_id, text_channel_id, voice_channel_id, status, opened_at, closing_at, deleted_at, reminder_sent_at, last_alert_at FROM discord_rooms WHERE lobby_id = $1 AND status = 'open'
 `
@@ -310,6 +321,34 @@ func (q *Queries) LockLobbyForRoom(ctx context.Context, id pgtype.UUID) (LockLob
 		&i.StartsAt,
 		&i.CancelledAt,
 		&i.Server,
+	)
+	return i, err
+}
+
+const lockRoomForAlert = `-- name: LockRoomForAlert :one
+SELECT r.status, r.text_channel_id, r.last_alert_at, l.owner_id
+FROM discord_rooms r
+JOIN lobbies l ON l.id = r.lobby_id
+WHERE r.lobby_id = $1
+FOR UPDATE OF r
+`
+
+type LockRoomForAlertRow struct {
+	Status        string
+	TextChannelID string
+	LastAlertAt   pgtype.Timestamptz
+	OwnerID       pgtype.UUID
+}
+
+// RN-27: trava a sala para dois avisos ao mesmo tempo postarem um só.
+func (q *Queries) LockRoomForAlert(ctx context.Context, lobbyID pgtype.UUID) (LockRoomForAlertRow, error) {
+	row := q.db.QueryRow(ctx, lockRoomForAlert, lobbyID)
+	var i LockRoomForAlertRow
+	err := row.Scan(
+		&i.Status,
+		&i.TextChannelID,
+		&i.LastAlertAt,
+		&i.OwnerID,
 	)
 	return i, err
 }
@@ -544,4 +583,19 @@ func (q *Queries) SetDiscordConnected(ctx context.Context, arg SetDiscordConnect
 	var discord_connected_at pgtype.Timestamptz
 	err := row.Scan(&discord_connected_at)
 	return discord_connected_at, err
+}
+
+const setLastAlert = `-- name: SetLastAlert :exec
+UPDATE discord_rooms SET last_alert_at = $1::timestamptz WHERE lobby_id = $2
+`
+
+type SetLastAlertParams struct {
+	Now     time.Time
+	LobbyID pgtype.UUID
+}
+
+// RN-27 / RN-28: só o aviso que deu certo conta para o intervalo.
+func (q *Queries) SetLastAlert(ctx context.Context, arg SetLastAlertParams) error {
+	_, err := q.db.Exec(ctx, setLastAlert, arg.Now, arg.LobbyID)
+	return err
 }
