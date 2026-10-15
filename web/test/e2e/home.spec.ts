@@ -195,7 +195,7 @@ test.describe('Home no desktop', () => {
 		await dayTabs(page).nth(2).click();
 		await expect(dayTabs(page).nth(2)).toHaveAttribute('aria-selected', 'true');
 		await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-			/^Grupos para \w{3}, \d+ \w{3}$/
+			/^Grupos para [^\s,]{3}, \d+ [^\s,]{3}$/
 		);
 		await expect(cards(page)).toHaveCount(count);
 		await expect(ownCards(page)).toHaveCount(1);
