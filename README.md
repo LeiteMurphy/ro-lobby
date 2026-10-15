@@ -54,7 +54,14 @@ Os valores do `.env.example` são fictícios e servem para o ambiente local.
 
 > **`.env` antigo?** Se o seu `.env` é de antes da Home, acrescente
 > `COMPOSE_PROFILES=dev` e `APP_WEB_PORT=3000`, ou copie o `.env.example` de novo. Sem o
-> `COMPOSE_PROFILES`, o `docker compose up` não sobe nenhum serviço.
+> `COMPOSE_PROFILES`, o `docker compose up` não sobe nenhum serviço. Se é de antes do
+> endurecimento, acrescente `APP_POSTGRES_PASSWORD` (veja [Segurança](#segurança)).
+
+Para conferir o `.env` sem mostrar nenhum valor:
+
+```powershell
+sh scripts/check-env.sh
+```
 
 **Porta ocupada?** Troque `POSTGRES_PORT`, `API_PORT`, `WEB_PORT` ou `APP_WEB_PORT` no `.env`. Se
 mudar `POSTGRES_PORT` ou `API_PORT`, ajuste também a `DATABASE_URL` ou a
@@ -192,7 +199,8 @@ pelo Cloudflare Tunnel ([ADR-08](docs/adr/0008-publicacao-tunel-cloudflare.md)).
 sai do PC até o Cloudflare: nenhuma porta do roteador é aberta e o IP de casa não aparece.
 
 **Limites:** o site só fica no ar com o PC ligado (sem hibernar) e o Docker rodando, e o
-banco fica no volume do Docker, sem backup.
+banco fica no volume do Docker. O backup é manual, com `bash scripts/backup.sh` (veja
+[Segurança](#segurança)).
 
 ### Uma vez só
 
@@ -210,6 +218,8 @@ banco fica no volume do Docker, sem backup.
    APP_ORIGIN=https://rolobby.com.br
    CLOUDFLARE_TUNNEL_TOKEN=<token do passo 2>
    ```
+   Com a origem pública, a pilha só sobe com segredos de verdade: confira com
+   `sh scripts/check-env.sh` antes de subir.
 
 ### Subir e parar
 
@@ -229,6 +239,84 @@ e a CI não dependerem do token. A configuração é conferida por:
 ```powershell
 bash scripts/check-compose-tunnel.sh
 ```
+
+## Segurança
+
+O repositório é público: tudo o que está nele, qualquer pessoa lê. A segurança do RO Lobby
+não depende de esconder o código. Ela depende de os segredos ficarem só no `.env`, que
+nunca vai para o git.
+
+### Segredos do `.env`
+
+| Variável | O que é | Onde trocar se vazar |
+|---|---|---|
+| `DISCORD_CLIENT_SECRET` | Segredo do aplicativo do login | Discord Developer Portal → OAuth2 → Reset Secret |
+| `DISCORD_BOT_TOKEN` | Token do bot da sala | Discord Developer Portal → Bot → Reset Token |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Token do túnel | Cloudflare Zero Trust → Tunnels → o túnel → Refresh token |
+| `APP_POSTGRES_PASSWORD` | Senha do banco da pilha app | Veja *Trocar a senha do banco* abaixo |
+
+Para gerar uma senha forte (só letras e números, porque ela vai dentro da URL do banco):
+
+```powershell
+openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32
+```
+
+O `POSTGRES_PASSWORD` é só do banco de desenvolvimento e pode ficar com o valor do
+`.env.example`. A pilha app usa o `APP_POSTGRES_PASSWORD`. Com `APP_ORIGIN` público, o
+serviço `env-check` impede a pilha de subir com senha curta (menos de 24 caracteres) ou com
+valores do `.env.example`, e diz qual variável corrigir sem mostrar o valor.
+
+**Se um segredo vazar** (commit, print, mensagem): troque o valor no painel da tabela acima,
+atualize o `.env` e suba a pilha de novo. Apagar o commit não basta, porque o valor já foi
+visto. O GitHub barra o push de tokens conhecidos (*push protection*) e avisa sobre os que
+passarem (*secret scanning*).
+
+### Antes de publicar
+
+1. `sh scripts/check-env.sh` sem problemas.
+2. Backup do banco: `bash scripts/backup.sh` (com migração nova:
+   `bash scripts/backup.sh antes-<número>`). O backup vai para `~/ro-lobby-backups/`, e só os
+   10 mais recentes ficam guardados. Os arquivos têm dados dos usuários: não compartilhe nem
+   envie para a nuvem.
+3. Subir pela `main` atualizada, nunca por uma branch de feature.
+
+### Trocar a senha do banco
+
+O PostgreSQL só lê a senha do ambiente na primeira vez que cria o volume. Num banco que já
+existe, a troca é feita dentro dele:
+
+```powershell
+bash scripts/backup.sh antes-troca-senha
+docker exec -it ro-lobby-app-postgres-1 psql -U ro_lobby -d ro_lobby -c "\password ro_lobby"
+# digite a senha nova duas vezes; ela não aparece na tela nem no histórico
+```
+
+Depois, ponha a mesma senha em `APP_POSTGRES_PASSWORD` no `.env` e suba a pilha de novo. Se
+a API não conectar, a senha do `.env` está diferente da do banco: repita o `\password`.
+
+### O que já vem protegido
+
+- **Rede:** o banco e a API da pilha não publicam porta. O banco de desenvolvimento e o web
+  só escutam em `127.0.0.1`, e o túnel chega ao web pela rede interna do Compose.
+- **Cabeçalhos:** o web envia `X-Frame-Options`, `X-Content-Type-Options`,
+  `Referrer-Policy`, `Permissions-Policy` e, com https, `Strict-Transport-Security`.
+- **Limites da API:** corpo de até 64 KiB; 300 requisições por minuto por IP, 10 trocas de
+  código de login por minuto por IP e 30 ações por minuto por sessão. Passado o limite, a
+  API responde 429 e o site mostra "Muitas tentativas".
+- **Dependências:** a CI roda `govulncheck` e `npm audit`, e o Dependabot abre PRs de
+  atualização toda semana.
+- **Sessões e tokens:** a sessão fica no banco só como hash, o cookie é `HttpOnly`,
+  `Secure` e `SameSite=Lax`, e o token do Discord é descartado depois do uso.
+
+### Cloudflare (painel, uma vez só)
+
+Em dash.cloudflare.com, no domínio `rolobby.com.br`:
+
+1. **SSL/TLS → Overview:** modo *Full*.
+2. **SSL/TLS → Edge Certificates:** ligar *Always Use HTTPS*.
+3. **Security → Bots:** ligar *Bot Fight Mode*.
+4. **Security → WAF → Rate limiting rules:** uma regra para o caminho `/auth/` com 20
+   requisições por minuto por IP, como segunda barreira antes da API.
 
 ## Testes e verificações
 
@@ -282,13 +370,15 @@ A CI gera de novo e falha se o resultado for diferente do que foi commitado.
 
 O workflow `.github/workflows/ci.yml` roda em todo PR para a `main`:
 
-- **Backend**, quando `backend/` muda: gofmt, golangci-lint, testes unitários, migrações,
-  testes de integração, build e código gerado.
-- **Web**, quando `web/` muda: ESLint, Prettier, svelte-check, Vitest com cobertura,
-  build, tipos gerados e a conferência de que o Client Secret não aparece no build.
+- **Backend**, quando `backend/` muda: gofmt, golangci-lint, `govulncheck`, testes
+  unitários, migrações, testes de integração, build e código gerado.
+- **Web**, quando `web/` muda: `npm audit`, ESLint, Prettier, svelte-check, Vitest com
+  cobertura, build, tipos gerados e a conferência de que o Client Secret não aparece no
+  build.
 - **Ponta a ponta**, quando o backend ou o web mudam.
-- **Pilha app**, quando o backend, o web ou o Compose mudam: constrói as imagens e roda
-  o `scripts/smoke-app.sh`. Não publica as imagens.
+- **Pilha app**, quando o backend, o web ou o Compose mudam: testa o verificador do
+  `.env` e o backup, confere o Compose, constrói as imagens e roda o
+  `scripts/smoke-app.sh`. Não publica as imagens.
 - O `openapi.yaml` e a própria CI disparam todos.
 - **CI ok** junta os resultados. PR só de documentação passa direto.
 
@@ -301,4 +391,8 @@ No GitHub: **Settings → Branches → Add branch ruleset** (ou *Add rule*) para
 1. Exigir pull request antes do merge.
 2. Exigir status checks e marcar **CI ok**. Não marque os jobs Backend, Web e Ponta a
    ponta: eles ficam pulados em PRs que não mexem na pasta deles.
-3. Bloquear force push.
+3. Bloquear force push e exclusão da branch.
+
+Sem revisão obrigatória de outra pessoa, porque o projeto tem um mantenedor só. Na aba
+**Settings → Code security**, deixe ligados *Secret scanning*, *Push protection*,
+*Dependabot alerts* e *Dependabot security updates*.
