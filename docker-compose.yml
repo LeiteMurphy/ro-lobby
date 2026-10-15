@@ -33,8 +33,9 @@ services:
     environment:
       <<: *postgres-env
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    # Endurecimento, RN-06: só o próprio PC alcança o banco de desenvolvimento.
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
 
@@ -127,8 +128,9 @@ services:
       # O adapter-node confere a origem das actions (proteção CSRF). RN-01
       # (publicacao-tunel): APP_ORIGIN troca a origem pelo domínio público.
       ORIGIN: ${APP_ORIGIN:-http://localhost:${APP_WEB_PORT:-3000}}
+    # Endurecimento, RN-06: só o próprio PC; o túnel chega pela rede interna do Compose.
     ports:
-      - "${APP_WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${APP_WEB_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy

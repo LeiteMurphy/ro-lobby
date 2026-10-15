@@ -81,6 +81,18 @@ else
 	fail "env-check falhou sem a mensagem esperada"
 fi
 
+echo "== Endurecimento CA-02.1 / CA-02.2 — portas só em 127.0.0.1"
+dev_json=$(docker compose --env-file "$env_file" --profile dev config --format json)
+[[ "$(get services.postgres.ports.0.host_ip <<<"$dev_json")" == "127.0.0.1" ]] && ok "postgres de dev em 127.0.0.1" || fail "postgres de dev fora de 127.0.0.1"
+[[ "$(get services.web.ports.0.host_ip <<<"$tunnel_json")" == "127.0.0.1" ]] && ok "web em 127.0.0.1" || fail "web fora de 127.0.0.1"
+# Serviços com porta publicada fora de 127.0.0.1, no JSON do `config` na entrada.
+exposed() { node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const sv=JSON.parse(s).services;console.log(Object.entries(sv).filter(([,v])=>(v.ports??[]).some(p=>p.host_ip!=="127.0.0.1")).map(([k])=>k).join(","))})'; }
+open_ports="$(exposed <<<"$tunnel_json")$(exposed <<<"$dev_json")"
+[[ -z "$open_ports" ]] && ok "nenhuma porta fora de 127.0.0.1" || fail "portas abertas para a rede em: $open_ports"
+for svc in app-postgres api; do
+	[[ -z "$(get services.$svc.ports <<<"$tunnel_json")" ]] && ok "$svc sem porta publicada" || fail "$svc publica porta"
+done
+
 if ((failures > 0)); then
 	echo "$failures falha(s)" >&2
 	exit 1
