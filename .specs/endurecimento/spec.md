@@ -5,6 +5,9 @@
 - Última revisão: 2026-10-15 — aprovada; os limites da RN-15 são por minuto e não mexem na
   duração da sessão (RN-09 da login-discord continua igual). Nas tasks, o limite de login
   passou a contar a troca do código, porque o início não chega à API (RN-15, CA-05.3)
+- Revisão: 2026-10-15 — RN-15 e CA-05.2 aprovados pelo usuário depois da validação do
+  ciclo 1: as ações contam por sessão e incluem toda requisição logada que muda algo
+  (exceto login e logout); o `/healthz` fica fora do limite geral
 
 ## 1. Contexto
 O repositório do RO Lobby é público, e a v1 roda no PC do usuário, publicada em
@@ -92,14 +95,15 @@ Esta entrega fecha esses pontos sem mudar o comportamento do produto para quem u
 - **RN-15** — A API limita a frequência de requisições:
   - **login** (a troca do código no retorno do Discord; o início só redireciona e não
     chega à API): 10 por minuto por IP;
-  - **ações** (criar ou editar lobby, candidatar, decidir, sair, remover, trocar
-    personagem, abrir sala, conectar ao Discord, salvar personagem e disponibilidade):
-    30 por minuto por usuário;
-  - **geral**: 300 por minuto por IP em qualquer rota.
+  - **ações** (toda requisição de quem está logado que muda algo — criar, editar, excluir
+    ou decidir — exceto o login e o logout): 30 por minuto por sessão. Quem está logado em
+    mais de um aparelho tem um limite em cada um;
+  - **geral**: 300 por minuto por IP em qualquer rota, exceto a verificação de saúde
+    (`/healthz`).
 
   Passado o limite, a resposta é 429 com `Retry-After`, e o web mostra "Muitas tentativas.
   Aguarde um pouco e tente de novo.". O intervalo próprio do "Avisar no Discord" (RN-27 da
-  discord-bot) continua valendo.
+  discord-bot) continua valendo, e o aviso também conta como ação.
 - **RN-16** — O IP de quem acessa é o que o Cloudflare informa (`CF-Connecting-IP`) quando
   a requisição chega pelo túnel. Fora do túnel, é o endereço da conexão. O web repassa
   esse IP à API, e a API só aceita o repasse vindo da rede interna (a API não tem porta
@@ -204,12 +208,12 @@ Given um usuário logado
 When ele envia à API um corpo de 65 KiB
 Then a resposta é 413 e nada é gravado
 
-CA-05.2 — Limite de ações por usuário  [US-05, RN-15]
-Given um usuário que fez 30 ações no último minuto
-When ele faz a 31ª
+CA-05.2 — Limite de ações por sessão  [US-05, RN-15]
+Given uma sessão que fez 30 ações no último minuto
+When ela faz a 31ª
 Then a resposta é 429 com Retry-After
   And o web mostra "Muitas tentativas. Aguarde um pouco e tente de novo."
-  And outro usuário no mesmo minuto não é afetado
+  And outra sessão no mesmo minuto não é afetada
 
 CA-05.3 — Limite de login por IP  [US-05, RN-15, RN-16]
 Given um IP que concluiu a troca do código de login 10 vezes no último minuto
@@ -287,7 +291,7 @@ Then há uma seção de segurança com: gerar segredos fortes, rodar o check-env
   não conecta. O passo a passo do README manda atualizar o `.env` e subir de novo, e o
   backup permite voltar [RN-19].
 - Vários usuários atrás do mesmo IP (casa, lan house) → o limite geral por IP (300/min)
-  comporta; as ações contam por usuário [RN-15].
+  comporta; as ações contam por sessão [RN-15].
 - A API reinicia → os contadores de limite zeram. Isso é aceito, porque os contadores ficam
   em memória [RN-15].
 - Uma rota de vulnerabilidade do Go só alcançável pelo Discord falso de teste → conta como

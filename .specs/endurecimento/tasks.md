@@ -74,7 +74,7 @@
   confere os quatro timeouts do `http.Server` (CA-05.6)
 - Commit: `ff384f3 feat(backend): limite de 64 KiB no corpo e prazos do servidor`
 
-### T-07 — Limite de requisições por IP e por usuário  [x]
+### T-07 — Limite de requisições por IP e por sessão  [x]
 - Cobre: US-05, RN-15, RN-16, CA-05.2 (API), CA-05.3, CA-05.4, CA-05.5
 - Depende de: T-06
 - Paralelizável: não
@@ -83,7 +83,7 @@
   (`API_RATE_LIMIT=off` só no e2e), `web/src/hooks.server.ts` (`handleFetch` repassa o IP do
   visitante só nas chamadas à API), `web/src/lib/security/client-ip.ts`,
   `web/playwright.config.ts`
-- Pronto quando: os testes com relógio falso cobrem 30 ações por usuário com a 31ª em 429 e
+- Pronto quando: os testes com relógio falso cobrem 30 ações por sessão com a 31ª em 429 e
   `Retry-After`, outro usuário livre, o login com 10 por IP, a liberação depois da janela e o
   limite geral de 300 por IP; o IP repassado pelo web é o usado na contagem
 - Commit: `ec63e48 feat: limite de requisições por IP e por sessão`
@@ -188,7 +188,7 @@
   `ADDRESS_HEADER` do adapter-node. Com o `ADDRESS_HEADER`, toda requisição local sem o
   cabeçalho (como o healthcheck do container) quebraria. O web só é alcançado pelo túnel ou
   pelo próprio PC (RN-06), e o Cloudflare sobrescreve o cabeçalho, então ele é confiável.
-- 2026-10-15 — T-07: "ações por usuário" contam por sessão (hash do token Bearer), sem ir ao
+- 2026-10-15 — T-07 (RN-15 revisada e aprovada depois do ciclo 1): "ações" contam por sessão (hash do token Bearer), sem ir ao
   banco a cada requisição. Quem está logado em dois aparelhos tem dois limites de 30/min.
 - 2026-10-15 — T-07: o e2e desliga o limite com `API_RATE_LIMIT=off`, porque faz centenas de
   requisições do mesmo IP. A API se recusa a subir com essa opção e `APP_ORIGIN` https.

@@ -192,3 +192,24 @@ func TestNew_RN15_RateLimitsOption(t *testing.T) {
 		t.Fatalf("New com opção não limitou: %d", rec.Code)
 	}
 }
+
+// RN-15: toda requisição logada que muda algo conta como ação, inclusive o "Avisar no
+// Discord" e rotas fora da lista original (excluir personagem, retirar candidatura).
+func TestRateLimit_RN15_EveryMutationCounts(t *testing.T) {
+	h, _, _ := newLimited()
+	routes := []struct{ method, path string }{
+		{http.MethodPost, "/lobbies/l1/discord-alert"},
+		{http.MethodDelete, "/characters/c1"},
+		{http.MethodPost, "/applications/a1/withdraw"},
+		{http.MethodPut, "/characters/c1/main"},
+	}
+	for i := range 30 {
+		r := routes[i%len(routes)]
+		if rec := send(h, r.method, r.path, "203.0.113.1", "sessao-a"); rec.Code != http.StatusNoContent {
+			t.Fatalf("ação %d (%s %s): status %d", i+1, r.method, r.path, rec.Code)
+		}
+	}
+	if rec := send(h, http.MethodPost, "/lobbies/l1/discord-alert", "203.0.113.1", "sessao-a"); rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("31ª ação (aviso): status %d, esperado 429", rec.Code)
+	}
+}
