@@ -24,7 +24,7 @@
     - com as duas, ela liga;
     - com só uma delas, a subida dá erro;
   - o token não aparece no log nem no `String()` da config.
-- Commit:
+- Commit: bd21b32
 - Notion: https://app.notion.com/p/3fad4a3a5eff81f2afedc879dfab7577
 
 ### T-02 — Cliente do bot e Discord falso  [P] [x]
@@ -42,7 +42,7 @@
   - o código `30013` vira `ErrGuildFull`;
   - apagar um canal que já não existe é sucesso;
   - toda mensagem vai com `allowed_mentions.parse = []` e só os IDs listados.
-- Commit:
+- Commit: 91f91b8
 - Notion: https://app.notion.com/p/3fad4a3a5eff81679476ed56596d8689
 
 ### T-03 — Trabalhador: fila, novas tentativas, lembrete e remoção  [x]
@@ -61,7 +61,7 @@
   - a sala encerrando apagada 1 h depois do cancelamento;
   - a remoção refeita quando o Discord volta;
   - um canal apagado à mão não trava a sala.
-- Commit:
+- Commit: d540d0b
 - Notion: https://app.notion.com/p/3fad4a3a5eff818bbf78e9ca8e171fc2
 
 ### T-04 — Abrir a sala e o bloco `discord` do detalhe (API)  [x]
@@ -80,7 +80,7 @@
   - `discord_unavailable` e `guild_full` sem sala gravada nem canal sobrando;
   - dois cliques ao mesmo tempo, com uma sala só;
   - o bloco `discord` só para os membros, com o link apenas com a sala aberta.
-- Commit:
+- Commit: 5e35f6c
 - Notion: https://app.notion.com/p/3fad4a3a5eff812d902cdcc622553c98
 
 ### T-05 — Conexão ao servidor (API)  [x]
@@ -98,7 +98,7 @@
   - `wrong_account` sem chamar a inclusão;
   - reconectar atualizando a data;
   - `discord_disabled` com a feature desligada.
-- Commit:
+- Commit: 24619f3
 - Notion: https://app.notion.com/p/3fad4a3a5eff81d38ed4dbbae8e1d813
 
 ### T-06 — A sala acompanha o grupo  [x]
@@ -117,7 +117,7 @@
   - o cancelamento com motivo e sala encerrando;
   - as ações do grupo funcionando com o Discord fora do ar, com os efeitos refeitos
     depois.
-- Commit:
+- Commit: 358bb6f
 - Notion: https://app.notion.com/p/3fad4a3a5eff818291abc786b9174adb
 
 ### T-07 — Link do Discord do dono (API)  [P] [x]
@@ -133,7 +133,7 @@
   - o link só para os membros;
   - o link ausente da lista da Home, do talento e do convite;
   - o link presente com a feature desligada.
-- Commit:
+- Commit: 629c491
 - Notion: https://app.notion.com/p/3fad4a3a5eff813c8196d9e6e9ee3b21
 
 ### T-08 — Avisar no Discord (API)  [x]
@@ -150,7 +150,7 @@
   - a falha que não conta para o intervalo e não é refeita;
   - o lembrete que não conta para o intervalo;
   - dois avisos simultâneos postando um só.
-- Commit:
+- Commit: d27db6a
 - Notion: https://app.notion.com/p/3fad4a3a5eff814baa21ff1d35ef8e12
 
 ## Web
@@ -168,7 +168,7 @@
   - "Reconectar";
   - nada disso aparece com a feature desligada;
   - o login continua só com `identify`.
-- Commit:
+- Commit: e67f322
 - Notion: https://app.notion.com/p/3fad4a3a5eff81e7b183df1ef6ce1f88
 
 ### T-10 — Detalhe do lobby: seção "Sala no Discord"  [x]
@@ -186,7 +186,7 @@
   - o "Avisar no Discord" com o tempo que falta;
   - o "Discord do anfitrião";
   - as mensagens de erro em pt-BR.
-- Commit:
+- Commit: 91c9d4b
 - Notion: https://app.notion.com/p/3fad4a3a5eff816da953f02c75cfaff5
 
 ### T-11 — Link do Discord no formulário do lobby  [P] [x]
@@ -198,7 +198,7 @@
   - o campo opcional com a ajuda "Só os membros aceitos veem";
   - o erro "Use um link de convite do Discord" junto do campo;
   - apagar o link na edição.
-- Commit:
+- Commit: 2d43671
 - Notion: https://app.notion.com/p/3fad4a3a5eff8102ab4bdd8dcb3d7cb9
 
 ### T-12 — Operação: README e pilha  [x]
@@ -216,7 +216,7 @@
   - regenerar o token se vazar.
 
   A pilha `app` sobe com e sem as variáveis.
-- Commit:
+- Commit: 5c7ff4d
 - Notion: https://app.notion.com/p/3fad4a3a5eff81f1a25bcb2abbd03f41
 
 ## Matriz de cobertura
