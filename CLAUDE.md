@@ -13,7 +13,8 @@ preview Open Graph) e o banco de talentos (disponibilidade por personagem, afini
 lobby e catálogo em `/talentos`) o grupo livre (lobby sem
 formação por função, de 2 a 12 vagas), o lobby sem instância (com título livre) e o
 servidor do jogo (Freya ou Nidhogg no personagem e no lobby, com filtro na Home e no banco
-de talentos). A pilha completa roda com
+de talentos) e a sala do grupo no Discord (bot no servidor oficial, link do Discord do dono e
+"Avisar no Discord"; liga com `DISCORD_BOT_TOKEN` e `DISCORD_GUILD_ID`). A pilha completa roda com
 `docker compose --profile app up` (ADR-06). Nada em andamento; os próximos passos ficam no
 Notion. O setup local e os comandos estão no `README.md`. As decisões de arquitetura ficam
 em `docs/adr/`.
