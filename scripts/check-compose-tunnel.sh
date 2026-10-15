@@ -62,6 +62,25 @@ else
 	fail "falhou sem a mensagem do token: $out"
 fi
 
+echo "== Endurecimento CA-01.1 / CA-01.4 — env-check antes do banco"
+app_json=$(base config --format json)
+[[ "$(get services.app-postgres.depends_on.env-check.condition <<<"$app_json")" == "service_completed_successfully" ]] && ok "app-postgres espera o env-check" || fail "app-postgres não depende do env-check"
+[[ "$(get services.migrate.depends_on.app-postgres.condition <<<"$app_json")" == "service_healthy" ]] && ok "migrate espera o banco" || fail "migrate não depende do banco"
+app_pw=$(sed -n 's/^APP_POSTGRES_PASSWORD=//p' .env.example)
+dev_pw=$(sed -n 's/^POSTGRES_PASSWORD=//p' .env.example)
+[[ "$(get services.app-postgres.environment.POSTGRES_PASSWORD <<<"$app_json")" == "$app_pw" ]] && ok "app-postgres usa APP_POSTGRES_PASSWORD" || fail "app-postgres não usa APP_POSTGRES_PASSWORD"
+grep -qF ":$app_pw@app-postgres" <<<"$(get services.api.environment.DATABASE_URL <<<"$app_json")" && ok "a API conecta com APP_POSTGRES_PASSWORD" || fail "a DATABASE_URL da API não usa APP_POSTGRES_PASSWORD"
+grep -qF ":$dev_pw@" <<<"$app_json" && fail "a senha de dev aparece na pilha app" || ok "a senha de dev não entra na pilha app"
+[[ "$(get services.env-check.network_mode <<<"$app_json")" == "none" ]] && ok "env-check sem rede" || fail "env-check com rede"
+if base run --rm --no-deps env-check >/dev/null 2>&1; then ok "env-check aceita o .env.example local"; else fail "env-check recusou o .env.example local"; fi
+if out=$(APP_ORIGIN=https://rolobby.com.br base run --rm --no-deps env-check 2>&1); then
+	fail "env-check aceitou a senha de exemplo com origem pública"
+elif grep -q "APP_POSTGRES_PASSWORD: está com o valor do .env.example" <<<"$out" && ! grep -qF "$app_pw" <<<"$out"; then
+	ok "env-check recusa a senha de exemplo com origem pública, sem mostrar o valor"
+else
+	fail "env-check falhou sem a mensagem esperada"
+fi
+
 if ((failures > 0)); then
 	echo "$failures falha(s)" >&2
 	exit 1
