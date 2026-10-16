@@ -3,7 +3,11 @@ import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
 import { sessionCall, toLogin } from '$lib/auth/session';
 import { listCharacters, listClasses } from '$lib/characters/api';
-import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import {
+	loadErrorMessage,
+	UNAVAILABLE_MESSAGE,
+	unavailableMessage
+} from '$lib/characters/messages';
 import { buildDays } from '$lib/home/days';
 import { zonedNow } from '$lib/home/time';
 import { createLobby, listInstances } from '$lib/lobbies/api';
@@ -66,7 +70,7 @@ export const load: PageServerLoad = async ({ locals, cookies, fetch, url }) => {
 		classes: classes.ok ? classes.data : [],
 		days,
 		values,
-		loadError: characters.ok && instances.ok ? null : UNAVAILABLE_MESSAGE,
+		loadError: loadErrorMessage(characters, instances),
 		loginHref: loginHref(new URL(back, 'http://web'))
 	};
 };
@@ -93,7 +97,7 @@ export const actions: Actions = {
 					message: lobbyConflictMessage(result.code) ?? UNAVAILABLE_MESSAGE
 				});
 			default:
-				return fail(503, { values, errors: {}, message: UNAVAILABLE_MESSAGE });
+				return fail(503, { values, errors: {}, message: unavailableMessage(result) });
 		}
 	}
 };

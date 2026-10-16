@@ -171,6 +171,19 @@ describe('/lobbies/novo', () => {
 		);
 	});
 
+	it('CA-05.2 (endurecimento): criar com a API em 429 mostra "Muitas tentativas"', async () => {
+		const { fn } = fakeFetch({ 'POST /lobbies': json(429, { error: 'rate_limited' }) });
+		const result = await novo.actions.create({
+			request: form(FORM),
+			cookies: fakeCookies('t'),
+			fetch: fn
+		} as unknown as NovoAction);
+		expect(result).toMatchObject({
+			status: 503,
+			data: { message: 'Muitas tentativas. Aguarde um pouco e tente de novo.' }
+		});
+	});
+
 	it('CA-01.1: criar manda o horário de Brasília em UTC e vai para o detalhe', async () => {
 		const { fn, calls } = fakeFetch({ 'POST /lobbies': json(201, TEMPLE) });
 		const e = await thrown(() =>

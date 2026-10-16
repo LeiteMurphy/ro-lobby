@@ -38,12 +38,16 @@ func New(db health.Pinger, authenticator Authenticator, chars CharacterService, 
 		talentsHandler:      talentsHandler{session: session, talents: talentSvc},
 		discordHandler:      discordHandler{session: session, rooms: o.rooms},
 	}, nil, api.StrictHTTPServerOptions{
-		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		},
+		RequestErrorHandlerFunc:  requestError,
 		ResponseErrorHandlerFunc: internalError,
 	})
-	return withSessionToken(api.HandlerFromMux(strict, http.NewServeMux()))
+	// Endurecimento, RN-13: o limite do corpo vale antes de qualquer rota ler a requisição.
+	h := limitBody(withSessionToken(api.HandlerFromMux(strict, http.NewServeMux())))
+	// Endurecimento, RN-15: o limite de requisições vem antes de tudo.
+	if o.limits != nil {
+		h = rateLimit(*o.limits, h)
+	}
+	return h
 }
 
 // internalError registra o erro e responde 500 sem detalhes: o texto de um erro interno

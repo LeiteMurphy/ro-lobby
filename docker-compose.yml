@@ -10,37 +10,71 @@ name: ro-lobby
 
 x-postgres: &postgres
   image: mirror.gcr.io/library/postgres:18-alpine
-  environment:
-    POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
-    POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
-    TZ: UTC
-    PGTZ: UTC
   healthcheck:
     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
     interval: 2s
     timeout: 3s
     retries: 15
 
-x-app-database-url: &app-database-url postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@app-postgres:5432/${POSTGRES_DB}?sslmode=disable
+x-postgres-env: &postgres-env
+  POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+  POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+  TZ: UTC
+  PGTZ: UTC
+
+# Endurecimento, RN-01: a pilha app usa a própria senha, separada da de desenvolvimento.
+x-app-database-url: &app-database-url postgres://${POSTGRES_USER}:${APP_POSTGRES_PASSWORD}@app-postgres:5432/${POSTGRES_DB}?sslmode=disable
 
 services:
   # Desenvolvimento (RN-03 da fundação, RN-04 da home-local)
   postgres:
     <<: *postgres
     profiles: [dev]
+    environment:
+      <<: *postgres-env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    # Endurecimento, RN-06: só o próprio PC alcança o banco de desenvolvimento.
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
 
   # Pilha app (RN-01 a RN-03 da home-local)
+
+  # Endurecimento, RN-02 e RN-04: confere o .env antes de o banco subir. Com origem
+  # pública, recusa senha curta e valores do .env.example, sem mostrar nenhum valor. Roda
+  # sem rede e sai.
+  env-check:
+    profiles: [app]
+    image: mirror.gcr.io/library/postgres:18-alpine
+    entrypoint: ["sh", "/check/check-env.sh", "--from-environment", "--example", "/check/.env.example"]
+    environment:
+      APP_ORIGIN: ${APP_ORIGIN:-}
+      POSTGRES_USER: ${POSTGRES_USER:-}
+      POSTGRES_DB: ${POSTGRES_DB:-}
+      APP_POSTGRES_PASSWORD: ${APP_POSTGRES_PASSWORD:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+    volumes:
+      - ./scripts/check-env.sh:/check/check-env.sh:ro
+      - ./.env.example:/check/.env.example:ro
+    network_mode: none
+    restart: "no"
+
   app-postgres:
     <<: *postgres
     profiles: [app]
+    environment:
+      <<: *postgres-env
+      POSTGRES_PASSWORD: ${APP_POSTGRES_PASSWORD:?defina APP_POSTGRES_PASSWORD no .env}
     # Sem porta publicada: só a rede interna do Compose alcança o banco da pilha.
     volumes:
       - app-postgres-data:/var/lib/postgresql
+    depends_on:
+      env-check:
+        condition: service_completed_successfully
 
   migrate:
     profiles: [app]
@@ -94,8 +128,9 @@ services:
       # O adapter-node confere a origem das actions (proteção CSRF). RN-01
       # (publicacao-tunel): APP_ORIGIN troca a origem pelo domínio público.
       ORIGIN: ${APP_ORIGIN:-http://localhost:${APP_WEB_PORT:-3000}}
+    # Endurecimento, RN-06: só o próprio PC; o túnel chega pela rede interna do Compose.
     ports:
-      - "${APP_WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${APP_WEB_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy

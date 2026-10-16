@@ -36,6 +36,19 @@ export const LIMIT_MESSAGE = 'Você já tem 10 personagens';
 export const IN_OPEN_LOBBY_MESSAGE =
 	'Esse personagem está num lobby aberto. Saia ou cancele antes de mudar servidor, nível ou função.';
 export const UNAVAILABLE_MESSAGE = 'Não foi possível falar com o servidor. Tente de novo.';
+/** RN-15 da spec endurecimento: a API recusou por excesso de requisições (429). */
+export const RATE_LIMITED_MESSAGE = 'Muitas tentativas. Aguarde um pouco e tente de novo.';
+
+/** A mensagem de uma falha sem tratamento próprio: excesso de requisições ou API fora. */
+export function unavailableMessage(result: { kind?: string }): string {
+	return result.kind === 'rate_limited' ? RATE_LIMITED_MESSAGE : UNAVAILABLE_MESSAGE;
+}
+
+/** Erro de carregamento de uma página: null se todas as chamadas deram certo. */
+export function loadErrorMessage(...results: { ok: boolean; kind?: string }[]): string | null {
+	const failed = results.find((r) => !r.ok);
+	return failed ? unavailableMessage(failed) : null;
+}
 export const NOT_FOUND_MESSAGE = 'Esse personagem não existe mais.';
 
 /** Mensagem do erro de um campo. */

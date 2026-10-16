@@ -20,7 +20,9 @@ import {
 	IN_OPEN_LOBBY_MESSAGE,
 	LIMIT_MESSAGE,
 	NOT_FOUND_MESSAGE,
-	UNAVAILABLE_MESSAGE
+	loadErrorMessage,
+	UNAVAILABLE_MESSAGE,
+	unavailableMessage
 } from '$lib/characters/messages';
 import { getConnection } from '$lib/discord/api';
 import { connectMessage } from '$lib/discord/messages';
@@ -59,7 +61,7 @@ export const load: PageServerLoad = async ({ url, locals, cookies, fetch }) => {
 		classes: classes.ok ? classes.data : [],
 		// Banco de talentos (RN-04): as instâncias de interesse saem do catálogo.
 		instances: instances.ok ? instances.data : [],
-		loadError: characters.ok && classes.ok ? null : UNAVAILABLE_MESSAGE,
+		loadError: loadErrorMessage(characters, classes),
 		// spec discord-bot, US-01: a conexão ao servidor do RO Lobby; sem resposta, some.
 		discord: connection.ok ? connection.data : { enabled: false, connectedAt: null },
 		discordMessage: connectMessage(url.searchParams.get('discord')),
@@ -130,7 +132,7 @@ function outcome(
 		case 'not_found':
 			return fail(404, { ...form, errors: {}, message: NOT_FOUND_MESSAGE });
 		default:
-			return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
+			return fail(503, { ...form, errors: {}, message: unavailableMessage(result) });
 	}
 }
 
@@ -189,7 +191,7 @@ export const actions: Actions = {
 			case 'not_found':
 				return fail(404, { ...form, errors: {}, message: NOT_FOUND_MESSAGE });
 			default:
-				return fail(503, { ...form, errors: {}, message: UNAVAILABLE_MESSAGE });
+				return fail(503, { ...form, errors: {}, message: unavailableMessage(result) });
 		}
 	},
 	// RN-16 da spec servidor: "Está certo" no aviso dos personagens migrados.

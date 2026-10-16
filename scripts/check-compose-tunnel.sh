@@ -62,6 +62,37 @@ else
 	fail "falhou sem a mensagem do token: $out"
 fi
 
+echo "== Endurecimento CA-01.1 / CA-01.4 — env-check antes do banco"
+app_json=$(base config --format json)
+[[ "$(get services.app-postgres.depends_on.env-check.condition <<<"$app_json")" == "service_completed_successfully" ]] && ok "app-postgres espera o env-check" || fail "app-postgres não depende do env-check"
+[[ "$(get services.migrate.depends_on.app-postgres.condition <<<"$app_json")" == "service_healthy" ]] && ok "migrate espera o banco" || fail "migrate não depende do banco"
+app_pw=$(sed -n 's/^APP_POSTGRES_PASSWORD=//p' .env.example)
+dev_pw=$(sed -n 's/^POSTGRES_PASSWORD=//p' .env.example)
+[[ "$(get services.app-postgres.environment.POSTGRES_PASSWORD <<<"$app_json")" == "$app_pw" ]] && ok "app-postgres usa APP_POSTGRES_PASSWORD" || fail "app-postgres não usa APP_POSTGRES_PASSWORD"
+grep -qF ":$app_pw@app-postgres" <<<"$(get services.api.environment.DATABASE_URL <<<"$app_json")" && ok "a API conecta com APP_POSTGRES_PASSWORD" || fail "a DATABASE_URL da API não usa APP_POSTGRES_PASSWORD"
+grep -qF ":$dev_pw@" <<<"$app_json" && fail "a senha de dev aparece na pilha app" || ok "a senha de dev não entra na pilha app"
+[[ "$(get services.env-check.network_mode <<<"$app_json")" == "none" ]] && ok "env-check sem rede" || fail "env-check com rede"
+if base run --rm --no-deps env-check >/dev/null 2>&1; then ok "env-check aceita o .env.example local"; else fail "env-check recusou o .env.example local"; fi
+if out=$(APP_ORIGIN=https://rolobby.com.br base run --rm --no-deps env-check 2>&1); then
+	fail "env-check aceitou a senha de exemplo com origem pública"
+elif grep -q "APP_POSTGRES_PASSWORD: está com o valor do .env.example" <<<"$out" && ! grep -qF "$app_pw" <<<"$out"; then
+	ok "env-check recusa a senha de exemplo com origem pública, sem mostrar o valor"
+else
+	fail "env-check falhou sem a mensagem esperada"
+fi
+
+echo "== Endurecimento CA-02.1 / CA-02.2 — portas só em 127.0.0.1"
+dev_json=$(docker compose --env-file "$env_file" --profile dev config --format json)
+[[ "$(get services.postgres.ports.0.host_ip <<<"$dev_json")" == "127.0.0.1" ]] && ok "postgres de dev em 127.0.0.1" || fail "postgres de dev fora de 127.0.0.1"
+[[ "$(get services.web.ports.0.host_ip <<<"$tunnel_json")" == "127.0.0.1" ]] && ok "web em 127.0.0.1" || fail "web fora de 127.0.0.1"
+# Serviços com porta publicada fora de 127.0.0.1, no JSON do `config` na entrada.
+exposed() { node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const sv=JSON.parse(s).services;console.log(Object.entries(sv).filter(([,v])=>(v.ports??[]).some(p=>p.host_ip!=="127.0.0.1")).map(([k])=>k).join(","))})'; }
+open_ports="$(exposed <<<"$tunnel_json")$(exposed <<<"$dev_json")"
+[[ -z "$open_ports" ]] && ok "nenhuma porta fora de 127.0.0.1" || fail "portas abertas para a rede em: $open_ports"
+for svc in app-postgres api; do
+	[[ -z "$(get services.$svc.ports <<<"$tunnel_json")" ]] && ok "$svc sem porta publicada" || fail "$svc publica porta"
+done
+
 if ((failures > 0)); then
 	echo "$failures falha(s)" >&2
 	exit 1

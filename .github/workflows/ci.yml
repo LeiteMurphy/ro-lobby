@@ -62,6 +62,10 @@ jobs:
               - 'scripts/smoke-app.sh'
               - 'docker-compose.tunnel.yml'
               - 'scripts/check-compose-tunnel.sh'
+              - 'scripts/check-env.sh'
+              - 'scripts/check-env.test.sh'
+              - 'scripts/backup.sh'
+              - 'scripts/backup.test.sh'
 
   backend:
     name: Backend
@@ -124,6 +128,10 @@ jobs:
             git status --short -- .; git diff -- .
             echo "::error::Código gerado desatualizado. Rode 'go generate ./...' em backend/ e faça commit."; exit 1
           fi
+
+      # Endurecimento, RN-09 / CA-03.2: vulnerabilidade alcançável pelo código derruba a CI.
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
       - name: Testes unitários (sem banco)
         run: go test -race -coverprofile=coverage-unit.out ./...
@@ -198,6 +206,11 @@ jobs:
             git status --short -- .; git diff -- .
             echo "::error::Tipos gerados desatualizados. Rode 'npm run generate' em web/ e faça commit."; exit 1
           fi
+
+      # Endurecimento, RN-09 / CA-03.2: vulnerabilidade alta ou crítica nas dependências de
+      # produção derruba a CI.
+      - name: npm audit
+        run: npm audit --omit=dev --audit-level=high
 
       - name: ESLint e Prettier
         run: npm run lint
@@ -314,7 +327,16 @@ jobs:
       - name: .env da pilha
         run: cp .env.example .env
 
+      # Spec endurecimento: CA-01.1 a CA-01.4, CA-08.1 e CA-08.2 do verificador do .env.
+      - name: Verificador do .env
+        run: bash scripts/check-env.test.sh
+
+      # Spec endurecimento: CA-07.1, backup com retenção (pg_dump de mentira).
+      - name: Backup com retenção
+        run: bash scripts/backup.test.sh
+
       # Spec publicacao-tunel: CA-01.1, CA-01.2, CA-01.3 e a configuração do CA-02.1.
+      # Spec endurecimento: o env-check antes do banco (CA-01.1, CA-01.4).
       - name: Configuração do túnel
         run: bash scripts/check-compose-tunnel.sh
 

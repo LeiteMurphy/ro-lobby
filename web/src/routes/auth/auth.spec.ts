@@ -179,6 +179,22 @@ describe('GET /auth/discord/callback', () => {
 		expect(api.calls).toHaveLength(0);
 	});
 
+	it('CA-05.3 (endurecimento): a API em 429 na troca do código → Home com erro de login', async () => {
+		const limited = fakeFetch({ 'POST /auth/discord': json(429, { error: 'rate_limited' }) });
+		const cookies = withState();
+		const to = await location(() =>
+			callback(
+				event(
+					'http://localhost:3000/auth/discord/callback?code=abc&state=estado-certo',
+					cookies,
+					limited.fn
+				)
+			)
+		);
+		expect(to).toBe('/?login=erro');
+		expect(cookies.jar.has(SESSION_COOKIE)).toBe(false);
+	});
+
 	it('CA-04.6: o mesmo retorno repetido é recusado (state de uso único)', async () => {
 		const cookies = withState();
 		const url = 'http://localhost:3000/auth/discord/callback?code=abc&state=estado-certo';

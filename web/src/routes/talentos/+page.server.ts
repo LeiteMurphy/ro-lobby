@@ -2,7 +2,7 @@ import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
 import { SESSION_COOKIE } from '$lib/auth/oauth';
 import { listClasses } from '$lib/characters/api';
-import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { unavailableMessage } from '$lib/characters/messages';
 import { SERVERS } from '$lib/catalog/servers';
 import { listInstances } from '$lib/lobbies/api';
 import { listTalents, type CatalogFilter, type Role } from '$lib/talents/api';
@@ -72,7 +72,7 @@ export const load: PageServerLoad = async ({ url, locals, cookies, fetch }) => {
 			? null
 			: talents.kind === 'invalid'
 				? 'Algum filtro não vale. Limpe os filtros e tente de novo.'
-				: UNAVAILABLE_MESSAGE,
+				: unavailableMessage(talents),
 		loginHref: loginHref(new URL(`${url.pathname}${url.search}`, 'http://web'))
 	};
 };

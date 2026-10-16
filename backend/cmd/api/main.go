@@ -70,11 +70,17 @@ func run() error {
 	go roomService.Run(ctx, discordroom.Every)
 	slog.Info("sala do grupo no Discord", "bot", cfg.Bot)
 
-	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           server.New(pool, authService, characterService, lobbyService, applications.NewService(pool), talents.NewService(pool), server.WithRooms(roomService)),
-		ReadHeaderTimeout: 5 * time.Second,
+	serverOpts := []server.Option{server.WithRooms(roomService)}
+	// Endurecimento, RN-15: o limite de requisições só desliga no e2e (API_RATE_LIMIT=off).
+	if cfg.RateLimit {
+		serverOpts = append(serverOpts, server.WithRateLimits(server.DefaultLimits()))
+	} else {
+		slog.Warn("limite de requisições desligado (API_RATE_LIMIT=off)")
 	}
+
+	// Endurecimento, RN-14: os prazos do servidor ficam em server.NewHTTPServer.
+	srv := server.NewHTTPServer(fmt.Sprintf(":%d", cfg.Port),
+		server.New(pool, authService, characterService, lobbyService, applications.NewService(pool), talents.NewService(pool), serverOpts...))
 
 	errCh := make(chan error, 1)
 	go func() {

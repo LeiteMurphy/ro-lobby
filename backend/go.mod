@@ -1,6 +1,6 @@
 module github.com/LeiteMurphy/ro-lobby/backend
 
-go 1.27.0
+go 1.27.2
 
 require (
 	github.com/getkin/kin-openapi v0.142.0

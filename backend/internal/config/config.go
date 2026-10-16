@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // snowflake é o formato de um ID do Discord.
@@ -25,6 +26,9 @@ type Config struct {
 	// AppOrigin é a origem pública do web (APP_ORIGIN, padrão http://localhost:3000), para o
 	// link do lobby nas mensagens do bot (RN-08 da discord-bot).
 	AppOrigin string
+	// RateLimit liga o limite de requisições (spec endurecimento, RN-15). Só o e2e desliga,
+	// com API_RATE_LIMIT=off, e nunca com origem pública (https).
+	RateLimit bool
 }
 
 // Bot: DISCORD_BOT_TOKEN e DISCORD_GUILD_ID juntas ligam a sala do grupo; nenhuma das duas a
@@ -78,6 +82,7 @@ func Load(getenv func(string) string) (Config, error) {
 		},
 		Bot:       Bot{Token: getenv("DISCORD_BOT_TOKEN"), GuildID: getenv("DISCORD_GUILD_ID")},
 		AppOrigin: getenv("APP_ORIGIN"),
+		RateLimit: getenv("API_RATE_LIMIT") != "off",
 	}
 	if cfg.AppOrigin == "" {
 		cfg.AppOrigin = "http://localhost:3000"
@@ -94,6 +99,9 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if cfg.Bot.GuildID != "" && !snowflake.MatchString(cfg.Bot.GuildID) {
 		return Config{}, fmt.Errorf("DISCORD_GUILD_ID inválida: %q", cfg.Bot.GuildID)
+	}
+	if !cfg.RateLimit && strings.HasPrefix(cfg.AppOrigin, "https://") {
+		return Config{}, errors.New("API_RATE_LIMIT=off não vale com APP_ORIGIN público (https)")
 	}
 	if cfg.Discord.APIBaseURL == "" {
 		cfg.Discord.APIBaseURL = defaultDiscordAPIBaseURL

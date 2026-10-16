@@ -27,7 +27,8 @@ type RoomService interface {
 type Option func(*options)
 
 type options struct {
-	rooms RoomService
+	rooms  RoomService
+	limits *Limits
 }
 
 // WithRooms liga as rotas da sala do grupo no Discord. Sem ela, a sala fica desligada

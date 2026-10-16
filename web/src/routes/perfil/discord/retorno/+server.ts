@@ -27,5 +27,6 @@ export const GET: RequestHandler = async ({ url, cookies, fetch }) => {
 	if (result.ok) back('conectado');
 	if (!result.ok && result.kind === 'rule' && result.code === 'wrong_account') back('conta'); // CA-01.4
 	if (!result.ok && result.kind === 'disabled') back('desligado');
+	if (!result.ok && result.kind === 'rate_limited') back('muitas'); // RN-15 da endurecimento
 	back('erro');
 };

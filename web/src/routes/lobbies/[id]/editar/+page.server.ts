@@ -3,7 +3,7 @@ import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
 import { sessionCall, toLogin } from '$lib/auth/session';
 import { listCharacters, listClasses } from '$lib/characters/api';
-import { UNAVAILABLE_MESSAGE } from '$lib/characters/messages';
+import { UNAVAILABLE_MESSAGE, unavailableMessage } from '$lib/characters/messages';
 import { buildDays } from '$lib/home/days';
 import { zonedNow } from '$lib/home/time';
 import { getLobby, listInstances, updateLobby } from '$lib/lobbies/api';
@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch }) =
 		listInstances(fetch, apiBaseUrl)
 	]);
 	if (!lobby.ok && lobby.kind === 'not_found') error(404, 'Lobby não encontrado');
-	if (!lobby.ok) error(503, UNAVAILABLE_MESSAGE);
+	if (!lobby.ok) error(503, unavailableMessage(lobby));
 	// RN-20: só o dono edita; para os outros, o lobby "não existe" aqui.
 	if (lobby.data.owner.userId !== locals.user.id) error(404, 'Lobby não encontrado');
 	// RN-17: lobby iniciado ou cancelado não se edita; volta para o detalhe.
@@ -109,6 +109,6 @@ export const actions: Actions = {
 					message: lobbyConflictMessage(result.code) ?? UNAVAILABLE_MESSAGE
 				});
 		}
-		return fail(503, { values, errors: {}, message: UNAVAILABLE_MESSAGE });
+		return fail(503, { values, errors: {}, message: unavailableMessage(result) });
 	}
 };

@@ -63,7 +63,10 @@ export default defineConfig({
 				DISCORD_API_BASE_URL: `${fakeDiscord}/api`,
 				DISCORD_BOT_TOKEN: discordBot.token,
 				DISCORD_GUILD_ID: discordBot.guildId,
-				APP_ORIGIN: `http://localhost:${webPort}`
+				APP_ORIGIN: `http://localhost:${webPort}`,
+				// Endurecimento, RN-15: o e2e faz centenas de requisições do mesmo IP em poucos
+				// segundos; o limite tem os próprios testes no backend.
+				API_RATE_LIMIT: 'off'
 			},
 			// Só fica pronto quando o /healthz responde 200, ou seja, com o banco no ar.
 			url: `${apiBaseUrl}/healthz`,
