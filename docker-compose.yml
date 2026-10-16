@@ -125,6 +125,9 @@ services:
       # RN-03 (login-discord): o web recebe só o Client ID, nunca o Client Secret.
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?defina DISCORD_CLIENT_ID no .env}
       DISCORD_AUTHORIZE_URL: ${DISCORD_AUTHORIZE_URL:-https://discord.com/oauth2/authorize}
+      # Spec discord-em-construcao, RN-01: a entrada no servidor e a sala do grupo ficam em
+      # construção no site até o servidor oficial ficar pronto. false volta ao normal.
+      DISCORD_UNDER_CONSTRUCTION: ${DISCORD_UNDER_CONSTRUCTION:-true}
       # O adapter-node confere a origem das actions (proteção CSRF). RN-01
       # (publicacao-tunel): APP_ORIGIN troca a origem pelo domínio público.
       ORIGIN: ${APP_ORIGIN:-http://localhost:${APP_WEB_PORT:-3000}}

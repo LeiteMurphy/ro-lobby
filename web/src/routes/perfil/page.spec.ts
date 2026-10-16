@@ -310,3 +310,37 @@ describe('conexão ao servidor do RO Lobby no /perfil (spec discord-bot)', () =>
 		);
 	});
 });
+
+describe('servidor do Discord em construção no /perfil (spec discord-em-construcao)', () => {
+	const section = (html: string) =>
+		(html.split('data-testid="discord-connection"')[1] ?? '').split('</section>')[0];
+
+	it('CA-01.1 / RN-02: botão "Em construção" desabilitado, com a frase e sem link', () => {
+		for (const connectedAt of [null, '2026-10-14T12:00:00Z']) {
+			const card = section(
+				renderPage([], null, {
+					discord: { enabled: true, connectedAt },
+					discordUnderConstruction: true
+				})
+			);
+			expect(card).toContain(
+				'O servidor do RO Lobby no Discord está em construção. Em breve você entra por aqui.'
+			);
+			expect(card).toMatch(/<button[^>]*disabled[^>]*>[\s\S]*Em construção/);
+			expect(card).not.toContain('href="/perfil/discord"');
+			expect(card).not.toContain('Entrar no servidor do RO Lobby');
+			expect(card).not.toContain('Reconectar');
+		}
+	});
+
+	it('CA-01.5 / RN-07: com a chave desligada, o botão de entrar continua', () => {
+		const card = section(
+			renderPage([], null, {
+				discord: { enabled: true, connectedAt: null },
+				discordUnderConstruction: false
+			})
+		);
+		expect(card).toContain('href="/perfil/discord"');
+		expect(card).not.toContain('Em construção');
+	});
+});

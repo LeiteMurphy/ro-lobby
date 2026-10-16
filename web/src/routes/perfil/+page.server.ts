@@ -25,6 +25,7 @@ import {
 	unavailableMessage
 } from '$lib/characters/messages';
 import { getConnection } from '$lib/discord/api';
+import { discordUnderConstruction } from '$lib/discord/construction';
 import { connectMessage } from '$lib/discord/messages';
 import { listInstances } from '$lib/lobbies/api';
 import { setAvailability } from '$lib/talents/api';
@@ -65,6 +66,8 @@ export const load: PageServerLoad = async ({ url, locals, cookies, fetch }) => {
 		// spec discord-bot, US-01: a conexão ao servidor do RO Lobby; sem resposta, some.
 		discord: connection.ok ? connection.data : { enabled: false, connectedAt: null },
 		discordMessage: connectMessage(url.searchParams.get('discord')),
+		// spec discord-em-construcao, RN-02.
+		discordUnderConstruction: discordUnderConstruction(),
 		loginHref: loginHref(PROFILE)
 	};
 };
