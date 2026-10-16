@@ -137,7 +137,7 @@
   checklist do Cloudflare
 - Commit: `21e177d docs: seção de segurança no README, com segredos, backup, troca de senha e Cloudflare`
 
-### T-12 — Troca da senha de produção e publicação  [ ]
+### T-12 — Troca da senha de produção e publicação  [x]
 - Cobre: US-01, US-02, RN-19, CA-01.5, CA-02.2 (parte da produção)
 - Depende de: merge do PR (memória "publicar só depois do merge")
 - Paralelizável: não
@@ -145,7 +145,14 @@
 - Pronto quando: o backup foi feito; a senha forte foi gerada no `.env` sem passar pelo chat;
   o `ALTER ROLE` foi aplicado; a pilha subiu pela `main` com o túnel; https://rolobby.com.br
   responde 200 com os mesmos usuários; o web publica em `127.0.0.1:3000`
-- Commit: — (operação; fica fora do relatório do validador, conferida no roteiro)
+- Commit: — (operação feita em 2026-10-15, depois do merge `fc19acb`):
+  - backup `ro_lobby-antes-troca-senha-20261015-223453.sql` (40 KB, 12 tabelas);
+  - senha de 32 caracteres gerada no `.env` sem passar pela tela, aplicada com `ALTER ROLE`;
+    `check-env.sh` diz "pronto para publicar";
+  - pilha publicada pela `main` com o túnel: `env-check` e `migrate` com saída 0, API, web
+    e túnel saudáveis; os 17 usuários, 16 personagens e 5 lobbies continuam lá;
+  - `web` em `127.0.0.1:3000`, Postgres de dev recriado em `127.0.0.1:5432`, banco e API sem
+    porta; cabeçalhos e HSTS conferidos em `https://rolobby.com.br/` e `/robots.txt`.
 
 ## Matriz de cobertura
 | Critério | Tasks |
