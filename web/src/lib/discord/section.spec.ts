@@ -109,3 +109,29 @@ describe('seção Sala no Discord', () => {
 		expect(out).toMatch(/role="alert"[^>]*>O servidor do RO Lobby está cheio agora/);
 	});
 });
+
+describe('seção Sala no Discord em construção (spec discord-em-construcao)', () => {
+	it('CA-01.2 / RN-03 / RN-04: só o aviso e o botão desabilitado; o link do dono continua', () => {
+		for (const room of [null, OPEN]) {
+			const out = html(
+				{ room, viewerConnected: false, ownerLink: 'https://discord.gg/abc' },
+				{ isOwner: true, underConstruction: true }
+			);
+			expect(out).toContain('A sala no Discord está em construção.');
+			expect(out).toMatch(/<button[^>]*disabled[^>]*>[\s\S]*Em construção/);
+			expect(out).not.toContain('?/openRoom');
+			expect(out).not.toContain('?/alert');
+			expect(out).not.toContain('data-testid="room-link"');
+			expect(out).not.toContain('Quem está na sala');
+			expect(out).not.toContain('/perfil/discord');
+			expect(out).toContain('data-testid="owner-link"');
+			expect(out).toContain('https://discord.gg/abc');
+		}
+	});
+
+	it('CA-01.5 / RN-07: sem a chave, a seção funciona como antes', () => {
+		const out = html({}, { isOwner: true, underConstruction: false });
+		expect(out).toContain('action="?/openRoom"');
+		expect(out).not.toContain('em construção');
+	});
+});

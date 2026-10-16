@@ -6,6 +6,7 @@
 	import ConfirmDialog from '$lib/characters/components/ConfirmDialog.svelte';
 	import type { Character } from '$lib/characters/api';
 	import { LIMIT_MESSAGE } from '$lib/characters/messages';
+	import { UNDER_CONSTRUCTION } from '$lib/discord/messages';
 	import { serverName } from '$lib/catalog/servers';
 	import { enhance } from '$app/forms';
 	import TopBar from '$lib/home/components/TopBar.svelte';
@@ -121,15 +122,22 @@
 			<section class="discord" aria-labelledby="discord-title" data-testid="discord-connection">
 				<div class="confirm-text">
 					<h2 id="discord-title">Servidor do RO Lobby no Discord</h2>
-					{#if connectedOn}
+					{#if data.discordUnderConstruction}
+						<!-- spec discord-em-construcao, RN-02. -->
+						<p>{UNDER_CONSTRUCTION.profile}</p>
+					{:else if connectedOn}
 						<p>Conectado ao servidor do RO Lobby em {connectedOn}.</p>
 					{:else}
 						<p>Entre no servidor para as salas dos seus grupos aparecerem para você no Discord.</p>
 					{/if}
 				</div>
-				<Button variant={connectedOn ? 'ghost' : 'primary'} href={resolve('/perfil/discord')}
-					>{connectedOn ? 'Reconectar' : 'Entrar no servidor do RO Lobby'}</Button
-				>
+				{#if data.discordUnderConstruction}
+					<Button variant="secondary" disabled>{UNDER_CONSTRUCTION.button}</Button>
+				{:else}
+					<Button variant={connectedOn ? 'ghost' : 'primary'} href={resolve('/perfil/discord')}
+						>{connectedOn ? 'Reconectar' : 'Entrar no servidor do RO Lobby'}</Button
+					>
+				{/if}
 			</section>
 		{/if}
 

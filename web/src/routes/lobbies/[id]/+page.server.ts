@@ -20,11 +20,13 @@ import { sessionCall, toLogin } from '$lib/auth/session';
 import { listCharacters, listClasses, type Character } from '$lib/characters/api';
 import { UNAVAILABLE_MESSAGE, unavailableMessage } from '$lib/characters/messages';
 import { alertRoom, openRoom } from '$lib/discord/api';
+import { discordUnderConstruction } from '$lib/discord/construction';
 import {
 	ALERT_MESSAGES,
 	cooldownMessage,
 	OPEN_ROOM_MESSAGES,
-	ruleMessage as discordRuleMessage
+	ruleMessage as discordRuleMessage,
+	UNDER_CONSTRUCTION
 } from '$lib/discord/messages';
 import { cancelLobby, getLobby } from '$lib/lobbies/api';
 import { lobbyConflictMessage, lobbyFieldMessages } from '$lib/lobbies/messages';
@@ -67,6 +69,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies, fetch, url
 	const classId = lobby.data.owner.classId;
 	return {
 		lobby: lobby.data,
+		// spec discord-em-construcao, RN-03.
+		discordUnderConstruction: discordUnderConstruction(),
 		classNames,
 		characters,
 		ownerClass: classId ? (classNames[classId] ?? classId) : null,
@@ -120,9 +124,15 @@ function applicationFailure<A extends string>(
 	});
 }
 
+// spec discord-em-construcao, RN-06: as actions da sala recusam sem chamar a API.
+function underConstruction() {
+	return fail(409, { action: 'discord' as const, text: UNDER_CONSTRUCTION.room, ok: false });
+}
+
 export const actions: Actions = {
 	// spec discord-bot, RN-05 a RN-09 e RN-20: o dono abre a sala.
 	openRoom: async ({ params, cookies, fetch }) => {
+		if (discordUnderConstruction()) return underConstruction();
 		const path = `/lobbies/${params.id}`;
 		const result = await openRoom(sessionCall(cookies, fetch, path), params.id);
 		if (result.ok) return { action: 'discord' as const, text: 'Sala aberta no Discord.', ok: true };
@@ -140,6 +150,7 @@ export const actions: Actions = {
 	},
 	// spec discord-bot, RN-26 a RN-28: o dono avisa o grupo, com intervalo de 10 minutos.
 	alert: async ({ params, cookies, fetch }) => {
+		if (discordUnderConstruction()) return underConstruction();
 		const path = `/lobbies/${params.id}`;
 		const result = await alertRoom(sessionCall(cookies, fetch, path), params.id);
 		if (result.ok)

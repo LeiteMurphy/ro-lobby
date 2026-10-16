@@ -2,12 +2,18 @@ import { redirect } from '@sveltejs/kit';
 import { authConfig } from '$lib/auth/config';
 import { CONNECT_PATH, CONNECT_STATE_COOKIE, sameState, SESSION_COOKIE } from '$lib/auth/oauth';
 import { connect } from '$lib/discord/api';
+import { discordUnderConstruction } from '$lib/discord/construction';
 import type { ConnectOutcome } from '$lib/discord/messages';
 import type { RequestHandler } from './$types';
 
 // Retorno da conexão ao servidor do RO Lobby (spec discord-bot, RN-01 a RN-04). O state é de
 // uso único; qualquer resultado volta ao perfil com a mensagem em `?discord=`.
 export const GET: RequestHandler = async ({ url, cookies, fetch }) => {
+	// spec discord-em-construcao, RN-05: fechado, volta ao perfil sem chamar a API.
+	if (discordUnderConstruction()) {
+		cookies.delete(CONNECT_STATE_COOKIE, { path: '/' });
+		redirect(303, '/perfil?discord=construcao');
+	}
 	const saved = cookies.get(CONNECT_STATE_COOKIE) ?? '';
 	cookies.delete(CONNECT_STATE_COOKIE, { path: '/' });
 	const back: (outcome: ConnectOutcome) => never = (outcome) =>

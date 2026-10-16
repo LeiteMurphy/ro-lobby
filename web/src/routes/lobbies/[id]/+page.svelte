@@ -548,6 +548,7 @@
 					<!-- spec discord-bot, D-05: o bloco só vem para o dono e os membros. -->
 					<DiscordSection
 						discord={lobby.discord}
+						underConstruction={data.discordUnderConstruction}
 						isOwner={data.isOwner}
 						lobbyOpen={lobby.status === 'open'}
 						result={form && 'action' in form && form.action === 'discord'

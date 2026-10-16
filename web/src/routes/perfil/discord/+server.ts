@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { authConfig } from '$lib/auth/config';
 import { loginHref } from '$lib/auth/display';
+import { discordUnderConstruction } from '$lib/discord/construction';
 import {
 	authorizeUrl,
 	CONNECT_PATH,
@@ -17,6 +18,8 @@ import type { RequestHandler } from './$types';
 // identify e guilds.join, com um state novo num cookie de 10 minutos. Sem sessão, vai ao
 // login e volta para o perfil.
 export const GET: RequestHandler = ({ url, cookies, locals }) => {
+	// spec discord-em-construcao, RN-05: fechado, volta ao perfil sem ir ao Discord.
+	if (discordUnderConstruction()) redirect(303, '/perfil?discord=construcao');
 	if (!locals.user || !cookies.get(SESSION_COOKIE)) {
 		redirect(303, loginHref(new URL('http://web/perfil')));
 	}

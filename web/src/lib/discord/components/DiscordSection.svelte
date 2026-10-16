@@ -4,7 +4,7 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import type { LobbyDiscord } from '../api';
-	import { cooldownMessage } from '../messages';
+	import { cooldownMessage, UNDER_CONSTRUCTION } from '../messages';
 
 	// Seção "Sala no Discord" do detalhe do lobby, só para os membros (spec discord-bot,
 	// RN-18, RN-19, RN-24, RN-26, RN-27).
@@ -18,9 +18,18 @@
 		result?: { text: string; ok: boolean } | null;
 		/** Agora, em ISO, para o tempo que falta até poder avisar de novo (RN-27). */
 		now: string;
+		/** spec discord-em-construcao, RN-03: a sala fica em construção. */
+		underConstruction?: boolean;
 	}
 
-	let { discord, isOwner, lobbyOpen, result = null, now }: Props = $props();
+	let {
+		discord,
+		isOwner,
+		lobbyOpen,
+		result = null,
+		now,
+		underConstruction = false
+	}: Props = $props();
 
 	const room = $derived(discord.room);
 	const waitSeconds = $derived(
@@ -40,7 +49,11 @@
 			<p class="msg" class:err={!result.ok} role={result.ok ? 'status' : 'alert'}>{result.text}</p>
 		{/if}
 
-		{#if discord.enabled}
+		{#if discord.enabled && underConstruction}
+			<!-- spec discord-em-construcao, RN-03: nada da sala; o link do dono continua (RN-04). -->
+			<p class="hint" data-testid="room-under-construction">{UNDER_CONSTRUCTION.room}</p>
+			<Button variant="secondary" disabled>{UNDER_CONSTRUCTION.button}</Button>
+		{:else if discord.enabled}
 			{#if !room}
 				{#if isOwner && lobbyOpen}
 					<!-- RN-06: só o dono abre, com o lobby aberto. -->

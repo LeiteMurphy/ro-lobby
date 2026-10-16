@@ -10,7 +10,9 @@ export const CONNECT_MESSAGES = {
 	cancelado: 'Conexão cancelada.',
 	erro: 'Não foi possível conectar agora. Tente de novo em instantes.',
 	desligado: 'A sala no Discord está desligada no momento.',
-	muitas: RATE_LIMITED_MESSAGE
+	muitas: RATE_LIMITED_MESSAGE,
+	// spec discord-em-construcao, RN-05.
+	construcao: 'O servidor do RO Lobby no Discord está em construção.'
 } as const;
 
 export type ConnectOutcome = keyof typeof CONNECT_MESSAGES;
@@ -52,3 +54,10 @@ export function ruleMessage(
 export function cooldownMessage(seconds: number): string {
 	return `Aguarde ${Math.max(1, Math.ceil(seconds / 60))} min para avisar de novo`;
 }
+
+/** spec discord-em-construcao, RN-02, RN-03 e RN-06. */
+export const UNDER_CONSTRUCTION = {
+	button: 'Em construção',
+	profile: 'O servidor do RO Lobby no Discord está em construção. Em breve você entra por aqui.',
+	room: 'A sala no Discord está em construção.'
+} as const;
